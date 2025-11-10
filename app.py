@@ -32,7 +32,20 @@ def build_form_for_questions(df: pd.DataFrame):
 
     for _, row in df.sort_values("display_order").iterrows():
         qid = row["question_id"]
-        label = row["question_text"]
+
+        # --- SAFE LABEL HANDLING ---
+        raw_label = row.get("question_text", "")
+        # Convert to string and handle NaN / blanks
+        if pd.isna(raw_label) or str(raw_label).strip() == "":
+            # Fallback: metric / pillar / id so there's always *something*
+            metric = str(row.get("metric", "") or "").strip()
+            pillar = str(row.get("strategic_pillar", "") or "").strip()
+            fallback = metric or pillar or qid
+            label = fallback
+        else:
+            label = str(raw_label)
+        # ---------------------------
+
         rtype = str(row.get("response_type", "")).strip()
         opts_raw = row.get("options", "")
         options = []
