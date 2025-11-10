@@ -16,17 +16,27 @@ from reportlab.platypus import (
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 
-
 def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]):
     """
-    Build a simple 2-column table of metric/question vs response.
+    Build a simple 2-column table of metric vs response (primary + description).
     """
     data = [["Pillar / Production / Metric", "Response"]]
     for _, row in questions.sort_values("display_order").iterrows():
         qid = row["question_id"]
         label = f"{row.get('strategic_pillar', '')} / {row.get('production', '')} / {row.get('metric', '')}"
-        value = responses.get(qid, "")
-        data.append([label, str(value)])
+        raw_val = responses.get(qid, "")
+
+        if isinstance(raw_val, dict):
+            primary = raw_val.get("primary", "")
+            desc = raw_val.get("description", "")
+            if desc:
+                value_str = f"{primary} — {desc}"
+            else:
+                value_str = str(primary)
+        else:
+            value_str = str(raw_val)
+
+        data.append([label, value_str])
 
     table = Table(
         data,
@@ -45,7 +55,6 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]):
         )
     )
     return table
-
 
 def build_scorecard_pdf(
     meta: Dict[str, Any],
