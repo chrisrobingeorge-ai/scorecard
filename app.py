@@ -23,48 +23,96 @@ def load_questions(file_path) -> pd.DataFrame:
         df["display_order"] = pd.to_numeric(df["display_order"], errors="coerce").fillna(0)
     return df
 
-
 def build_form_for_questions(df: pd.DataFrame):
     """
-    Render Streamlit widgets for each question and collect responses.
+    Render Streamlit widgets for each question and collect responses,
+    grouped by Strategic Pillar and Production, with nicer labels.
     """
     responses = {}
 
-    for _, row in df.sort_values("display_order").iterrows():
-        qid = row["question_id"]
+    # Clean up NA values so we don't get 'nan' anywhere
+    df = df.copy()
+    df["strategic_pillar"] = df["strategic_pillar"].fillna("General")
+    df["production"] = df["production"].fillna("All works")
+    df["metric"] = df["metric"].fillna("")
 
-        # --- SAFE LABEL HANDLING ---
-        raw_label = row.get("question_text", "")
-        # Convert to string and handle NaN / blanks
-        if pd.isna(raw_label) or str(raw_label).strip() == "":
-            # Fallback: metric / pillar / id so there's always *something*
-            metric = str(row.get("metric", "") or "").strip()
-            pillar = str(row.get("strategic_pillar", "") or "").strip()
-            fallback = metric or pillar or qid
-            label = fallback
-        else:
-            label = str(raw_label)
-        # ---------------------------
+    # Ensure ordering is stable
+    df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
 
-        rtype = str(row.get("response_type", "")).strip()
-        opts_raw = row.get("options", "")
-        options = []
-        if isinstance(opts_raw, str) and opts_raw.strip():
-            options = [o.strip() for o in opts_raw.split(",") if o.strip()]
+    pillars = df["strategic_pillar"].unique()
 
-        if rtype == "yes_no":
-            responses[qid] = st.selectbox(label, YES_NO_OPTIONS, key=qid)
-        elif rtype == "scale_1_5":
-            responses[qid] = int(st.slider(label, 1, 5, 3, key=qid))
-        elif rtype == "number":
-            responses[qid] = float(st.number_input(label, value=0.0, step=1.0, key=qid))
-        elif rtype == "select" and options:
-            responses[qid] = st.selectbox(label, options, key=qid)
-        else:
-            responses[qid] = st.text_area(label, key=qid, height=70)
+    for pillar in pillars:
+        pillar_block = df[df["strategic_pillar"] == pillar].sort_values(
+            ["production", "display_order"]
+        )
+
+        st.markdown(f"### {pillar}")
+
+        for production in pillar_block["production"].unique():
+            prod_block = pillar_block[pillar_block["production"] == production]
+
+            # Subheading for production / area
+            if production and str(production).strip().lower() not in ("school-wide", "corporate-wide"):
+                st.markdown(f"**{production}**")
+
+            cols = st.columns(2)
+
+            for idx, (_, row) in enumerate(prod_block.iterrows()):
+                col = cols[idx % 2]
+                with col:
+                    qid = row["question_id"]
+
+                    # --- label handling (no 'nan') ---
+                    raw_label = row.get("question_text", "")
+                    if pd.isna(raw_label) or str(raw_label).strip() == "":
+                        metric = str(row.get("metric", "") or "").strip()
+                        if production and production not in ("School-wide", "Corporate-wide"):
+                            fallback = f"{metric} ({production})" if metric else qid
+                        else:
+                            fallback = metric or qid
+                        label = fallback
+                    else:
+                        label = str(raw_label).strip()
+                    # -------------------------------
+
+                    rtype = str(row.get("response_type", "")).strip().lower()
+                    opts_raw = row.get("options", "")
+                    options = []
+                    if isinstance(opts_raw, str) and opts_raw.strip():
+                        options = [o.strip() for o in opts_raw.split(",") if o.strip()]
+
+                    required = bool(row.get("required", False))
+                    if required:
+                        label_display = f"{label} *"
+                    else:
+                        label_display = label
+
+                    # Widgets by response_type
+                    if rtype == "yes_no":
+                        responses[qid] = st.radio(
+                            label_display,
+                            YES_NO_OPTIONS,
+                            horizontal=True,
+                            key=qid,
+                        )
+                    elif rtype == "scale_1_5":
+                        responses[qid] = int(
+                            st.slider(label_display, 1, 5, 3, key=qid)
+                        )
+                    elif rtype == "number":
+                        responses[qid] = st.number_input(
+                            label_display, value=0.0, step=1.0, key=qid
+                        )
+                    elif rtype == "select" and options:
+                        responses[qid] = st.selectbox(
+                            label_display, options, key=qid
+                        )
+                    else:
+                        responses[qid] = st.text_area(
+                            label_display, key=qid, height=70
+                        )
 
     return responses
-
 
 def main():
     # Basic identity + month
