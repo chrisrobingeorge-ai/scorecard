@@ -26,7 +26,7 @@ def load_questions(file_path) -> pd.DataFrame:
 def build_form_for_questions(df: pd.DataFrame):
     """
     Render widgets for each question, grouped by pillar + production,
-    with a main answer plus an optional description field.
+    with a main answer plus a description field.
     """
     responses = {}
 
@@ -121,7 +121,7 @@ def build_form_for_questions(df: pd.DataFrame):
                     show_desc = rtype in ("yes_no", "scale_1_5", "number", "select")
                     if show_desc:
                         metric = str(row.get("metric", "") or "").strip()
-                        desc_label = metric + " – description / notes (optional)" if metric else "Description / notes (optional)"
+                        desc_label = metric + " – description / notes" if metric else "Description / notes"
                         desc_label = str(desc_label)
                         entry["description"] = st.text_area(
                             desc_label, key=f"{qid}_desc", height=60
