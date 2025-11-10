@@ -1,6 +1,7 @@
 # ai_utils.py
 
 import json
+import os
 from datetime import datetime
 from typing import Dict, Any
 
@@ -9,8 +10,13 @@ from openai import OpenAI
 
 from config import MODEL_NAME
 
-client = OpenAI()
+api_key = os.environ.get("OPENAI_API_KEY")
+if not api_key:
+    raise RuntimeError(
+        "OPENAI_API_KEY is not set. Please set it as an environment variable or Streamlit secret."
+    )
 
+client = OpenAI(api_key=api_key)
 
 def build_ai_payload(
     meta: Dict[str, Any],
