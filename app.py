@@ -25,8 +25,8 @@ def load_questions(file_path) -> pd.DataFrame:
 
 def build_form_for_questions(df: pd.DataFrame):
     """
-    Render Streamlit widgets for each question and collect responses,
-    grouped by Strategic Pillar and Production, with nicer labels.
+    Render widgets for each question, grouped by pillar + production,
+    with a main answer plus an optional description field.
     """
     responses = {}
 
@@ -48,7 +48,7 @@ def build_form_for_questions(df: pd.DataFrame):
         for production in pillar_block["production"].unique():
             prod_block = pillar_block[pillar_block["production"] == production]
 
-            if production and str(production).strip().lower() not in ("school-wide", "corporate-wide"):
+            if production and str(production).strip().lower() not in ("school-wide", "corporate-wide", "all works"):
                 st.markdown(f"**{production}**")
 
             cols = st.columns(2)
@@ -58,7 +58,7 @@ def build_form_for_questions(df: pd.DataFrame):
                 with col:
                     qid = row["question_id"]
 
-                    # --- label handling ---
+                    # ----- Label (no 'nan') -----
                     raw_label = row.get("question_text", "")
                     try:
                         is_na = pd.isna(raw_label)
@@ -67,19 +67,15 @@ def build_form_for_questions(df: pd.DataFrame):
 
                     if is_na or str(raw_label).strip() == "":
                         metric = str(row.get("metric", "") or "").strip()
-                        if production and production not in ("School-wide", "Corporate-wide"):
-                            fallback = f"{metric} ({production})" if metric else qid
-                        else:
-                            fallback = metric or qid
+                        fallback = metric or qid
                         label = fallback
                     else:
                         label = str(raw_label).strip()
 
                     required = bool(row.get("required", False))
                     label_display = f"{label} *" if required else label
-                    # Force to pure string to keep Streamlit happy
                     label_display = str(label_display)
-                    # ----------------------
+                    # ----------------------------
 
                     rtype = str(row.get("response_type", "")).strip().lower()
                     opts_raw = row.get("options", "")
@@ -87,29 +83,52 @@ def build_form_for_questions(df: pd.DataFrame):
                     if isinstance(opts_raw, str) and opts_raw.strip():
                         options = [o.strip() for o in opts_raw.split(",") if o.strip()]
 
+                    # We'll collect a small dict per metric
+                    entry = {
+                        "primary": None,       # main answer (Y/N, number, scale…)
+                        "description": None,   # free-text context
+                    }
+
+                    # ---- primary control by type ----
                     if rtype == "yes_no":
-                        responses[qid] = st.radio(
+                        entry["primary"] = st.radio(
                             label_display,
                             YES_NO_OPTIONS,
                             horizontal=True,
                             key=qid,
                         )
                     elif rtype == "scale_1_5":
-                        responses[qid] = int(
+                        entry["primary"] = int(
                             st.slider(label_display, 1, 5, 3, key=qid)
                         )
                     elif rtype == "number":
-                        responses[qid] = st.number_input(
+                        entry["primary"] = st.number_input(
                             label_display, value=0.0, step=1.0, key=qid
                         )
                     elif rtype == "select" and options:
-                        responses[qid] = st.selectbox(
+                        entry["primary"] = st.selectbox(
                             label_display, options, key=qid
                         )
                     else:
-                        responses[qid] = st.text_area(
-                            label_display, key=qid, height=70
+                        # Fallback: free-text as the primary answer
+                        entry["primary"] = st.text_area(
+                            label_display, key=qid, height=60
                         )
+                    # ---------------------------------
+
+                    # ---- description / context ----
+                    # Show for everything except when the primary is *already* a big text box.
+                    show_desc = rtype in ("yes_no", "scale_1_5", "number", "select")
+                    if show_desc:
+                        metric = str(row.get("metric", "") or "").strip()
+                        desc_label = metric + " – description / notes (optional)" if metric else "Description / notes (optional)"
+                        desc_label = str(desc_label)
+                        entry["description"] = st.text_area(
+                            desc_label, key=f"{qid}_desc", height=60
+                        )
+                    # --------------------------------
+
+                    responses[qid] = entry
 
     return responses
 
@@ -160,17 +179,23 @@ def main():
         if bool(row.get("required", False)):
             qid = row["question_id"]
             val = responses.get(qid, None)
-            if val in (None, "", []):
+
+            primary_val = None
+            if isinstance(val, dict):
+                primary_val = val.get("primary", None)
+            else:
+                primary_val = val
+
+            if primary_val in (None, "", []):
                 missing_required.append(row["question_text"])
 
     if missing_required:
-        st.error(
-            "Please answer all required questions before generating the summary."
-        )
+        st.error("Please answer all required questions before generating the summary.")
         with st.expander("Missing required questions"):
             for q in missing_required:
                 st.write("• ", q)
         return
+
 
     meta = {
         "staff_name": staff_name or "Unknown",
