@@ -30,13 +30,10 @@ def build_form_for_questions(df: pd.DataFrame):
     """
     responses = {}
 
-    # Clean up NA values so we don't get 'nan' anywhere
     df = df.copy()
     df["strategic_pillar"] = df["strategic_pillar"].fillna("General")
     df["production"] = df["production"].fillna("All works")
     df["metric"] = df["metric"].fillna("")
-
-    # Ensure ordering is stable
     df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
 
     pillars = df["strategic_pillar"].unique()
@@ -51,7 +48,6 @@ def build_form_for_questions(df: pd.DataFrame):
         for production in pillar_block["production"].unique():
             prod_block = pillar_block[pillar_block["production"] == production]
 
-            # Subheading for production / area
             if production and str(production).strip().lower() not in ("school-wide", "corporate-wide"):
                 st.markdown(f"**{production}**")
 
@@ -62,9 +58,14 @@ def build_form_for_questions(df: pd.DataFrame):
                 with col:
                     qid = row["question_id"]
 
-                    # --- label handling (no 'nan') ---
+                    # --- label handling ---
                     raw_label = row.get("question_text", "")
-                    if pd.isna(raw_label) or str(raw_label).strip() == "":
+                    try:
+                        is_na = pd.isna(raw_label)
+                    except TypeError:
+                        is_na = False
+
+                    if is_na or str(raw_label).strip() == "":
                         metric = str(row.get("metric", "") or "").strip()
                         if production and production not in ("School-wide", "Corporate-wide"):
                             fallback = f"{metric} ({production})" if metric else qid
@@ -73,7 +74,12 @@ def build_form_for_questions(df: pd.DataFrame):
                         label = fallback
                     else:
                         label = str(raw_label).strip()
-                    # -------------------------------
+
+                    required = bool(row.get("required", False))
+                    label_display = f"{label} *" if required else label
+                    # Force to pure string to keep Streamlit happy
+                    label_display = str(label_display)
+                    # ----------------------
 
                     rtype = str(row.get("response_type", "")).strip().lower()
                     opts_raw = row.get("options", "")
@@ -81,13 +87,6 @@ def build_form_for_questions(df: pd.DataFrame):
                     if isinstance(opts_raw, str) and opts_raw.strip():
                         options = [o.strip() for o in opts_raw.split(",") if o.strip()]
 
-                    required = bool(row.get("required", False))
-                    if required:
-                        label_display = f"{label} *"
-                    else:
-                        label_display = label
-
-                    # Widgets by response_type
                     if rtype == "yes_no":
                         responses[qid] = st.radio(
                             label_display,
