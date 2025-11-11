@@ -158,9 +158,25 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
                             label_display, YES_NO_OPTIONS, horizontal=True, key=qid
                         )
                     elif rtype == "scale_1_5":
-                        entry["primary"] = int(st.slider(label_display, 1, 5, 3, key=qid))
+                        if qid in st.session_state:
+                            entry["primary"] = int(
+                                st.slider(label_display, min_value=1, max_value=5, key=qid)
+                            )
+                        else:
+                            entry["primary"] = int(
+                                st.slider(
+                                    label_display, min_value=1, max_value=5, value=3, key=qid
+                                )
+                            )
                     elif rtype == "number":
-                        entry["primary"] = st.number_input(label_display, value=0.0, step=1.0, key=qid)
+                        if qid in st.session_state:
+                            entry["primary"] = st.number_input(
+                                label_display, step=1.0, key=qid
+                            )
+                        else:
+                            entry["primary"] = st.number_input(
+                                label_display, value=0.0, step=1.0, key=qid
+                            )
                     elif (rtype in ("select", "dropdown")) and options:
                         entry["primary"] = st.selectbox(label_display, options, key=qid)
                     else:
