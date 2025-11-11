@@ -1,6 +1,6 @@
 section,department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Set Design,ATI01,Did this production feature innovative set design?,yes_no,"Yes,No",TRUE,3,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Set Design Description,ATI02,Please describe any innovative set design used.,text,,FALSE,4,Innovation,1
+Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Set Design,ATI01,1 a) Did this production feature innovative set design?,yes_no,"Yes,No",TRUE,3,Innovation,1
+Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Set Design Description,ATI02,b) Please describe any innovative set design used.,text,,FALSE,4,Innovation,1
 Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Lighting,ATI03,Did this production use innovative lighting techniques?,yes_no,"Yes,No",TRUE,5,Innovation,1
 Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Lighting Description,ATI04,Please describe any innovative lighting techniques used.,text,,FALSE,6,Innovation,1
 Artistic & Technical Innovation,Artistic,Innovation,ALL,Multimedia,ATI05,"Was multimedia (e.g. video, projections) used in this production?",yes_no,"Yes,No",TRUE,7,Innovation,1
