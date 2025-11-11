@@ -468,20 +468,20 @@ def main():
 
     # --------------------------- Form section (narrow column + blank gutter) ---------------------------
     st.markdown("### Scorecard Questions")
-
+    
     tab_pillars = filtered["strategic_pillar"].dropna().unique().tolist()
     tabs = st.tabs(tab_pillars)
-
-    responses: Dict[str, dict] = {}
     
-    current_prod = st.session_state.get("filter_production", "All")  # the show you chose at the top
+    responses: Dict[str, dict] = {}
+    current_show = st.session_state.get("dept_label", "")  # e.g., "Nijinsky", "Romeo & Juliet"
     
     for tab, p in zip(tabs, tab_pillars):
         with tab:
-            block = filtered[filtered["strategic_pillar"] == p]
-            responses.update(build_form_for_questions(block, key_prefix=current_prod))
-
-
+            left_col, _ = st.columns([0.65, 0.35])  # narrow question column + blank gutter
+            with left_col:
+                block = filtered[filtered["strategic_pillar"] == p]
+                responses.update(build_form_for_questions(block, key_prefix=current_show))
+    
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
 
