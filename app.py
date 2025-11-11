@@ -200,11 +200,7 @@ def queue_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
     except Exception as e:
         return False, f"Could not queue draft: {e}"
 
-
 def _apply_pending_draft_if_any():
-    """
-    If a pending draft exists, apply it to session_state BEFORE any widgets are created.
-    """
     b = st.session_state.get("pending_draft_bytes")
     h = st.session_state.get("pending_draft_hash")
     if not b:
@@ -215,45 +211,78 @@ def _apply_pending_draft_if_any():
         answers = data.get("answers", {}) or {}
         meta = data.get("meta", {}) or {}
 
-        # 1) Apply answers
-        for qid_str, entry in answers.items():
-            st.session_state[qid_str] = entry.get("primary", None)
-            st.session_state[f"{qid_str}_desc"] = entry.get("description", None)
+        # Load all questions for the department to get types/options
+        dept = meta.get("department")
+        if dept and dept in DEPARTMENT_FILES:
+            questions_df = load_questions(DEPARTMENT_FILES[dept])
+            qinfo = {row["question_id"]: row for _, row in questions_df.iterrows()}
+        else:
+            qinfo = {}
 
-        # 2) Apply meta to bound UI keys
+        # 1) Apply answers, normalising for widget type
+        for qid_str, entry in answers.items():
+            val = entry.get("primary", None)
+            desc = entry.get("description", None)
+            row = qinfo.get(qid_str, {})
+            rtype = str(row.get("response_type", "")).strip().lower()
+            opts_raw = row.get("options", "")
+            options = [o.strip() for o in opts_raw.split(",") if o.strip()] if isinstance(opts_raw, str) else []
+
+            # Normalise value for widget type
+            if rtype == "yes_no":
+                # Must match one of YES_NO_OPTIONS exactly
+                if val in YES_NO_OPTIONS:
+                    st.session_state[qid_str] = val
+            elif rtype in ("select", "dropdown"):
+                if val in options:
+                    st.session_state[qid_str] = val
+            elif rtype == "scale_1_5":
+                try:
+                    ival = int(val)
+                    if 1 <= ival <= 5:
+                        st.session_state[qid_str] = ival
+                except Exception:
+                    pass
+            elif rtype == "number":
+                try:
+                    st.session_state[qid_str] = float(val)
+                except Exception:
+                    pass
+            else:
+                # Text or anything else
+                if val is not None:
+                    st.session_state[qid_str] = str(val)
+
+            # Description is always text
+            if desc is not None:
+                st.session_state[f"{qid_str}_desc"] = str(desc)
+
+        # 2) Apply meta to bound UI keys (as before)
         if "staff_name" in meta:
             st.session_state["staff_name"] = meta["staff_name"]
         if "role" in meta:
             st.session_state["role"] = meta["role"]
-
         if "month" in meta and isinstance(meta["month"], str):
             try:
                 y, m = meta["month"].split("-")
                 st.session_state["report_month_date"] = date(int(y), int(m), 1)
             except Exception:
                 pass
-
         if "department" in meta and meta["department"] in DEPARTMENT_FILES:
             st.session_state["dept_label"] = meta["department"]
-
-        # Filters
         if "filter_pillar" in meta:
             st.session_state["filter_pillar"] = meta["filter_pillar"]
         st.session_state["filter_production"] = meta.get("production") or "All"
 
-        # Book-keeping
         st.session_state["loaded_draft"] = data
         st.session_state["draft_hash"] = h
         st.session_state["draft_applied"] = True
 
     except Exception as e:
-        # Surface the error in the sidebar later
         st.session_state["pending_draft_error"] = str(e)
     finally:
-        # Clear pending markers
         st.session_state.pop("pending_draft_bytes", None)
         st.session_state.pop("pending_draft_hash", None)
-
 
 def clear_form(all_questions_df: pd.DataFrame):
     """
