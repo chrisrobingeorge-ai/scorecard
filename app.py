@@ -20,6 +20,8 @@ from pdf_utils import build_scorecard_pdf
 # ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Monthly Scorecard", layout="wide")
 
+GENERAL_PROD_LABEL = "General (school-wide / all works)"
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Utilities
@@ -53,6 +55,7 @@ def get_answers_df() -> pd.DataFrame:
             columns=["department", "production", "question_id", "primary", "description"]
         )
     return st.session_state["answers_df"]
+
 
 def get_answer_value(dept: str, production: str, qid: str) -> Tuple[object | None, str | None]:
     df = get_answers_df()
@@ -93,31 +96,6 @@ def upsert_answer(dept: str, production: str, qid: str, primary, description=Non
             ignore_index=True,
         )
 
-def get_current_show() -> str:
-    """Use the Production / area filter as the current show name."""
-    return st.session_state.get("filter_production", "All")
-
-
-def _build_show_key(department: str, show: str) -> str:
-    """Create a unique key for storing answers by department and show."""
-    dept_clean = (department or "").strip()
-    show_clean = (show or "").strip()
-    return f"{dept_clean}::{show_clean}"
-
-
-def _extract_state_entry(qid: str):
-    """Return the current session_state entry for a question (primary + desc)."""
-    has_primary = qid in st.session_state
-    has_desc = f"{qid}_desc" in st.session_state
-    if not (has_primary or has_desc):
-        return None
-    entry = {}
-    if has_primary:
-        entry["primary"] = st.session_state[qid]
-    if has_desc:
-        entry["description"] = st.session_state[f"{qid}_desc"]
-    return entry
-
 
 def _normalise_show_entry(entry):
     """Convert stored show answers into the dict format used across the app."""
@@ -132,54 +110,7 @@ def _normalise_show_entry(entry):
         return None
     return {"primary": entry}
 
-def clear_question_widgets(question_ids):
-    """Remove all question widget keys from session_state."""
-    for qid in question_ids:
-        st.session_state.pop(qid, None)
-        st.session_state.pop(f"{qid}_desc", None)
 
-def save_answers_for_show(show_key: str, question_ids):
-    """Copy current widget values into a per-show store in session_state."""
-    if not show_key:
-        return
-    question_ids = list(dict.fromkeys(question_ids or []))
-    answers_by_show = st.session_state.get("answers_by_show", {})
-    show_answers = dict(answers_by_show.get(show_key, {}))
-    for qid in question_ids:
-        entry = _extract_state_entry(qid)
-        if entry is not None:
-            show_answers[qid] = entry
-        elif qid in show_answers:
-            show_answers.pop(qid, None)
-    answers_by_show[show_key] = show_answers
-    st.session_state["answers_by_show"] = answers_by_show
-
-
-def load_answers_for_show(show_key: str, question_ids):
-    """Hydrate widget values from the per-show store (if any)."""
-    if not show_key:
-        return
-    question_ids = list(dict.fromkeys(question_ids or []))
-    answers_by_show = st.session_state.get("answers_by_show", {})
-    show_answers = answers_by_show.get(show_key, {})
-    for qid in question_ids:
-        entry = _normalise_show_entry(show_answers.get(qid))
-        if entry and "primary" in entry:
-            st.session_state[qid] = entry["primary"]
-        else:
-            st.session_state.pop(qid, None)
-        desc_key = f"{qid}_desc"
-        if entry and "description" in entry:
-            st.session_state[desc_key] = entry["description"]
-        else:
-            st.session_state.pop(desc_key, None)
-
-def clear_question_widgets(question_ids):
-    """Remove all question widget keys from session_state."""
-    for qid in question_ids:
-        st.session_state.pop(qid, None)
-        st.session_state.pop(f"{qid}_desc", None)
-        
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -283,7 +214,6 @@ def build_form_for_questions(
             entry = {"primary": None, "description": prev_desc}
 
             if rtype == "yes_no":
-                # determine default index if possible
                 if prev_primary in YES_NO_OPTIONS:
                     idx = YES_NO_OPTIONS.index(prev_primary)
                 else:
@@ -320,6 +250,7 @@ def build_form_for_questions(
             responses[qid] = entry
 
     return responses
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
@@ -462,9 +393,13 @@ def _apply_pending_draft_if_any():
                 pass
         if "department" in meta and meta["department"] in DEPARTMENT_FILES:
             st.session_state["dept_label"] = meta["department"]
-        if "filter_pillar" in meta:
-            st.session_state["filter_pillar"] = meta["filter_pillar"]
-        st.session_state["filter_production"] = meta.get("production") or "All"
+
+        # Restore current production filter (UI label)
+        prod_norm = meta.get("production") or ""
+        if not prod_norm:
+            st.session_state["filter_production"] = GENERAL_PROD_LABEL
+        else:
+            st.session_state["filter_production"] = prod_norm
 
         st.session_state["loaded_draft"] = data
         st.session_state["draft_hash"] = h
@@ -476,6 +411,7 @@ def _apply_pending_draft_if_any():
         st.session_state.pop("pending_draft_bytes", None)
         st.session_state.pop("pending_draft_hash", None)
 
+
 def clear_form(all_questions_df: pd.DataFrame):
     """Clears answers for the current department's questions and resets draft flags."""
     keys_to_clear = []
@@ -486,8 +422,7 @@ def clear_form(all_questions_df: pd.DataFrame):
         if k in st.session_state:
             del st.session_state[k]
 
-    for k in ("staff_name", "role", "report_month_date",
-              "filter_pillar", "filter_production"):
+    for k in ("staff_name", "role", "report_month_date", "filter_production"):
         st.session_state.pop(k, None)
 
     st.session_state.pop("answers_df", None)
@@ -511,6 +446,12 @@ def _normalise_answers_for_export(answers: Dict[str, dict]) -> Dict[str, dict]:
             payload["description"] = normalised["description"]
         export[qid] = payload
     return export
+
+
+def _build_show_key(department: str, show: str) -> str:
+    dept_clean = (department or "").strip()
+    show_clean = (show or "").strip()
+    return f"{dept_clean}::{show_clean}"
 
 
 def build_draft_from_state(
@@ -538,17 +479,15 @@ def build_draft_from_state(
             df = df[df["question_id"].isin(qid_set)]
 
     # Decide which production is "current"
-    prod_for_current = current_production
-    if not prod_for_current or prod_for_current == "All":
-        prod_for_current = meta.get("production") or ""
+    prod_for_current = current_production or ""
 
     # Current production's answers → draft["answers"]
     current_answers: Dict[str, dict] = {}
     if not df.empty:
-        if prod_for_current:
+        if prod_for_current != "":
             curr_df = df[df["production"] == prod_for_current]
         else:
-            curr_df = df
+            curr_df = df[df["production"] == ""]  # general rows
 
         for _, row in curr_df.iterrows():
             qid = str(row["question_id"])
@@ -591,6 +530,7 @@ def build_draft_from_state(
         draft["per_show_answers"] = per_show_export
 
     return draft
+
 
 CUSTOM_CSS = """
 <style>
@@ -685,55 +625,64 @@ def main():
     questions_all_df = load_questions(DEPARTMENT_FILES[dept_label])
     all_question_ids = questions_all_df["question_id"].astype(str).tolist()
 
-    # Scope filters (production list from productions.csv)
+    # Scope: Production / area
     st.subheader("Scope of this report")
 
-    pillars = ["All"] + sorted(questions_all_df["strategic_pillar"].dropna().unique().tolist())
     productions_df = load_productions()
     dept_series = productions_df["department"].astype(str).str.strip().str.lower()
     current_dept = (dept_label or "").strip().lower()
     dept_prods = productions_df[(dept_series == current_dept) & (productions_df["active"])]
     if dept_prods.empty:
         dept_prods = productions_df[productions_df["active"]]
-    prod_options = ["All"] + sorted(dept_prods["production_name"].dropna().unique().tolist())
 
-    sel_pillar = st.selectbox("Strategic pillar (optional filter)", pillars, key="filter_pillar")
-    sel_prod = st.selectbox("Production / area (optional filter)", prod_options, key="filter_production")
-    
-    # This is the production we are currently editing
-    current_production = sel_prod
+    prod_list = sorted(dept_prods["production_name"].dropna().unique().tolist())
+    prod_options = [GENERAL_PROD_LABEL] + prod_list
+
+    sel_prod = st.selectbox("Production / area", prod_options, key="filter_production")
+
+    # Normalised production key for storage: "" for General, or the production name
+    if sel_prod == GENERAL_PROD_LABEL:
+        current_production = ""
+    else:
+        current_production = sel_prod
 
     # Filter questions for display
     filtered = questions_all_df.copy()
-    if sel_pillar != "All":
-        filtered = filtered[filtered["strategic_pillar"] == sel_pillar]
-    if sel_prod != "All" and "production" in filtered.columns and sel_prod in filtered["production"].unique():
-        filtered = filtered[filtered["production"] == sel_prod]
+    if "production" in filtered.columns:
+        prod_col = filtered["production"].astype(str).fillna("").str.strip()
+        if current_production == "":
+            # General: only general questions
+            general_vals = ["", "all works", "school-wide", "corporate-wide", "all"]
+            filtered = filtered[prod_col.str.lower().isin(general_vals)]
+        else:
+            # Specific production: only that production's questions
+            filtered = filtered[prod_col == current_production]
 
     if filtered.empty:
-        st.warning("No questions found for this combination. Try changing the filters.")
+        st.warning("No questions found for this combination. Try changing the production.")
         return
 
-    # Debug panel
+    # Debug panel (based on answers_df)
     with st.expander("Debug: visible answers status"):
-        set_count = 0
-        missing_ids = []
-        for _, row in filtered.iterrows():
-            qid = row["question_id"]
-            if qid in st.session_state or f"{qid}_desc" in st.session_state:
-                set_count += 1
-            else:
-                missing_ids.append(qid)
-        st.write(f"Answers set for visible questions: {set_count} / {len(filtered)}")
+        answers_df = get_answers_df()
+        mask = (
+            (answers_df["department"] == dept_label) &
+            (answers_df["production"] == current_production)
+        )
+        have = set(answers_df[mask]["question_id"].astype(str).tolist())
+        qids_visible = filtered["question_id"].astype(str).tolist()
+        set_count = sum(1 for qid in qids_visible if qid in have)
+        missing_ids = [qid for qid in qids_visible if qid not in have]
+        st.write(f"Answers set for visible questions: {set_count} / {len(qids_visible)}")
         if missing_ids:
-            st.caption("IDs with no value yet (may be untouched or filtered previously):")
+            st.caption("IDs with no value yet for this production:")
             st.code(", ".join(missing_ids), language="text")
 
     # Render form (tabs per pillar)
     st.markdown("### Scorecard Questions")
     tab_pillars = filtered["strategic_pillar"].dropna().unique().tolist()
     tabs = st.tabs(tab_pillars)
-    
+
     responses: Dict[str, dict] = {}
     for tab, p in zip(tabs, tab_pillars):
         with tab:
@@ -747,8 +696,8 @@ def main():
                         production=current_production,
                     )
                 )
-    
-    # NEW: write responses into the table
+
+    # Persist responses into answers_df
     for qid, entry in responses.items():
         upsert_answer(
             dept=dept_label,
@@ -757,9 +706,8 @@ def main():
             primary=entry.get("primary"),
             description=entry.get("description"),
         )
-    
-    submitted = st.button("Generate AI Summary & PDF", type="primary")
 
+    submitted = st.button("Generate AI Summary & PDF", type="primary")
 
     # Meta
     meta = {
@@ -767,13 +715,10 @@ def main():
         "role": st.session_state.get("role") or "",
         "department": st.session_state.get("dept_label"),
         "month": month_str,
-        "production": (st.session_state.get("filter_production") or ""),
-        "filter_pillar": st.session_state.get("filter_pillar", "All"),
+        "production": current_production,  # normalised: "" for General, else name
     }
-    if meta["production"] == "All":
-        meta["production"] = ""
 
-    # Save progress (download JSON) — TEMP: drafts ignore per-production state
+    # Save progress (download JSON) — includes all productions for this department
     draft_dict = build_draft_from_state(
         questions_all_df,
         meta,
@@ -785,7 +730,7 @@ def main():
         data=json.dumps(draft_dict, indent=2),
         file_name=f"scorecard_draft_{meta['department'].replace(' ', '_')}_{month_str}.json",
         mime="application/json",
-        help="Downloads a snapshot of your current answers. (Multi-production draft support to be updated.)",
+        help="Downloads a snapshot of your current answers (this and other productions). Re-upload later to continue.",
     )
     st.sidebar.download_button(
         "⬇️ Download answers CSV",
