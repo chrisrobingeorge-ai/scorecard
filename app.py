@@ -263,14 +263,23 @@ def main():
         type="json",
         help="Upload a JSON draft you previously saved."
     )
-    if draft_file is not None:
+
+    # When a file is uploaded, store its JSON in session_state
+    if draft_file is not None and "loaded_draft" not in st.session_state:
         try:
-            draft_data = json.loads(draft_file.read().decode("utf-8"))
-            apply_draft_to_state(draft_data)
-            st.sidebar.success("Draft loaded. Your answers have been restored.")
+            draft_data = json.loads(draft_file.getvalue().decode("utf-8"))
+            st.session_state["loaded_draft"] = draft_data
+            st.session_state["draft_applied"] = False
+            st.sidebar.success("Draft loaded. It will now populate the form.")
         except Exception as e:
             st.sidebar.error(f"Could not load draft: {e}")
+
+    # Apply the draft exactly once, before rendering the form
+    if st.session_state.get("loaded_draft") is not None and not st.session_state.get("draft_applied", False):
+        apply_draft_to_state(st.session_state["loaded_draft"])
+        st.session_state["draft_applied"] = True
     # ------------------------------------------
+
     with st.form("scorecard_form"):
         responses = build_form_for_questions(filtered)
         submitted = st.form_submit_button("Generate AI Summary & PDF")
