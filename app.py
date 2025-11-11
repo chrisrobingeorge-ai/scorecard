@@ -232,80 +232,94 @@ def load_productions() -> pd.DataFrame:
 # ─────────────────────────────────────────────────────────────────────────────
 # Form rendering
 # ─────────────────────────────────────────────────────────────────────────────
-def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
+def build_form_for_questions(
+    df: pd.DataFrame,
+    dept_label: str,
+    production: str,
+) -> Dict[str, dict]:
     """
-    Render widgets for each question, grouped by pillar + production.
-    Uses st.session_state for initial values. Returns {qid: {primary}}.
+    Render widgets for each question, grouped by strategic pillar.
+    Reads/writes values via answers_df. Returns {qid: {primary, description}}.
     """
     responses: Dict[str, dict] = {}
 
     df = df.copy()
     df["strategic_pillar"] = df["strategic_pillar"].replace("", "General")
-    df["production"] = df["production"].replace("", "All works")
     df["metric"] = df["metric"].fillna("")
     df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
 
     pillars = df["strategic_pillar"].unique()
 
     for pillar in pillars:
-        pillar_block = df[df["strategic_pillar"] == pillar].sort_values(
-            ["production", "display_order"]
-        )
+        pillar_block = df[df["strategic_pillar"] == pillar].sort_values("display_order")
         st.markdown(f"### {pillar}")
 
-        for production in pillar_block["production"].unique():
-            prod_block = pillar_block[pillar_block["production"] == production]
+        for _, row in pillar_block.iterrows():
+            qid = row["question_id"]  # ALWAYS STRING
 
-            prod_label = str(production).strip()
-            if prod_label and prod_label.lower() not in (
-                "school-wide",
-                "corporate-wide",
-                "all works",
-                "all",
-            ):
-                st.markdown(f"**{prod_label}**")
+            # Label resolution
+            raw_label = str(row.get("question_text", "") or "").strip()
+            if not raw_label:
+                metric = str(row.get("metric", "") or "").strip()
+                label = metric or qid
+            else:
+                label = raw_label
 
-            for _, row in prod_block.iterrows():
-                qid = row["question_id"]  # ALWAYS STRING
+            required = bool(row.get("required", False))
+            label_display = f"{label} *" if required else label
 
-                # Label resolution
-                raw_label = str(row.get("question_text", "") or "").strip()
-                if not raw_label:
-                    metric = str(row.get("metric", "") or "").strip()
-                    label = metric or qid
+            rtype = str(row.get("response_type", "")).strip().lower()
+            opts_raw = row.get("options", "")
+            options = []
+            if isinstance(opts_raw, str) and opts_raw.strip():
+                options = [o.strip() for o in opts_raw.split(",") if o.strip()]
+
+            # Get previous value for this (dept, production, qid)
+            prev_primary, prev_desc = get_answer_value(dept_label, production, qid)
+
+            # Make widget key unique per production
+            widget_key = f"{dept_label}::{production}::{qid}"
+
+            entry = {"primary": None, "description": prev_desc}
+
+            if rtype == "yes_no":
+                # determine default index if possible
+                if prev_primary in YES_NO_OPTIONS:
+                    idx = YES_NO_OPTIONS.index(prev_primary)
                 else:
-                    label = raw_label
+                    idx = 0
+                entry["primary"] = st.radio(
+                    label_display,
+                    YES_NO_OPTIONS,
+                    horizontal=True,
+                    key=widget_key,
+                    index=idx,
+                )
+            elif rtype == "scale_1_5":
+                default_val = 3
+                if isinstance(prev_primary, (int, float)) and 1 <= int(prev_primary) <= 5:
+                    default_val = int(prev_primary)
+                entry["primary"] = int(
+                    st.slider(label_display, min_value=1, max_value=5, key=widget_key, value=default_val)
+                )
+            elif rtype == "number":
+                default_val = float(prev_primary) if isinstance(prev_primary, (int, float)) else 0.0
+                entry["primary"] = st.number_input(label_display, step=1.0, key=widget_key, value=default_val)
+            elif (rtype in ("select", "dropdown")) and options:
+                default = prev_primary if prev_primary in options else options[0]
+                entry["primary"] = st.selectbox(
+                    label_display,
+                    options,
+                    key=widget_key,
+                    index=options.index(default),
+                )
+            else:
+                default_text = str(prev_primary) if prev_primary is not None else ""
+                entry["primary"] = st.text_area(label_display, key=widget_key, value=default_text, height=60)
 
-                required = bool(row.get("required", False))
-                label_display = f"{label} *" if required else label
-
-                rtype = str(row.get("response_type", "")).strip().lower()
-                opts_raw = row.get("options", "")
-                options = []
-                if isinstance(opts_raw, str) and opts_raw.strip():
-                    options = [o.strip() for o in opts_raw.split(",") if o.strip()]
-
-                entry = {"primary": None, "description": None}
-
-                if rtype == "yes_no":
-                    entry["primary"] = st.radio(
-                        label_display, YES_NO_OPTIONS, horizontal=True, key=qid
-                    )
-                elif rtype == "scale_1_5":
-                    entry["primary"] = int(
-                        st.slider(label_display, min_value=1, max_value=5, key=qid)
-                    )
-                elif rtype == "number":
-                    entry["primary"] = st.number_input(label_display, step=1.0, key=qid)
-                elif (rtype in ("select", "dropdown")) and options:
-                    entry["primary"] = st.selectbox(label_display, options, key=qid)
-                else:
-                    entry["primary"] = st.text_area(label_display, key=qid, height=60)
-
-                responses[qid] = entry
+            responses[qid] = entry
 
     return responses
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
