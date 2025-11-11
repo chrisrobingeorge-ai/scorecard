@@ -335,17 +335,42 @@ def build_draft_from_state(all_questions_df: pd.DataFrame, meta: dict) -> dict:
             draft["answers"][qid] = {"primary": primary, "description": desc}
     return draft
 
+CUSTOM_CSS = """
+<style>
+/* Global base size a bit smaller */
+html, body, [class*="stMarkdown"] {
+    font-size: 0.9rem;
+}
+
+/* Title / headings slightly reduced */
+h1 { font-size: 1.6rem !important; }
+h2 { font-size: 1.3rem !important; }
+h3 { font-size: 1.05rem !important; }
+
+/* Form labels and widget text */
+label, .stTextInput, .stNumberInput, .stSelectbox, .stRadio, .stDateInput, .stTextArea {
+    font-size: 0.85rem !important;
+}
+
+/* Make cards feel a bit “tighter” */
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+</style>
+"""
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Main App
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
-    # Initialize flags
     if "draft_applied" not in st.session_state:
         st.session_state["draft_applied"] = False
 
-    # 1) Apply any pending draft BEFORE rendering widgets
     _apply_pending_draft_if_any()
+
+    # ↓ smaller fonts + tighter layout
+    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
     # 2) Sidebar: Draft controls FIRST (so future uploads queue + rerun before widgets)
     st.sidebar.subheader("Drafts")
@@ -428,6 +453,7 @@ def main():
         dept_prods = productions_df[productions_df["active"]]
     prod_options = ["All"] + sorted(dept_prods["production_name"].dropna().unique().tolist())
 
+    # Filters (already bound to session_state via key=...)
     sel_pillar = st.selectbox("Strategic pillar (optional filter)", pillars, key="filter_pillar")
     sel_prod = st.selectbox("Production / area (optional filter)", prod_options, key="filter_production")
 
@@ -446,7 +472,7 @@ def main():
         st.warning("No questions found for this combination. Try changing the filters.")
         return
 
-    # Debug: how many answers are currently set in session_state for visible questions?
+    # Debug
     with st.expander("Debug: visible answers status"):
         set_count = 0
         missing_ids = []
@@ -461,10 +487,66 @@ def main():
             st.caption("IDs with no value yet (may be untouched or filtered previously):")
             st.code(", ".join(missing_ids), language="text")
 
-    # --------------------------- Form section ---------------------------
-    st.markdown("### Scorecard Questions")
-    responses = build_form_for_questions(filtered)
-    submitted = st.button("Generate AI Summary & PDF")
+    # ----------------- Main body: questions (left) vs AI (right) -----------------
+    form_col, summary_col = st.columns([2.3, 1])
+
+    # Left: questions in tabs by strategic pillar
+    with form_col:
+        st.markdown("### Scorecard Questions")
+
+        tab_pillars = filtered["strategic_pillar"].dropna().unique().tolist()
+        tabs = st.tabs(tab_pillars)
+
+        responses = {}
+        for tab, p in zip(tabs, tab_pillars):
+            with tab:
+                block = filtered[filtered["strategic_pillar"] == p]
+                # build_form_for_questions already groups by pillar + production;
+                # giving it only this pillar keeps each tab focused.
+                responses.update(build_form_for_questions(block))
+
+        submitted = st.button("Generate AI Summary & PDF", type="primary")
+
+    # Right: AI interpretation panel (we'll fill it after AI runs)
+    with summary_col:
+        st.markdown("### AI Interpretation")
+        ai_overall_placeholder = st.empty()
+        ai_pillars_placeholder = st.empty()
+        ai_risks_placeholder = st.empty()
+        ai_priorities_placeholder = st.empty()
+        ai_notes_placeholder = st.empty()
+
+        # Show previous result (if any) so the panel isn't blank on reload
+        prev_ai = st.session_state.get("ai_result")
+        if prev_ai and not submitted:
+            ai_overall_placeholder.markdown("#### Overall Summary")
+            ai_overall_placeholder.write(prev_ai.get("overall_summary", ""))
+
+            pillar_summaries = prev_ai.get("pillar_summaries", []) or []
+            if pillar_summaries:
+                ai_pillars_placeholder.markdown("#### By Strategic Pillar")
+                for ps in pillar_summaries:
+                    st.markdown(
+                        f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
+                    )
+                    st.write(ps.get("summary", ""))
+
+            risks = prev_ai.get("risks", []) or []
+            if risks:
+                ai_risks_placeholder.markdown("#### Key Risks / Concerns")
+                for r in risks:
+                    st.write(f"- {r}")
+
+            priorities = prev_ai.get("priorities_next_month", []) or []
+            if priorities:
+                ai_priorities_placeholder.markdown("#### Priorities for Next Month")
+                for p in priorities:
+                    st.write(f"- {p}")
+
+            nfl = prev_ai.get("notes_for_leadership", "")
+            if nfl:
+                ai_notes_placeholder.markdown("#### Notes for Leadership")
+                ai_notes_placeholder.write(nfl)
 
     # Meta (built from bound keys)
     meta = {
@@ -492,46 +574,32 @@ def main():
         return
 
     # ------------------------ Validation & AI ---------------------------
-    missing_required = []
-    for _, row in filtered.iterrows():
-        if bool(row.get("required", False)):
-            qid = row["question_id"]
-            val = responses.get(qid, None)
-            primary_val = val.get("primary", None) if isinstance(val, dict) else val
-            if primary_val in (None, "", []):
-                qt = str(row.get("question_text") or "").strip()
-                missing_required.append(qt or qid)
+    # (after the "if not submitted: return" and meta/draft logic)
 
-    if missing_required:
-        st.error("Please answer all required questions before generating the summary.")
-        with st.expander("Missing required questions"):
-            for q in missing_required:
-                st.write("• ", q)
-        return
-
-    # AI call (with graceful error if key/SDK not configured)
     try:
         with st.spinner("Asking AI to interpret this scorecard..."):
             ai_result = interpret_scorecard(meta, filtered, responses)
     except RuntimeError as e:
         st.error(f"AI configuration error: {e}")
-        st.info("Check your OPENAI_API_KEY secret and that `openai>=1.51.0` (or newer) is in requirements.txt.")
+        st.info(
+            "Check your OPENAI_API_KEY secret and that `openai>=1.51.0` "
+            "(or newer) is in requirements.txt."
+        )
         st.stop()
     except Exception as e:
         st.error(f"Failed to generate AI summary: {e}")
         st.stop()
 
     st.success("AI summary generated.")
+    st.session_state["ai_result"] = ai_result  # so the right panel can reuse it
 
-    # --------------------------- Output UI -----------------------------
-    st.subheader("AI Interpretation")
-
-    st.markdown("#### Overall Summary")
-    st.write(ai_result.get("overall_summary", ""))
+    # Fill the right-hand placeholders we created above
+    ai_overall_placeholder.markdown("#### Overall Summary")
+    ai_overall_placeholder.write(ai_result.get("overall_summary", ""))
 
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
     if pillar_summaries:
-        st.markdown("#### By Strategic Pillar")
+        ai_pillars_placeholder.markdown("#### By Strategic Pillar")
         for ps in pillar_summaries:
             st.markdown(
                 f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
@@ -540,20 +608,21 @@ def main():
 
     risks = ai_result.get("risks", []) or []
     if risks:
-        st.markdown("#### Key Risks / Concerns")
+        ai_risks_placeholder.markdown("#### Key Risks / Concerns")
         for r in risks:
             st.write(f"- {r}")
 
     priorities = ai_result.get("priorities_next_month", []) or []
     if priorities:
-        st.markdown("#### Priorities for Next Month")
+        ai_priorities_placeholder.markdown("#### Priorities for Next Month")
         for p in priorities:
             st.write(f"- {p}")
 
     nfl = ai_result.get("notes_for_leadership", "")
     if nfl:
-        st.markdown("#### Notes for Leadership")
-        st.write(nfl)
+        ai_notes_placeholder.markdown("#### Notes for Leadership")
+        ai_notes_placeholder.write(nfl)
+
 
     # PDF
     try:
