@@ -787,6 +787,12 @@ def main():
         mime="application/json",
         help="Downloads a snapshot of your current answers. (Multi-production draft support to be updated.)",
     )
+    st.sidebar.download_button(
+        "⬇️ Download answers CSV",
+        data=get_answers_df().to_csv(index=False),
+        file_name="scorecard_answers.csv",
+        mime="text/csv",
+    )
 
     if not submitted:
         return
