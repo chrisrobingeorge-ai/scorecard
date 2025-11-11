@@ -1,5 +1,6 @@
 # app.py
 
+import streamlit as st
 from __future__ import annotations
 
 import hashlib
@@ -8,7 +9,6 @@ from datetime import date
 from typing import Dict, Tuple
 
 import pandas as pd
-import streamlit as st
 
 from config import DEPARTMENT_FILES, YES_NO_OPTIONS
 from ai_utils import interpret_scorecard
