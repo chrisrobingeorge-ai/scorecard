@@ -1,68 +1,31 @@
 section,department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Set Design,ATI01,1 a) Did this production feature innovative set design?,yes_no,"Yes,No",TRUE,3,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Set Design Description,ATI02,b) Please describe any innovative set design used.,text,,FALSE,4,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Lighting,ATI03,Did this production use innovative lighting techniques?,yes_no,"Yes,No",TRUE,5,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Lighting Description,ATI04,Please describe any innovative lighting techniques used.,text,,FALSE,6,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Multimedia,ATI05,"Was multimedia (e.g. video, projections) used in this production?",yes_no,"Yes,No",TRUE,7,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Multimedia Description,ATI06,Please describe the multimedia elements used.,text,,FALSE,8,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Automated Lighting,ATI07,Was automated lighting technology used?,yes_no,"Yes,No",TRUE,9,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Crew Hours Saved,ATI08,Estimate the number of crew hours saved due to innovations.,number,,FALSE,10,Efficiency,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Money Saved,ATI09,Estimate the amount of money saved due to innovations.,number,,FALSE,11,Efficiency,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Reusable Sets,ATI10,Are any sets reusable for future productions?,yes_no,"Yes,No",TRUE,12,Sustainability,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Reusable Sets Description,ATI11,Please specify which sets are reusable.,text,,FALSE,13,Sustainability,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Reusable Costumes,ATI12,Are any costumes reusable for future productions?,yes_no,"Yes,No",TRUE,14,Sustainability,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Reusable Costumes Description,ATI13,Please specify which costumes are reusable.,text,,FALSE,15,Sustainability,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Renowned Designers,ATI14,Were renowned designers involved?,yes_no,"Yes,No",TRUE,16,Collaboration,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Renowned Designers Names,ATI15,Please list the names of renowned designers involved.,text,,FALSE,17,Collaboration,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,New Technologies,ATI16,Were any new technologies introduced?,yes_no,"Yes,No",TRUE,18,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,New Technologies Description,ATI17,Please describe any new technologies introduced.,text,,FALSE,19,Innovation,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Crew Trained,ATI18,Did crew receive training for new technologies or processes?,yes_no,"Yes,No",TRUE,20,Development,1
-Artistic & Technical Innovation,Artistic,Innovation,ALL,Crew Training Description,ATI19,Please describe any crew training provided.,text,,FALSE,21,Development,1
-Artistic Contributions & Social Impact,Artistic,Impact,ALL,Contemporary,ACSI01,Is this production considered contemporary?,yes_no,"Yes,No",TRUE,22,General,1
-Artistic Contributions & Social Impact,Artistic,Impact,ALL,Choreographer(s),ACSI02,Who were the choreographers?,number,,TRUE,23,General,1
-Artistic Contributions & Social Impact,Artistic,Impact,ALL,Music,ACSI03,What music was used?,number,,TRUE,24,General,1
-Artistic Contributions & Social Impact,Artistic,Impact,ALL,Social Issues,ACSI04,Did the production address any social issues?,yes_no,"Yes,No",TRUE,25,Impact,1
-Artistic Contributions & Social Impact,Artistic,Impact,ALL,Social Issues Description,ACSI05,Please specify any social issues addressed.,text,,FALSE,26,Impact,1
-Artistic Contributions & Social Impact,Artistic,Impact,ALL,Alberta Artists,ACSI06,Were Alberta-based artists involved?,yes_no,"Yes,No",TRUE,27,Collaboration,1
-Artistic Contributions & Social Impact,Artistic,Impact,ALL,Alberta Artists Names,ACSI07,Please list the names of Alberta-based artists involved.,text,,FALSE,28,Collaboration,1
-Artistic Contributions & Social Impact,Artistic,Impact,ALL,Artist Contributions,ACSI08,What were the key artistic contributions?,text,,TRUE,29,General,1
-Collaborations & Residencies,Artistic,Collaboration,ALL,International Choreographers,CR01,Were international choreographers involved?,yes_no,"Yes,No",TRUE,30,Collaboration,1
-Collaborations & Residencies,Artistic,Collaboration,ALL,International Choreographers Names,CR02,Please list the names of international choreographers.,text,,FALSE,31,Collaboration,1
-Collaborations & Residencies,Artistic,Collaboration,ALL,Artistic Residencies,CR03,Did this production involve artistic residencies?,yes_no,"Yes,No",TRUE,32,Collaboration,1
-Collaborations & Residencies,Artistic,Collaboration,ALL,Artistic Residencies Description,CR04,Please describe any artistic residencies.,text,,FALSE,33,Collaboration,1
-Collaborations & Residencies,Artistic,Collaboration,ALL,Visual Arts Collaborations,CR05,Were there visual arts collaborations?,yes_no,"Yes,No",TRUE,34,Collaboration,1
-Collaborations & Residencies,Artistic,Collaboration,ALL,Visual Arts Collaborations Description,CR06,Please describe any visual arts collaborations.,text,,FALSE,35,Collaboration,1
-Recruitment & Auditions,Artistic,Recruitment,ALL,Audition Month,RA01,In which month did auditions take place?,dropdown,"Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec",TRUE,36,Recruitment,1
-Recruitment & Auditions,Artistic,Recruitment,ALL,International Auditions,RA02,Were international auditions held?,yes_no,"Yes,No",TRUE,37,Recruitment,1
-Recruitment & Auditions,Artistic,Recruitment,ALL,Audition Locations,RA03,Where were auditions held?,text,,TRUE,38,Recruitment,1
-Recruitment & Auditions,Artistic,Recruitment,ALL,Number Auditioning,RA04,How many dancers auditioned?,number,,TRUE,39,Recruitment,1
-Recruitment & Auditions,Artistic,Recruitment,ALL,Number Hired,RA05,How many dancers were hired?,number,,TRUE,40,Recruitment,1
-Recruitment & Auditions,Artistic,Recruitment,ALL,Hired Dancer Origins,RA06,What were the origins of hired dancers?,text,,TRUE,41,Recruitment,1
-Recruitment & Auditions,Artistic,Recruitment,ALL,International Competitions,RA07,Were international competitions attended?,yes_no,"Yes,No",TRUE,42,Recruitment,1
-Recruitment & Auditions,Artistic,Recruitment,ALL,Competition Locations,RA08,Where were competitions held?,text,,TRUE,43,Recruitment,1
-Festivals & Events,Artistic,Engagement,ALL,Festival Name,FE01,What is the name of the festival?,text,,TRUE,44,Engagement,1
-Festivals & Events,Artistic,Engagement,ALL,Festival Location,FE02,Where was the festival held?,text,,TRUE,45,Engagement,1
-Festivals & Events,Artistic,Engagement,ALL,Festival Production,FE03,Which production was performed at the festival?,text,,TRUE,46,Engagement,1
-Festivals & Events,Artistic,Engagement,ALL,Number of Performances,FE04,How many performances took place?,number,,TRUE,47,Engagement,1
-Festivals & Events,Artistic,Engagement,ALL,Media Placements,FE05,How many media placements were achieved?,number,,TRUE,48,Engagement,1
-Festivals & Events,Artistic,Engagement,ALL,International Donor Events,FE06,How many international donor events were held?,number,,TRUE,49,Engagement,1
-Festivals & Events,Artistic,Engagement,ALL,Number of Guests,FE07,How many guests attended donor events?,number,,TRUE,50,Engagement,1
-Festivals & Events,Artistic,Engagement,ALL,Event Location,FE08,Where were donor events held?,text,,TRUE,51,Engagement,1
-Financials & Marketing,Marketing,Financial,ALL,Ticket Revenue,FM01,What was the ticket revenue compared to budget?,number,,TRUE,52,Financial,1
-Financials & Marketing,Marketing,Financial,ALL,Seats Sold,FM02,How many seats were sold compared to target?,number,,TRUE,53,Financial,1
-Financials & Marketing,Marketing,Financial,ALL,Average Ticket Price,FM03,What was the average ticket price?,number,,TRUE,54,Financial,1
-Financials & Marketing,Marketing,Financial,ALL,Production Sponsors,FM04,Who were the production sponsors?,text,,FALSE,55,Financial,1
-Financials & Marketing,Marketing,Financial,ALL,Luxury Brand Collaborations,FM05,Were there any luxury brand collaborations?,yes_no,"Yes,No",TRUE,56,Partnership,1
-Financials & Marketing,Marketing,Financial,ALL,Luxury Brand Collaborations Description,FM06,Please describe any luxury brand collaborations.,text,,FALSE,57,Partnership,1
-Financials & Marketing,Marketing,Financial,ALL,Luxury Brand Sponsorships,FM07,Were there any luxury brand sponsorships?,yes_no,"Yes,No",TRUE,58,Partnership,1
-Financials & Marketing,Marketing,Financial,ALL,Luxury Brand Sponsorships Description,FM08,Please describe any luxury brand sponsorships.,text,,FALSE,59,Partnership,1
-Financials & Marketing,Marketing,Financial,ALL,Subscription Campaigns,FM09,Please provide year-over-year subscription renewal and new account data.,number,,FALSE,60,Financial,1
-Financials & Marketing,Marketing,Financial,ALL,Single Ticket Sales,FM10,Please provide single ticket sales and year-over-year percentage change.,number,,FALSE,61,Financial,1
-Financials & Marketing,Marketing,Financial,ALL,Experiential Events,FM11,Were experiential events held?,yes_no,"Yes,No",TRUE,62,Engagement,1
-Financials & Marketing,Marketing,Financial,ALL,Experiential Events Description,FM12,Please describe experiential events and provide attendee numbers.,text,,FALSE,63,Engagement,1
-Financials & Marketing,Marketing,Financial,ALL,Pop-Up Performances,FM13,Were pop-up performances held?,yes_no,"Yes,No",TRUE,64,Engagement,1
-Financials & Marketing,Marketing,Financial,ALL,Pop-Up Performances Description,FM14,Please describe pop-up performances and provide attendee numbers.,text,,FALSE,65,Engagement,1
-Financials & Marketing,Marketing,Financial,ALL,Immersive Booths,FM15,Were immersive booths held?,yes_no,"Yes,No",TRUE,66,Engagement,1
-Financials & Marketing,Marketing,Financial,ALL,Immersive Booths Description,FM16,Please describe immersive booths and provide attendee numbers.,text,,FALSE,67,Engagement,1
-Financials & Marketing,Marketing,Financial,ALL,Website Traffic,FM17,What was the website traffic and year-over-year change?,number,,FALSE,68,Digital,1
-Financials & Marketing,Marketing,Financial,ALL,Ticketmaster Traffic,FM18,What was the Ticketmaster event page traffic and year-over-year change?,number,,FALSE,69,Digital,1
+Artistic & Technical Innovation,Artistic,Innovation,ALL,Overall Innovation Level,ATI01,"Overall, to what extent did this production incorporate new or innovative artistic or technical elements?",dropdown,"1 - None,2 - Incremental,3 - Moderate,4 - Significant,5 - Transformative",TRUE,1,Innovation,1
+Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovation Focus Areas,ATI02,"Which aspects of the production were most innovative? (e.g., set, lighting, multimedia, choreography, technology.)",text,,TRUE,2,Innovation,1
+Artistic & Technical Innovation,Artistic,Sustainability,ALL,Reuse Designed In,ATI03,Were any sets or costumes intentionally designed for reuse in future productions?,yes_no,"Yes,No",TRUE,3,Sustainability,1
+Artistic & Technical Innovation,Artistic,Sustainability,ALL,Reusable Elements Description,ATI04,"If yes, briefly describe the main reusable elements and how they might be used again.",text,,FALSE,4,Sustainability,1
+Artistic & Technical Innovation,Artistic,Efficiency,ALL,Innovation Efficiency / Capability Gains,ATI05,"Did innovations in this production lead to any measurable efficiency or capability gains (e.g., hours saved, cost savings, crew training)?",yes_no,"Yes,No",TRUE,5,Efficiency,1
+Artistic & Technical Innovation,Artistic,Efficiency,ALL,Efficiency / Capability Gains Description,ATI06,"If yes, briefly summarise the most important efficiency or capability gains.",text,,FALSE,6,Efficiency,1
+Artistic Contributions & Social Impact,Artistic,Impact,ALL,Artistic Classification,ACSI01,How is this production classified?,dropdown,"Classical/canon,Contemporary,Mixed,Other",TRUE,7,General,1
+Artistic Contributions & Social Impact,Artistic,Impact,ALL,Social / Community Issues Addressed,ACSI02,Did this production explicitly address any social or community issues?,yes_no,"Yes,No",TRUE,8,Impact,1
+Artistic Contributions & Social Impact,Artistic,Impact,ALL,Social / Community Issues Description,ACSI03,"If yes, which issues were addressed and how were they expressed in the work?",text,,FALSE,9,Impact,1
+Artistic Contributions & Social Impact,Artistic,Collaboration,ALL,Alberta-based Artists Involved,ACSI04,Were Alberta-based artists involved in this production?,yes_no,"Yes,No",TRUE,10,Collaboration,1
+Artistic Contributions & Social Impact,Artistic,Collaboration,ALL,Alberta-based Artists Description,ACSI05,"If yes, how many Alberta-based artists were involved, and in what key roles?",text,,FALSE,11,Collaboration,1
+Artistic Contributions & Social Impact,Artistic,Impact,ALL,Key Artistic Contributions,ACSI06,"In your view, what were the key artistic contributions or innovations that distinguished this production?",text,,TRUE,12,General,1
+Collaborations & Residencies,Artistic,Collaboration,ALL,External Artistic Collaborators,CR01,"Were any significant external artistic collaborators engaged (e.g., guest choreographers, designers, visual artists, companies)?",yes_no,"Yes,No",TRUE,13,Collaboration,1
+Collaborations & Residencies,Artistic,Collaboration,ALL,External Collaborators Description,CR02,"If yes, list the most significant collaborators and their contributions.",text,,FALSE,14,Collaboration,1
+Collaborations & Residencies,Artistic,Collaboration,ALL,Artistic Residencies Involved,CR03,Did this production involve any artistic residency (incoming or outgoing)?,yes_no,"Yes,No",TRUE,15,Collaboration,1
+Collaborations & Residencies,Artistic,Collaboration,ALL,Artistic Residencies Description,CR04,"If yes, briefly describe the residency (partner, duration, focus).",text,,FALSE,16,Collaboration,1
+Recruitment & Auditions,Artistic,Recruitment,ALL,Dedicated Recruitment Required,RA01,Did this production require dedicated auditions or recruitment beyond standard company casting?,yes_no,"Yes,No",TRUE,17,Recruitment,1
+Recruitment & Auditions,Artistic,Recruitment,ALL,Recruitment Timing,RA02,"If yes, in which month did the main auditions or recruitment activities for this production take place?",dropdown,"Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec",FALSE,18,Recruitment,1
+Recruitment & Auditions,Artistic,Recruitment,ALL,Recruitment Volume & Hires,RA03,"If yes, approximately how many dancers were auditioned or considered specifically for this production, and how many were ultimately hired?",text,,FALSE,19,Recruitment,1
+Festivals & Events,Artistic,Engagement,ALL,Festival / External Event Performance,FE01,Was this production performed at a festival or external special event outside our main season?,yes_no,"Yes,No",TRUE,20,Engagement,1
+Festivals & Events,Artistic,Engagement,ALL,Festival / Event Details,FE02,"If yes, name the festival or event, its location (city, country), and the number of performances of this production.",text,,FALSE,21,Engagement,1
+Festivals & Events,Artistic,Engagement,ALL,Festival / Event Outcomes,FE03,"If yes, briefly note any notable media coverage or donor/stakeholder events linked to this festival or event (type and scale, not a full list).",text,,FALSE,22,Engagement,1
+Financials & Marketing,Marketing,Financial,ALL,Ticket Revenue vs Budget (%),FM01,What was the ticket revenue performance for this production versus budget (variance %)?,number,,TRUE,23,Financial,1
+Financials & Marketing,Marketing,Financial,ALL,Seats Sold vs Target (%),FM02,What was the seats sold performance for this production versus target (variance %)?,number,,TRUE,24,Financial,1
+Financials & Marketing,Marketing,Financial,ALL,Average Ticket Price,FM03,What was the average ticket price realised for this production ($)?,number,,TRUE,25,Financial,1
+Financials & Marketing,Marketing,Engagement,ALL,Audience Development Tactics Used,FM04,"Briefly describe the primary audience development tactics used for this production (e.g., subscription campaigns, price offers, experiential events, digital campaigns).",text,,TRUE,26,Engagement,1
+Financials & Marketing,Marketing,Engagement,ALL,Most Impactful Tactic & Evidence,FM05,"Which tactic had the greatest impact on sales or engagement for this production, and what evidence supports this?",text,,TRUE,27,Engagement,1
+Financials & Marketing,Marketing,Partnership,ALL,Luxury Brand Involvement,FM06,Were any collaborations or sponsorships with luxury brands associated with this production?,yes_no,"Yes,No",TRUE,28,Partnership,1
+Financials & Marketing,Marketing,Partnership,ALL,Luxury Brand Involvement Description,FM07,"If yes, briefly describe the most significant luxury brand involvement (brand, type, and purpose).",text,,FALSE,29,Partnership,1
+Financials & Marketing,Marketing,Digital,ALL,Digital Performance Change,FM08,"How did digital performance for this production compare to a relevant prior period? Please provide % change for website traffic to production/campaign pages and ticketing platform event pages, if available.",text,,FALSE,30,Digital,1
