@@ -455,9 +455,8 @@ def main():
 
     # --------------------------- Form section ---------------------------
     st.markdown("### Scorecard Questions")
-    with st.form("scorecard_form"):
-        responses = build_form_for_questions(filtered)
-        submitted = st.form_submit_button("Generate AI Summary & PDF")
+    responses = build_form_for_questions(filtered)
+    submitted = st.button("Generate AI Summary & PDF")
 
     # Meta (built from bound keys)
     meta = {
