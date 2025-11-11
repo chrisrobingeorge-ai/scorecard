@@ -585,8 +585,7 @@ def main():
         "**not persistent**. To keep your progress, **download** a draft and "
         "**re-upload** it later."
     )
-    st.sidebar.info(f"Streamlit version: {st.__version__}")
-
+    
     # Identity & Date
     staff_name = st.text_input("Your name", key="staff_name")
     role = st.text_input("Your role / department title", key="role")
