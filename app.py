@@ -127,71 +127,70 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
             ):
                 st.markdown(f"**{production}**")
 
-            cols = st.columns(2)
-            for idx, (_, row) in enumerate(prod_block.iterrows()):
-                col = cols[idx % 2]
-                with col:
-                    qid = row["question_id"]  # ALWAYS STRING
+            # ONE column: each question full width (inside whatever column we call this in)
+            for _, row in prod_block.iterrows():
+                qid = row["question_id"]  # ALWAYS STRING
 
-                    # Label resolution
-                    raw_label = str(row.get("question_text", "") or "").strip()
-                    if not raw_label:
-                        metric = str(row.get("metric", "") or "").strip()
-                        label = metric or qid
-                    else:
-                        label = raw_label
+                # Label resolution (now using your numbered CSV text)
+                raw_label = str(row.get("question_text", "") or "").strip()
+                if not raw_label:
+                    metric = str(row.get("metric", "") or "").strip()
+                    label = metric or qid
+                else:
+                    label = raw_label
 
-                    required = bool(row.get("required", False))
-                    label_display = f"{label} *" if required else label
+                required = bool(row.get("required", False))
+                label_display = f"{label} *" if required else label
 
-                    rtype = str(row.get("response_type", "")).strip().lower()
-                    opts_raw = row.get("options", "")
-                    options = []
-                    if isinstance(opts_raw, str) and opts_raw.strip():
-                        options = [o.strip() for o in opts_raw.split(",") if o.strip()]
+                rtype = str(row.get("response_type", "")).strip().lower()
+                opts_raw = row.get("options", "")
+                options = []
+                if isinstance(opts_raw, str) and opts_raw.strip():
+                    options = [o.strip() for o in opts_raw.split(",") if o.strip()]
 
-                    entry = {"primary": None, "description": None}
+                entry = {"primary": None, "description": None}
 
-                    # Primary control by type
-                    if rtype == "yes_no":
-                        entry["primary"] = st.radio(
-                            label_display, YES_NO_OPTIONS, horizontal=True, key=qid
+                # Primary control by type
+                if rtype == "yes_no":
+                    entry["primary"] = st.radio(
+                        label_display, YES_NO_OPTIONS, horizontal=True, key=qid
+                    )
+                elif rtype == "scale_1_5":
+                    if qid in st.session_state:
+                        entry["primary"] = int(
+                            st.slider(label_display, min_value=1, max_value=5, key=qid)
                         )
-                    elif rtype == "scale_1_5":
-                        if qid in st.session_state:
-                            entry["primary"] = int(
-                                st.slider(label_display, min_value=1, max_value=5, key=qid)
-                            )
-                        else:
-                            entry["primary"] = int(
-                                st.slider(
-                                    label_display, min_value=1, max_value=5, value=3, key=qid
-                                )
-                            )
-                    elif rtype == "number":
-                        if qid in st.session_state:
-                            entry["primary"] = st.number_input(
-                                label_display, step=1.0, key=qid
-                            )
-                        else:
-                            entry["primary"] = st.number_input(
-                                label_display, value=0.0, step=1.0, key=qid
-                            )
-                    elif (rtype in ("select", "dropdown")) and options:
-                        entry["primary"] = st.selectbox(label_display, options, key=qid)
                     else:
-                        entry["primary"] = st.text_area(label_display, key=qid, height=60)
-
-                    # Description control for certain types
-                    show_desc = rtype in ("yes_no", "scale_1_5", "number", "select", "dropdown")
-                    if show_desc:
-                        metric = str(row.get("metric", "") or "").strip()
-                        desc_label = (metric + " – description / notes") if metric else "Description / notes"
-                        entry["description"] = st.text_area(
-                            desc_label, key=f"{qid}_desc", height=60
+                        entry["primary"] = int(
+                            st.slider(
+                                label_display, min_value=1, max_value=5, value=3, key=qid
+                            )
                         )
+                elif rtype == "number":
+                    if qid in st.session_state:
+                        entry["primary"] = st.number_input(
+                            label_display, step=1.0, key=qid
+                        )
+                    else:
+                        entry["primary"] = st.number_input(
+                            label_display, value=0.0, step=1.0, key=qid
+                        )
+                elif (rtype in ("select", "dropdown")) and options:
+                    entry["primary"] = st.selectbox(label_display, options, key=qid)
+                else:
+                    entry["primary"] = st.text_area(label_display, key=qid, height=60)
 
-                    responses[qid] = entry
+                # Description control for certain types
+                show_desc = rtype in ("yes_no", "scale_1_5", "number", "select", "dropdown")
+                if show_desc:
+                    metric = str(row.get("metric", "") or "").strip()
+                    desc_label = (metric + " – description / notes") if metric else "Description / notes"
+                    entry["description"] = st.text_area(
+                        desc_label, key=f"{qid}_desc", height=60
+                    )
+
+                responses[qid] = entry
+
 
     return responses
 
