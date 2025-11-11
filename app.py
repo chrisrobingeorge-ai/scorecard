@@ -8,7 +8,6 @@ from datetime import date
 from typing import Dict, Tuple
 
 import pandas as pd
-import streamlit as st
 
 from config import DEPARTMENT_FILES, YES_NO_OPTIONS
 from ai_utils import interpret_scorecard
