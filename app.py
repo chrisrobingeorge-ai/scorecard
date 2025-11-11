@@ -260,10 +260,12 @@ def build_form_for_questions(
         entry = {"primary": None, "description": prev_desc}
 
         if rtype == "yes_no":
+            # Radio for Yes / No
             if prev_primary in YES_NO_OPTIONS:
                 idx = YES_NO_OPTIONS.index(prev_primary)
             else:
                 idx = 0
+
             entry["primary"] = st.radio(
                 label_display,
                 YES_NO_OPTIONS,
@@ -271,7 +273,23 @@ def build_form_for_questions(
                 key=widget_key,
                 index=idx,
             )
+
+            # If answered "Yes", show a follow-up description box
+            if entry["primary"] == "Yes":
+                desc_key = f"{widget_key}__desc"
+                default_desc = prev_desc or ""
+                entry["description"] = st.text_area(
+                    "If yes, briefly describe:",
+                    key=desc_key,
+                    value=default_desc,
+                    height=60,
+                )
+            else:
+                # Clear description if they change back to "No"
+                entry["description"] = ""
+
         elif rtype == "scale_1_5":
+
             default_val = 3
             if isinstance(prev_primary, (int, float)) and 1 <= int(prev_primary) <= 5:
                 default_val = int(prev_primary)
@@ -787,13 +805,8 @@ def main():
     # Validation (visible questions only)
     missing_required = []
     for _, row in filtered.iterrows():
-        qid = row["question_id"]
-
-        # Skip required check if the question is not visible under current answers
-        if not should_show_question(qid, dept_label, current_production):
-            continue
-
         if bool(row.get("required", False)):
+            qid = row["question_id"]
             val = responses.get(qid, None)
             primary_val = val.get("primary", None) if isinstance(val, dict) else val
             if primary_val in (None, "", []):
