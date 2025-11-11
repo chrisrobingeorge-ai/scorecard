@@ -1,4 +1,4 @@
-# requirements.txt
 streamlit==1.51.0
 pandas>=2.2
-# reportlab>=4.0
+openai>=1.51.0
+reportlab>=4.2 
