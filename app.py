@@ -34,11 +34,6 @@ def load_questions(file_path) -> pd.DataFrame:
 
 @st.cache_data
 def load_productions() -> pd.DataFrame:
-    """
-    Load list of productions from a separate CSV, e.g. data/productions.csv
-    Columns expected: department, production_name, active (TRUE/FALSE)
-    """
-    # adjust this path if you defined PRODUCTIONS_FILE in config.py
     df = pd.read_csv("data/productions.csv")
 
     df["department"] = df["department"].fillna("")
@@ -48,16 +43,6 @@ def load_productions() -> pd.DataFrame:
     else:
         df["active"] = True
 
-    return df
-
-@st.cache_data
-def load_questions(file_path) -> pd.DataFrame:
-    df = pd.read_csv(file_path)
-    # Normalise some types
-    if "required" in df.columns:
-        df["required"] = df["required"].astype(str).str.upper().eq("TRUE")
-    if "display_order" in df.columns:
-        df["display_order"] = pd.to_numeric(df["display_order"], errors="coerce").fillna(0)
     return df
 
 def build_form_for_questions(df: pd.DataFrame):
