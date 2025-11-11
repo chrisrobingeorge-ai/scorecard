@@ -65,11 +65,11 @@ def load_productions() -> pd.DataFrame:
 # -----------------------------
 def build_form_for_questions(
     df: pd.DataFrame, initial_answers: dict | None = None
-):
+) -> dict:
     """
     Render widgets for each question, grouped by pillar + production,
     with a main answer plus a description field.
-    `initial_answers` comes from a loaded draft and is used as defaults.
+    `initial_answers` is used only as initial values (from a loaded draft).
     """
     responses: dict = {}
     if initial_answers is None:
@@ -329,6 +329,10 @@ def main():
     # -------- DRAFT CONTROLS (SIDEBAR) --------
     st.sidebar.subheader("Drafts")
 
+    # Reset flag if not present
+    if "draft_used_once" not in st.session_state:
+        st.session_state["draft_used_once"] = False
+
     draft_file = st.sidebar.file_uploader(
         "Load saved draft",
         type="json",
@@ -339,6 +343,8 @@ def main():
         try:
             draft_data = json.loads(draft_file.getvalue().decode("utf-8"))
             st.session_state["loaded_draft"] = draft_data
+            # allow it to be used again for initial defaults
+            st.session_state["draft_used_once"] = False
             st.sidebar.success(
                 "Draft loaded. The form will use these answers as defaults."
             )
@@ -346,22 +352,20 @@ def main():
             st.sidebar.error(f"Could not load draft: {e}")
 
     draft = st.session_state.get("loaded_draft")
-    initial_answers = draft.get("answers", {}) if draft else {}
-    
-    # DEBUG: show what we actually loaded
-    if draft:
-        st.sidebar.markdown("**Loaded draft meta**")
-        st.sidebar.json(draft.get("meta", {}))
-        st.sidebar.write("Loaded answers:", len(initial_answers))
-
-    
+    if draft and not st.session_state.get("draft_used_once", False):
+        initial_answers = draft.get("answers", {})
+    else:
+        initial_answers = {}
     # ------------------------------------------
 
     st.markdown("### Scorecard Questions")
 
-    with st.form("scorecard_form"):
-        responses = build_form_for_questions(filtered, initial_answers=initial_answers)
-        submitted = st.form_submit_button("Generate AI Summary & PDF")
+    # Build the form widgets (no st.form, so values always go into session_state)
+    responses = build_form_for_questions(filtered, initial_answers=initial_answers)
+
+    # Mark draft as used so that subsequent reruns don't keep overwriting user edits
+    if draft and not st.session_state.get("draft_used_once", False):
+        st.session_state["draft_used_once"] = True
 
     # Meta used for drafts + AI
     meta = {
@@ -382,7 +386,9 @@ def main():
         help="Download a snapshot of your current answers so you can finish later.",
     )
 
-    # If they haven't clicked submit, stop here
+    # Submit button (outside of any form)
+    submitted = st.button("Generate AI Summary & PDF")
+
     if not submitted:
         return
 
