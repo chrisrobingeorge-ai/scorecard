@@ -307,7 +307,9 @@ def _apply_pending_draft_if_any():
             row = qinfo.get(qid_str, {})
             rtype = str(row.get("response_type", "")).strip().lower()
             opts_raw = row.get("options", "")
-            options = [o.strip() for o in opts_raw.split(",") if o.strip()] if isinstance(opts_raw, str) else []
+            options = [o.strip() for o in opts_raw.split(",") if o.strip()] if isinstance(
+                opts_raw, str
+            ) else []
 
             normalized: Dict[str, object] = {}
             val = entry.get("primary") if isinstance(entry, dict) else None
@@ -397,7 +399,11 @@ def _apply_pending_draft_if_any():
     except Exception as e:
         st.session_state["pending_draft_error"] = str(e)
     finally:
-    @@ -327,62 +404,106 @@ def _apply_pending_draft_if_any():
+        # Clear pending draft markers so it doesn't re-apply every run
+        st.session_state.pop("pending_draft_bytes", None)
+        st.session_state.pop("pending_draft_hash", None)
+
+
 def clear_form(all_questions_df: pd.DataFrame):
     """
     Clears answers for the current department's questions and resets draft flags.
@@ -417,7 +423,7 @@ def clear_form(all_questions_df: pd.DataFrame):
     st.session_state.pop("answers_by_show", None)
     st.session_state.pop("prev_show_key", None)
     st.session_state.pop("prev_question_ids", None)
-    
+
     st.session_state.pop("draft_applied", None)
     st.session_state.pop("draft_hash", None)
     st.session_state.pop("loaded_draft", None)
@@ -450,7 +456,6 @@ def build_draft_from_state(
     """
     Build a draft including the current show plus any saved per-show answers.
     """
-
     question_ids = list(dict.fromkeys(question_ids or []))
 
     if current_show_key:
@@ -504,7 +509,6 @@ label, .stTextInput, .stNumberInput, .stSelectbox, .stRadio, .stDateInput, .stTe
     padding-top: 1.5rem;
     padding-bottom: 2rem;
 }
-
 </style>
 """
 
