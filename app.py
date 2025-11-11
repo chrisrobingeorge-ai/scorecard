@@ -12,6 +12,43 @@ from pdf_utils import build_scorecard_pdf
 st.set_page_config(page_title="Monthly Scorecard", layout="wide")
 st.title("Monthly Scorecard with AI Summary")
 
+@st.cache_data
+def load_questions(file_path) -> pd.DataFrame:
+    df = pd.read_csv(file_path)
+
+    if "required" in df.columns:
+        df["required"] = df["required"].astype(str).str.upper().eq("TRUE")
+    if "display_order" in df.columns:
+        df["display_order"] = pd.to_numeric(df["display_order"], errors="coerce").fillna(0)
+
+    if "section" not in df.columns:
+        df["section"] = df.get("strategic_pillar", "General")
+
+    df["section"] = df["section"].fillna("General")
+    df["strategic_pillar"] = df.get("strategic_pillar", "").fillna("")
+    df["production"] = df.get("production", "").fillna("")
+    df["metric"] = df.get("metric", "").fillna("")
+    df["question_text"] = df.get("question_text", "").fillna("")
+    return df
+
+
+@st.cache_data
+def load_productions() -> pd.DataFrame:
+    """
+    Load list of productions from a separate CSV, e.g. data/productions.csv
+    Columns expected: department, production_name, active (TRUE/FALSE)
+    """
+    # adjust this path if you defined PRODUCTIONS_FILE in config.py
+    df = pd.read_csv("data/productions.csv")
+
+    df["department"] = df["department"].fillna("")
+    df["production_name"] = df["production_name"].fillna("")
+    if "active" in df.columns:
+        df["active"] = df["active"].astype(str).str.upper().eq("TRUE")
+    else:
+        df["active"] = True
+
+    return df
 
 @st.cache_data
 def load_questions(file_path) -> pd.DataFrame:
