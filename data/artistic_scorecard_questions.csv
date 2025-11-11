@@ -1,6 +1,4 @@
 section,department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight
-Production Details,Artistic,Innovation,ALL,Production Name,PD01,What is the name of the production?,text,,TRUE,1,General,1
-Production Details,Artistic,Innovation,ALL,Description,PD02,Please provide a brief description of the production.,text,,TRUE,2,General,1
 Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Set Design,ATI01,Did this production feature innovative set design?,yes_no,"Yes,No",TRUE,3,Innovation,1
 Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Set Design Description,ATI02,Please describe any innovative set design used.,text,,FALSE,4,Innovation,1
 Artistic & Technical Innovation,Artistic,Innovation,ALL,Innovative Lighting,ATI03,Did this production use innovative lighting techniques?,yes_no,"Yes,No",TRUE,5,Innovation,1
