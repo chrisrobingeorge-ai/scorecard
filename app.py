@@ -1,5 +1,10 @@
 # app.py
 
+import streamlit as st
+st.sidebar.info(f"Streamlit version: {st.__version__}")
+# or
+st.write("Streamlit version:", st.__version__)
+
 import json
 from datetime import date
 
