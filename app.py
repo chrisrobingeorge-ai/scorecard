@@ -275,10 +275,32 @@ def main():
         responses = build_form_for_questions(filtered)
         submitted = st.form_submit_button("Generate AI Summary & PDF")
 
+    # Build meta now (we’ll use it for drafts + AI)
+    meta = {
+        "staff_name": staff_name or "Unknown",
+        "role": role or "",
+        "department": dept_label,
+        "month": month_str,
+        "production": sel_prod if sel_prod != "All" else "",
+    }
+
+    # ---- Save progress (download draft) ----
+    # Use the *filtered* questions for the current scope
+    draft_dict = build_draft_from_state(filtered, meta)
+    st.sidebar.download_button(
+        "💾 Save progress",
+        data=json.dumps(draft_dict, indent=2),
+        file_name="scorecard_draft.json",
+        mime="application/json",
+        help="Download a snapshot of your current answers so you can finish later.",
+    )
+    # ----------------------------------------
+
+    # If they haven't clicked submit, stop here (but the Save button is visible)
     if not submitted:
         return
 
-    # Basic validation
+    # Basic validation (same as before)
     missing_required = []
     for _, row in filtered.iterrows():
         if bool(row.get("required", False)):
@@ -301,31 +323,9 @@ def main():
                 st.write("• ", q)
         return
 
-
-    meta = {
-        "staff_name": staff_name or "Unknown",
-        "role": role or "",
-        "department": dept_label,
-        "month": month_str,
-        "production": sel_prod if sel_prod != "All" else "",
-    }
-
-    # Build the form and collect responses
-    responses = build_form_for_questions(filtered)
-
-    # ---- Save progress (download draft) ----
-    draft_dict = build_draft_from_state(questions_df, meta)
-    st.sidebar.download_button(
-        "💾 Save progress",
-        data=json.dumps(draft_dict, indent=2),
-        file_name="scorecard_draft.json",
-        mime="application/json",
-        help="Download a snapshot of your current answers so you can finish later.",
-    )
-    # ----------------------------------------
-
     with st.spinner("Asking AI to interpret this scorecard..."):
         ai_result = interpret_scorecard(meta, filtered, responses)
+
 
     st.success("AI summary generated.")
 
