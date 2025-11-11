@@ -5,15 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import date
-
-# Before (causes warning when session_state already has report_month_date)
-# month_date = st.date_input("Reporting month", value=date.today(), key="report_month_date")
-
-# After (safe)
-if "report_month_date" in st.session_state:
-    month_date = st.date_input("Reporting month", key="report_month_date")
-else:
-    month_date = st.date_input("Reporting month", value=date.today(), key="report_month_date")
 from typing import Dict, Tuple
 
 import pandas as pd
@@ -356,11 +347,22 @@ def main():
     )
     st.sidebar.info(f"Streamlit version: {st.__version__}")
 
-    # ------------- Identity & Date (BOUND TO SESSION STATE) -------------
+    # --- Identity & Date (BOUND TO SESSION STATE) ---
+    
+    # Name and role: only use key=... (no value=...), so they hydrate from session_state if a draft set them
     staff_name = st.text_input("Your name", key="staff_name")
     role = st.text_input("Your role / department title", key="role")
-    month_date = st.date_input("Reporting month", value=date.today(), key="report_month_date")
-    month_str = (st.session_state.get("report_month_date") or date.today()).strftime("%Y-%m")
+    
+    # Date: avoid passing value= when the key already exists (draft loader may have set it)
+    from datetime import date as _date
+    
+    if "report_month_date" in st.session_state:
+        month_date = st.date_input("Reporting month", key="report_month_date")
+    else:
+        month_date = st.date_input("Reporting month", value=_date.today(), key="report_month_date")
+    
+    # Derive YYYY-MM for downstream use
+    month_str = (st.session_state.get("report_month_date") or _date.today()).strftime("%Y-%m")
 
     # ------------------------ Department (BOUND) ------------------------
     dept_label = st.selectbox(
