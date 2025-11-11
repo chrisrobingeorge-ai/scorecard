@@ -14,6 +14,12 @@ from pdf_utils import build_scorecard_pdf
 st.set_page_config(page_title="Monthly Scorecard", layout="wide")
 st.title("Monthly Scorecard with AI Summary")
 
+def safe_rerun():
+    """Call st.rerun() if available, else fall back to st.experimental_rerun()."""
+    if hasattr(st, "rerun"):
+        st.rerun()
+    else:
+        st.experimental_rerun()
 
 # -----------------------------
 # Data loading helpers
@@ -309,7 +315,7 @@ def main():
 
             st.session_state["draft_applied"] = True
             st.sidebar.success("Draft loaded and applied to the form.")
-            st.experimental_rerun()
+            safe_rerun()
 
         except Exception as e:
             st.sidebar.error(f"Could not load draft: {e}")
