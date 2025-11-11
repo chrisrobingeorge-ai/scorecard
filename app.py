@@ -1,7 +1,7 @@
 # app.py
 
-import streamlit as st
 from __future__ import annotations
+import streamlit as st
 
 import hashlib
 import json
