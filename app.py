@@ -484,7 +484,7 @@ def main():
             st.caption("IDs with no value yet (may be untouched or filtered previously):")
             st.code(", ".join(missing_ids), language="text")
 
-    # --------------------------- Form section (single column) ---------------------------
+    # --------------------------- Form section (narrow column + blank gutter) ---------------------------
     st.markdown("### Scorecard Questions")
 
     tab_pillars = filtered["strategic_pillar"].dropna().unique().tolist()
@@ -493,10 +493,14 @@ def main():
     responses: Dict[str, dict] = {}
     for tab, p in zip(tabs, tab_pillars):
         with tab:
-            block = filtered[filtered["strategic_pillar"] == p]
-            responses.update(build_form_for_questions(block))
+            # Left column for questions, right column left blank to tighten width
+            left_col, _ = st.columns([0.65, 0.35])  # tweak numbers to taste
+            with left_col:
+                block = filtered[filtered["strategic_pillar"] == p]
+                responses.update(build_form_for_questions(block))
 
     submitted = st.button("Generate AI Summary & PDF", type="primary")
+
 
     # Meta (built from bound keys)
     meta = {
