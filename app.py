@@ -159,6 +159,51 @@ def load_productions() -> pd.DataFrame:
         df["active"] = True
     return df
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Conditional visibility rules
+# ─────────────────────────────────────────────────────────────────────────────
+def should_show_question(qid: str, dept_label: str, production: str) -> bool:
+    """
+    Decide whether a question should be shown, based on answers to other questions.
+    Uses Streamlit session_state values for the controlling questions.
+    """
+    base = f"{dept_label}::{production}::"
+
+    def v(other_qid: str):
+        return st.session_state.get(f"{base}{other_qid}")
+
+    # Innovation & Sustainability
+    if qid == "ATI04":  # Reusable Elements Description
+        return v("ATI03") == "Yes"
+    if qid == "ATI06":  # Efficiency / Capability Gains Description
+        return v("ATI05") == "Yes"
+
+    # Artistic contributions & social impact
+    if qid == "ACSI03":  # Social / Community Issues Description
+        return v("ACSI02") == "Yes"
+    if qid == "ACSI05":  # Alberta-based Artists Description
+        return v("ACSI04") == "Yes"
+
+    # Collaborations & residencies
+    if qid == "CR02":  # External Collaborators Description
+        return v("CR01") == "Yes"
+    if qid == "CR04":  # Artistic Residencies Description
+        return v("CR03") == "Yes"
+
+    # Recruitment & auditions
+    if qid in ("RA02", "RA03"):  # Recruitment Timing / Volume & Hires
+        return v("RA01") == "Yes"
+
+    # Festivals & events
+    if qid in ("FE02", "FE03"):  # Festival / Event Details & Outcomes
+        return v("FE01") == "Yes"
+
+    # Luxury brands
+    if qid == "FM07":  # Luxury Brand Involvement Description
+        return v("FM06") == "Yes"
+
+    # Default: visible
+    return True
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Form rendering
@@ -181,12 +226,12 @@ def build_form_for_questions(
 
     pillars = df["strategic_pillar"].unique()
 
-    for pillar in pillars:
-        pillar_block = df[df["strategic_pillar"] == pillar].sort_values("display_order")
-        st.markdown(f"### {pillar}")
-
         for _, row in pillar_block.iterrows():
             qid = row["question_id"]  # ALWAYS STRING
+
+            # NEW: conditional visibility
+            if not should_show_question(qid, dept_label, production):
+                continue
 
             # Label resolution
             raw_label = str(row.get("question_text", "") or "").strip()
@@ -741,13 +786,19 @@ def main():
     # Validation (visible questions only)
     missing_required = []
     for _, row in filtered.iterrows():
+        qid = row["question_id"]
+
+        # Skip required check if the question is not visible under current answers
+        if not should_show_question(qid, dept_label, current_production):
+            continue
+
         if bool(row.get("required", False)):
-            qid = row["question_id"]
             val = responses.get(qid, None)
             primary_val = val.get("primary", None) if isinstance(val, dict) else val
             if primary_val in (None, "", []):
                 qt = str(row.get("question_text") or "").strip()
                 missing_required.append(qt or qid)
+
 
     if missing_required:
         st.error("Please answer all required questions before generating the summary.")
