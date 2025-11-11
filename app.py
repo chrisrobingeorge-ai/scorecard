@@ -134,7 +134,7 @@ def load_questions(file_path: str) -> pd.DataFrame:
         df["section"] = df.get("strategic_pillar", "General")
 
     for c in ("section", "strategic_pillar", "production", "metric",
-              "question_text", "response_type", "options"):
+              "question_text", "response_type", "options", "depends_on"):
         _ensure_col(df, c, "")
 
     # Defaults for grouping/rendering
@@ -205,6 +205,22 @@ def should_show_question(qid: str, dept_label: str, production: str) -> bool:
     # Default: visible
     return True
 
+def question_is_visible(row: pd.Series, dept_label: str, production: str) -> bool:
+    """
+    Returns True if the question should be shown, based on an optional 'depends_on'
+    parent question. Currently: show only if parent == 'Yes' for yes/no parents.
+    """
+    depends_on = str(row.get("depends_on", "") or "").strip()
+    if not depends_on:
+        return True  # no dependency
+
+    # Parent widget key must match how you build keys in build_form_for_questions
+    parent_key = f"{dept_label}::{production}::{depends_on}"
+    parent_val = st.session_state.get(parent_key)
+
+    # Only show when parent is explicitly 'Yes'
+    return parent_val == "Yes"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Form rendering
 # ─────────────────────────────────────────────────────────────────────────────
@@ -230,9 +246,14 @@ def build_form_for_questions(
     for _, row in df.iterrows():
         qid = str(row["question_id"])  # ALWAYS STRING
 
-        # Conditional visibility
-        if not should_show_question(qid, dept_label, production):
+    # We already filtered by pillar in main(), so just sort and iterate
+    for _, row in df.sort_values("display_order").iterrows():
+
+        # NEW: skip if dependency not satisfied
+        if not question_is_visible(row, dept_label, production):
             continue
+
+        qid = str(row["question_id"])  # ALWAYS STRING
 
         # Label resolution
         raw_label = str(row.get("question_text", "") or "").strip()
