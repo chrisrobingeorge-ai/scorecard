@@ -580,7 +580,7 @@ def main():
         load_answers_for_show(current_show_key, all_question_ids)
         st.session_state["active_show_key"] = current_show_key
 
-    # Filter questions for display (most rows in your CSV have production=ALL, so this typically shows all)
+    # Filter questions for display
     filtered = questions_all_df.copy()
     if sel_pillar != "All":
         filtered = filtered[filtered["strategic_pillar"] == sel_pillar]
