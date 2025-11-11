@@ -294,20 +294,7 @@ def build_form_for_questions(
                 key=widget_key,
                 index=idx,
             )
-
-            # If answered "Yes", show a follow-up description box
-            if entry["primary"] == "Yes":
-                desc_key = f"{widget_key}__desc"
-                default_desc = prev_desc or ""
-                entry["description"] = st.text_area(
-                    "If yes, briefly describe:",
-                    key=desc_key,
-                    value=default_desc,
-                    height=60,
-                )
-            else:
-                # Clear description if they change back to "No"
-                entry["description"] = ""
+            # leave entry["description"] as whatever was in prev_desc (usually "")
 
         elif rtype == "scale_1_5":
 
