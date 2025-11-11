@@ -700,23 +700,32 @@ def main():
         prod_lower = prod_col.str.lower()
 
         # "General" questions are ones that apply school-wide / all works etc.
+    if "production" in filtered.columns:
+        prod_col = filtered["production"].astype(str).fillna("").str.strip()
+        prod_lower = prod_col.str.lower()
+
+        # General questions (apply broadly)
         general_vals = ["", "all works", "school-wide", "corporate-wide", "all"]
-        general_mask = prod_lower.isin(general_vals)
+        # General-only questions: shown only when "General" is selected
+        general_only_vals = ["general_only"]
+
+        general_mask = prod_lower.isin(general_vals + general_only_vals)
+        general_only_mask = prod_lower.isin(general_only_vals)
 
         if current_production == "":
-            # General: only general questions
+            # General: show general + general-only
             filtered = filtered[general_mask]
         else:
-            # Specific production: include general + this production (case-insensitive)
+            # Specific production: include general (but NOT general-only) + this production
             cur_norm = current_production.strip()
             specific_mask = prod_col.str.casefold() == cur_norm.casefold()
 
             if specific_mask.any():
-                filtered = filtered[general_mask | specific_mask]
+                filtered = filtered[(general_mask & ~general_only_mask) | specific_mask]
             else:
-                # If there are no specific questions for this production,
-                # fall back to general only (better than "no questions").
-                filtered = filtered[general_mask]
+                # If there are no specific questions, show only general (not general-only)
+                filtered = filtered[general_mask & ~general_only_mask]
+
 
     if filtered.empty:
         st.warning("No questions found for this combination. Try changing the production.")
