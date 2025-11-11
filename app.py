@@ -14,15 +14,16 @@ from config import DEPARTMENT_FILES, YES_NO_OPTIONS
 from ai_utils import interpret_scorecard
 from pdf_utils import build_scorecard_pdf
 
-# ---------------------------------------------------------------------
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Streamlit config MUST be the first Streamlit call
-# ---------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Monthly Scorecard", layout="wide")
 
 
-# ---------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────────────────────────
 # Utilities
-# ---------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────────────────────────
 def safe_rerun():
     """Call st.rerun() if available, else fall back to st.experimental_rerun()."""
     if hasattr(st, "rerun"):
@@ -42,9 +43,9 @@ def _ensure_col(df: pd.DataFrame, col: str, default=""):
     df[col] = df[col].fillna(default)
 
 
-# ---------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
-# ---------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data
 def load_questions(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path)
@@ -91,9 +92,9 @@ def load_productions() -> pd.DataFrame:
     return df
 
 
-# ---------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────────────────────────
 # Form rendering
-# ---------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────────────────────────
 def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
     """
     Render widgets for each question, grouped by pillar + production.
@@ -179,39 +180,53 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
     return responses
 
 
-# ---------------------------------------------------------------------
-# Draft helpers
-# ---------------------------------------------------------------------
-def apply_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
+# ─────────────────────────────────────────────────────────────────────────────
+# Draft helpers — queued apply to avoid "cannot be modified after widget" errors
+# ─────────────────────────────────────────────────────────────────────────────
+def queue_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
     """
-    Apply a draft (bytes). Returns (applied, message).
-    Applies even if a different draft was already applied in this session.
+    Queue a draft for application on the next run (before widgets are created).
+    Returns (queued, message).
     """
     try:
-        content = draft_bytes.decode("utf-8")
         h = _hash_bytes(draft_bytes)
-
-        # Skip if already applied this exact content
         if st.session_state.get("draft_hash") == h:
             return False, "This draft is already applied."
 
-        data = json.loads(content)
+        # Store raw bytes + hash and apply on next run
+        st.session_state["pending_draft_bytes"] = draft_bytes
+        st.session_state["pending_draft_hash"] = h
+        return True, "Draft received; applying…"
+    except Exception as e:
+        return False, f"Could not queue draft: {e}"
+
+
+def _apply_pending_draft_if_any():
+    """
+    If a pending draft exists, apply it to session_state BEFORE any widgets are created.
+    """
+    b = st.session_state.get("pending_draft_bytes")
+    h = st.session_state.get("pending_draft_hash")
+    if not b:
+        return
+
+    try:
+        data = json.loads(b.decode("utf-8"))
         answers = data.get("answers", {}) or {}
         meta = data.get("meta", {}) or {}
 
-        # 1) Apply answers into session_state
+        # 1) Apply answers
         for qid_str, entry in answers.items():
             st.session_state[qid_str] = entry.get("primary", None)
             st.session_state[f"{qid_str}_desc"] = entry.get("description", None)
 
-        # 2) Apply meta to bound UI keys so widgets reflect the draft immediately
+        # 2) Apply meta to bound UI keys
         if "staff_name" in meta:
             st.session_state["staff_name"] = meta["staff_name"]
         if "role" in meta:
             st.session_state["role"] = meta["role"]
 
         if "month" in meta and isinstance(meta["month"], str):
-            # "YYYY-MM" -> set to first of that month
             try:
                 y, m = meta["month"].split("-")
                 st.session_state["report_month_date"] = date(int(y), int(m), 1)
@@ -231,10 +246,13 @@ def apply_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
         st.session_state["draft_hash"] = h
         st.session_state["draft_applied"] = True
 
-        return True, "Draft loaded and applied to the form."
-
     except Exception as e:
-        return False, f"Could not load draft: {e}"
+        # Surface the error in the sidebar later
+        st.session_state["pending_draft_error"] = str(e)
+    finally:
+        # Clear pending markers
+        st.session_state.pop("pending_draft_bytes", None)
+        st.session_state.pop("pending_draft_hash", None)
 
 
 def clear_form(all_questions_df: pd.DataFrame):
@@ -273,10 +291,54 @@ def build_draft_from_state(all_questions_df: pd.DataFrame, meta: dict) -> dict:
     return draft
 
 
-# ---------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────────────────────────
 # Main App
-# ---------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────────────────────────
 def main():
+    # Initialize flags
+    if "draft_applied" not in st.session_state:
+        st.session_state["draft_applied"] = False
+
+    # 1) Apply any pending draft BEFORE rendering widgets
+    _apply_pending_draft_if_any()
+
+    # 2) Sidebar: Draft controls FIRST (so future uploads queue + rerun before widgets)
+    st.sidebar.subheader("Drafts")
+
+    draft_file = st.sidebar.file_uploader(
+        "Load saved draft (JSON)",
+        type="json",
+        help="Upload a JSON draft you previously downloaded.",
+    )
+    if draft_file is not None:
+        queued, msg = queue_draft_bytes(draft_file.getvalue())
+        if queued:
+            st.sidebar.success(msg)
+            safe_rerun()
+        else:
+            st.sidebar.info(msg)
+
+    with st.sidebar.expander("Paste draft JSON"):
+        txt = st.text_area("Paste JSON here", height=120, key="paste_json")
+        if st.button("Load pasted draft"):
+            if txt.strip():
+                queued, msg = queue_draft_bytes(txt.encode("utf-8"))
+                if queued:
+                    st.success(msg)
+                    safe_rerun()
+                else:
+                    st.info(msg)
+
+    with st.sidebar.expander("Draft helpers"):
+        if st.button("Force re-apply last draft"):
+            st.session_state.pop("draft_hash", None)
+            st.sidebar.success("You can now re-upload the same draft to apply it again.")
+
+    # Show any pending draft error from last cycle
+    if "pending_draft_error" in st.session_state:
+        st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
+
+    # 3) Main UI starts here
     st.title("Monthly Scorecard with AI Summary")
     st.caption(
         ":information_source: On Streamlit Community Cloud, the server file system is "
@@ -284,10 +346,6 @@ def main():
         "**re-upload** it later."
     )
     st.sidebar.info(f"Streamlit version: {st.__version__}")
-
-    # Init flags
-    if "draft_applied" not in st.session_state:
-        st.session_state["draft_applied"] = False
 
     # ------------- Identity & Date (BOUND TO SESSION STATE) -------------
     staff_name = st.text_input("Your name", key="staff_name")
@@ -335,54 +393,7 @@ def main():
         st.warning("No questions found for this combination. Try changing the filters.")
         return
 
-    # -------------------------- Draft controls --------------------------
-    st.sidebar.subheader("Drafts")
-
-    # File uploader
-    draft_file = st.sidebar.file_uploader(
-        "Load saved draft (JSON)",
-        type="json",
-        help="Upload a JSON draft you previously downloaded.",
-    )
-    if draft_file is not None:
-        applied, msg = apply_draft_bytes(draft_file.getvalue())
-        if applied:
-            st.sidebar.success(msg)
-            safe_rerun()
-        else:
-            if "already applied" in msg:
-                st.sidebar.info(msg)
-            else:
-                st.sidebar.error(msg)
-
-    # Paste-from-clipboard loader
-    with st.sidebar.expander("Paste draft JSON"):
-        txt = st.text_area("Paste JSON here", height=120, key="paste_json")
-        if st.button("Load pasted draft"):
-            if txt.strip():
-                applied, msg = apply_draft_bytes(txt.encode("utf-8"))
-                if applied:
-                    st.success(msg)
-                    safe_rerun()
-                else:
-                    if "already applied" in msg:
-                        st.info(msg)
-                    else:
-                        st.error(msg)
-
-    # Force re-apply helper (useful in testing same file repeatedly)
-    with st.sidebar.expander("Draft helpers"):
-        if st.button("Force re-apply last draft"):
-            st.session_state.pop("draft_hash", None)
-            st.sidebar.success("You can now re-upload the same draft to apply it again.")
-
-    # Clear form
-    if st.sidebar.button("Clear current answers"):
-        clear_form(questions_all_df)
-        st.sidebar.success("Form cleared.")
-        safe_rerun()
-
-    # Show loaded meta quick view
+    # Show loaded meta
     draft = st.session_state.get("loaded_draft")
     if draft:
         st.sidebar.markdown("**Loaded draft meta**")
