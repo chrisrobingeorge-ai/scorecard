@@ -127,7 +127,7 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
                 "all works",
                 "all",          # ← added
             ):
-                st.markdown(f"**{prod_label}**")
+                st.markdown(f"**{production}**")
 
 
             # ONE column: each question full width (inside whatever column we call this in)
