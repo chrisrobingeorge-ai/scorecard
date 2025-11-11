@@ -148,17 +148,42 @@ def main():
     # Optional filters for pillar / production
     st.subheader("Scope of this report")
 
-    pillars = ["All"] + sorted(questions_df["strategic_pillar"].dropna().unique().tolist())
-    productions = ["All"] + sorted(questions_df["production"].dropna().unique().tolist())
-
+    # Pillar filter (same as before)
+    pillars = ["All"] + sorted(
+        questions_df["strategic_pillar"].dropna().unique().tolist()
+    )
     sel_pillar = st.selectbox("Strategic pillar (optional filter)", pillars)
-    sel_prod = st.selectbox("Production / area (optional filter)", productions)
 
+    # Production filter now comes from productions.csv
+    productions_df = load_productions()  # <-- make sure this function exists above
+
+    dept_prods = productions_df[
+        (productions_df["department"] == dept_label)
+        & (productions_df["active"])
+    ]
+
+    prod_options = ["All"] + sorted(
+        dept_prods["production_name"].dropna().unique().tolist()
+    )
+
+    sel_prod = st.selectbox(
+        "Production / area (optional filter)",
+        prod_options,
+    )
+
+    # Apply filters to the questions
     filtered = questions_df.copy()
     if sel_pillar != "All":
         filtered = filtered[filtered["strategic_pillar"] == sel_pillar]
-    if sel_prod != "All":
+
+    # Only filter by production if your questions CSV actually uses it
+    if sel_prod != "All" and "production" in filtered.columns:
         filtered = filtered[filtered["production"] == sel_prod]
+
+    if filtered.empty:
+        st.warning("No questions found for this combination. Try changing the filters.")
+        return
+
 
     if filtered.empty:
         st.warning("No questions found for this combination. Try changing the filters.")
@@ -202,7 +227,9 @@ def main():
         "role": role or "",
         "department": dept_label,
         "month": month_str,
+        "production": sel_prod if sel_prod != "All" else "",
     }
+
 
     with st.spinner("Asking AI to interpret this scorecard..."):
         ai_result = interpret_scorecard(meta, filtered, responses)
