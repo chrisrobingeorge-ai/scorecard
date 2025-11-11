@@ -338,7 +338,7 @@ CUSTOM_CSS = """
 <style>
 /* Global base size a bit smaller */
 html, body, [class*="stMarkdown"] {
-    font-size: 1.2rem;
+    font-size: 1.0rem;
 }
 
 /* Title / headings slightly reduced */
