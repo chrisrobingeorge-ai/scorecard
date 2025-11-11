@@ -265,20 +265,33 @@ def main():
     )
 
     # When a file is uploaded, store its JSON in session_state
-    if draft_file is not None and "loaded_draft" not in st.session_state:
+    if draft_file is not None:
         try:
             draft_data = json.loads(draft_file.getvalue().decode("utf-8"))
             st.session_state["loaded_draft"] = draft_data
-            st.session_state["draft_applied"] = False
-            st.sidebar.success("Draft loaded. It will now populate the form.")
+            st.sidebar.success("Draft loaded. Select the same department/month/production to see answers.")
         except Exception as e:
             st.sidebar.error(f"Could not load draft: {e}")
 
-    # Apply the draft exactly once, before rendering the form
-    if st.session_state.get("loaded_draft") is not None and not st.session_state.get("draft_applied", False):
-        apply_draft_to_state(st.session_state["loaded_draft"])
-        st.session_state["draft_applied"] = True
+    # If we have a loaded draft and the meta matches current scope, apply it
+    draft = st.session_state.get("loaded_draft")
+    if draft:
+        d_meta = draft.get("meta", {})
+        draft_dept = d_meta.get("department", "")
+        draft_month = d_meta.get("month", "")
+        draft_prod = d_meta.get("production", "")
+
+        current_prod = sel_prod if sel_prod != "All" else ""
+
+        if (
+            draft_dept == dept_label
+            and draft_month == month_str
+            and draft_prod == current_prod
+        ):
+            apply_draft_to_state(draft)
     # ------------------------------------------
+
+    st.markdown("### Scorecard Questions")
 
     with st.form("scorecard_form"):
         responses = build_form_for_questions(filtered)
