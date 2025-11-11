@@ -43,6 +43,56 @@ def _ensure_col(df: pd.DataFrame, col: str, default=""):
     df[col] = df[col].fillna(default)
 
 
+def get_answers_df() -> pd.DataFrame:
+    """
+    Single source of truth for all answers.
+    One row = one answer to one question for one production in one department.
+    """
+    if "answers_df" not in st.session_state:
+        st.session_state["answers_df"] = pd.DataFrame(
+            columns=["department", "production", "question_id", "primary", "description"]
+        )
+    return st.session_state["answers_df"]
+
+def get_answer_value(dept: str, production: str, qid: str) -> Tuple[object | None, str | None]:
+    df = get_answers_df()
+    mask = (
+        (df["department"] == dept) &
+        (df["production"] == production) &
+        (df["question_id"] == qid)
+    )
+    if not mask.any():
+        return None, None
+    row = df[mask].iloc[0]
+    return row.get("primary", None), row.get("description", None)
+
+
+def upsert_answer(dept: str, production: str, qid: str, primary, description=None):
+    df = get_answers_df()
+    mask = (
+        (df["department"] == dept) &
+        (df["production"] == production) &
+        (df["question_id"] == qid)
+    )
+
+    new_row = {
+        "department": dept,
+        "production": production,
+        "question_id": qid,
+        "primary": primary,
+        "description": description or "",
+    }
+
+    if mask.any():
+        st.session_state["answers_df"].loc[mask, ["primary", "description"]] = [
+            (primary, description or "")
+        ]
+    else:
+        st.session_state["answers_df"] = pd.concat(
+            [df, pd.DataFrame([new_row])],
+            ignore_index=True,
+        )
+
 def get_current_show() -> str:
     """Use the Production / area filter as the current show name."""
     return st.session_state.get("filter_production", "All")
@@ -581,15 +631,9 @@ def main():
 
     sel_pillar = st.selectbox("Strategic pillar (optional filter)", pillars, key="filter_pillar")
     sel_prod = st.selectbox("Production / area (optional filter)", prod_options, key="filter_production")
-
-    # Determine current show key and LOAD once when the active show changes
-    current_show = get_current_show()
-    current_show_key = _build_show_key(dept_label, current_show)
-    if st.session_state.get("active_show_key") != current_show_key:
-        # Clear all question widgets before loading new answers
-        clear_question_widgets(all_question_ids)
-        load_answers_for_show(current_show_key, all_question_ids)
-        st.session_state["active_show_key"] = current_show_key
+    
+    # This is the production we are currently editing
+    current_production = sel_prod
 
     # Filter questions for display
     filtered = questions_all_df.copy()
@@ -621,19 +665,33 @@ def main():
     st.markdown("### Scorecard Questions")
     tab_pillars = filtered["strategic_pillar"].dropna().unique().tolist()
     tabs = st.tabs(tab_pillars)
-
+    
     responses: Dict[str, dict] = {}
     for tab, p in zip(tabs, tab_pillars):
         with tab:
             left_col, _ = st.columns([0.65, 0.35])
             with left_col:
                 block = filtered[filtered["strategic_pillar"] == p]
-                responses.update(build_form_for_questions(block))
-
-    # IMPORTANT: Save current show's answers on every run AFTER rendering widgets
-    save_answers_for_show(current_show_key, all_question_ids)
-
+                responses.update(
+                    build_form_for_questions(
+                        block,
+                        dept_label=dept_label,
+                        production=current_production,
+                    )
+                )
+    
+    # NEW: write responses into the table
+    for qid, entry in responses.items():
+        upsert_answer(
+            dept=dept_label,
+            production=current_production,
+            qid=qid,
+            primary=entry.get("primary"),
+            description=entry.get("description"),
+        )
+    
     submitted = st.button("Generate AI Summary & PDF", type="primary")
+
 
     # Meta
     meta = {
