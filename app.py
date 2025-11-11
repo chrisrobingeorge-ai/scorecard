@@ -1,5 +1,3 @@
-# app.py
-
 from __future__ import annotations
 
 import streamlit as st
@@ -42,6 +40,7 @@ def _ensure_col(df: pd.DataFrame, col: str, default=""):
         df[col] = default
     df[col] = df[col].fillna(default)
 
+
 def get_current_show() -> str:
     """Use the Production / area filter as the current show key."""
     return st.session_state.get("filter_production", "All")
@@ -77,6 +76,7 @@ def load_answers_for_show(show: str, questions_df: pd.DataFrame):
         else:
             # clear any leftover value for this question
             st.session_state.pop(qid, None)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
@@ -131,6 +131,11 @@ def load_productions() -> pd.DataFrame:
 # Form rendering
 # ─────────────────────────────────────────────────────────────────────────────
 def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
+    """
+    Render widgets for each question, grouped by pillar + production.
+    Uses st.session_state for initial values. Returns {qid: {primary}}.
+    Descriptions are now explicit questions in the CSV only.
+    """
     responses: Dict[str, dict] = {}
 
     df = df.copy()
@@ -159,9 +164,11 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
             ):
                 st.markdown(f"**{prod_label}**")
 
+            # Single vertical column; outer layout controls width
             for _, row in prod_block.iterrows():
                 qid = row["question_id"]  # ALWAYS STRING
 
+                # Label resolution (CSV handles numbering, e.g. "1 a) ...")
                 raw_label = str(row.get("question_text", "") or "").strip()
                 if not raw_label:
                     metric = str(row.get("metric", "") or "").strip()
@@ -202,7 +209,6 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
     return responses
 
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
 # ─────────────────────────────────────────────────────────────────────────────
@@ -222,6 +228,7 @@ def queue_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
         return True, "Draft received; applying…"
     except Exception as e:
         return False, f"Could not queue draft: {e}"
+
 
 def _apply_pending_draft_if_any():
     b = st.session_state.get("pending_draft_bytes")
@@ -253,7 +260,6 @@ def _apply_pending_draft_if_any():
 
             # Normalise value for widget type
             if rtype == "yes_no":
-                # Must match one of YES_NO_OPTIONS exactly
                 if val in YES_NO_OPTIONS:
                     st.session_state[qid_str] = val
             elif rtype in ("select", "dropdown"):
@@ -272,11 +278,10 @@ def _apply_pending_draft_if_any():
                 except Exception:
                     pass
             else:
-                # Text or anything else
                 if val is not None:
                     st.session_state[qid_str] = str(val)
 
-            # Description is always text
+            # Description is always text (legacy support)
             if desc is not None:
                 st.session_state[f"{qid_str}_desc"] = str(desc)
 
@@ -307,6 +312,7 @@ def _apply_pending_draft_if_any():
         st.session_state.pop("pending_draft_bytes", None)
         st.session_state.pop("pending_draft_hash", None)
 
+
 def clear_form(all_questions_df: pd.DataFrame):
     """
     Clears answers for the current department's questions and resets draft flags.
@@ -319,7 +325,6 @@ def clear_form(all_questions_df: pd.DataFrame):
         if k in st.session_state:
             del st.session_state[k]
 
-    # Clear meta-bound keys (leave department so user doesn't lose context)
     for k in ("staff_name", "role", "report_month_date",
               "filter_pillar", "filter_production"):
         st.session_state.pop(k, None)
@@ -332,6 +337,7 @@ def clear_form(all_questions_df: pd.DataFrame):
 def build_draft_from_state(all_questions_df: pd.DataFrame, meta: dict) -> dict:
     """
     Build a draft by scanning session_state for ALL questions in the department.
+    (Per-show answers are not merged; this captures the current show's values.)
     """
     draft = {"meta": meta, "answers": {}}
     for _, row in all_questions_df.iterrows():
@@ -341,6 +347,7 @@ def build_draft_from_state(all_questions_df: pd.DataFrame, meta: dict) -> dict:
         if primary is not None or (desc not in (None, "")):
             draft["answers"][qid] = {"primary": primary, "description": desc}
     return draft
+
 
 CUSTOM_CSS = """
 <style>
@@ -367,6 +374,7 @@ label, .stTextInput, .stNumberInput, .stSelectbox, .stRadio, .stDateInput, .stTe
 </style>
 """
 
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Main App
 # ─────────────────────────────────────────────────────────────────────────────
@@ -376,10 +384,10 @@ def main():
 
     _apply_pending_draft_if_any()
 
-    # ↓ smaller fonts + tighter layout
+    # Smaller fonts + tighter layout
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-    # 2) Sidebar: Draft controls FIRST (so future uploads queue + rerun before widgets)
+    # Sidebar: Draft controls
     st.sidebar.subheader("Drafts")
 
     draft_file = st.sidebar.file_uploader(
@@ -411,11 +419,10 @@ def main():
             st.session_state.pop("draft_hash", None)
             st.sidebar.success("You can now re-upload the same draft to apply it again.")
 
-    # Show any pending draft error from last cycle
     if "pending_draft_error" in st.session_state:
         st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
 
-    # 3) Main UI starts here
+    # Main UI
     st.title("Monthly Scorecard with AI Summary")
     st.caption(
         ":information_source: On Streamlit Community Cloud, the server file system is "
@@ -424,7 +431,7 @@ def main():
     )
     st.sidebar.info(f"Streamlit version: {st.__version__}")
 
-    # --- Identity & Date (BOUND TO SESSION STATE) ---
+    # Identity & Date
     staff_name = st.text_input("Your name", key="staff_name")
     role = st.text_input("Your role / department title", key="role")
 
@@ -434,20 +441,18 @@ def main():
     else:
         month_date = st.date_input("Reporting month", value=_date.today(), key="report_month_date")
 
-    # Derive YYYY-MM for downstream use
     month_str = (st.session_state.get("report_month_date") or _date.today()).strftime("%Y-%m")
 
-    # ------------------------ Department (BOUND) ------------------------
+    # Department
     dept_label = st.selectbox(
         "Which area are you reporting on?",
         list(DEPARTMENT_FILES.keys()),
         key="dept_label",
     )
 
-    # Load all questions for this department
     questions_all_df = load_questions(DEPARTMENT_FILES[dept_label])
 
-    # ----------------------------- Filters ------------------------------
+    # Scope filters
     st.subheader("Scope of this report")
 
     pillars = ["All"] + sorted(questions_all_df["strategic_pillar"].dropna().unique().tolist())
@@ -492,27 +497,39 @@ def main():
             st.caption("IDs with no value yet (may be untouched or filtered previously):")
             st.code(", ".join(missing_ids), language="text")
 
-    # --------------------------- Form section (narrow column + blank gutter) ---------------------------
+    # Per-show answer management (must run after filters)
+    current_show = get_current_show()
+    prev_show = st.session_state.get("prev_show")
+
+    if prev_show is None:
+        # First load: hydrate if we already have something stored for this show
+        load_answers_for_show(current_show, questions_all_df)
+        st.session_state["prev_show"] = current_show
+    else:
+        if current_show != prev_show:
+            # Save old show's answers and load new show's answers
+            save_answers_for_show(prev_show, questions_all_df)
+            load_answers_for_show(current_show, questions_all_df)
+            st.session_state["prev_show"] = current_show
+
+    # Form section (narrow column + blank gutter)
     st.markdown("### Scorecard Questions")
-    
+
     tab_pillars = filtered["strategic_pillar"].dropna().unique().tolist()
     tabs = st.tabs(tab_pillars)
-    
+
     responses: Dict[str, dict] = {}
-    
-    # This is the show you pick in "Production / area (optional filter)"
-    current_show = st.session_state.get("filter_production", "")
-    
+
     for tab, p in zip(tabs, tab_pillars):
         with tab:
             left_col, _ = st.columns([0.65, 0.35])  # narrow question column + blank gutter
             with left_col:
                 block = filtered[filtered["strategic_pillar"] == p]
-                responses.update(build_form_for_questions(block, key_prefix=current_show))
-    
+                responses.update(build_form_for_questions(block))
+
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
-    # Meta (built from bound keys)
+    # Meta
     meta = {
         "staff_name": st.session_state.get("staff_name") or "Unknown",
         "role": st.session_state.get("role") or "",
@@ -524,7 +541,7 @@ def main():
     if meta["production"] == "All":
         meta["production"] = ""
 
-    # Save progress (downloads ALL department questions)
+    # Save progress (downloads ALL department questions for the current show)
     draft_dict = build_draft_from_state(questions_all_df, meta)
     st.sidebar.download_button(
         "💾 Save progress (download JSON)",
@@ -537,7 +554,7 @@ def main():
     if not submitted:
         return
 
-    # ------------------------ Validation & AI ---------------------------
+    # Validation & AI
     missing_required = []
     for _, row in filtered.iterrows():
         if bool(row.get("required", False)):
@@ -571,7 +588,7 @@ def main():
 
     st.success("AI summary generated.")
 
-    # --------------------------- AI Interpretation (full width) ---------------------------
+    # AI Interpretation
     st.subheader("AI Interpretation")
 
     st.markdown("#### Overall Summary")
@@ -615,7 +632,6 @@ def main():
     except Exception as e:
         st.warning(f"PDF export failed: {e}")
         st.info("If this persists, check pdf_utils.py dependencies (reportlab or fpdf2).")
-
 
 
 if __name__ == "__main__":
