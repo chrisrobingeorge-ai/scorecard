@@ -650,13 +650,26 @@ def main():
     filtered = questions_all_df.copy()
     if "production" in filtered.columns:
         prod_col = filtered["production"].astype(str).fillna("").str.strip()
+        prod_lower = prod_col.str.lower()
+
+        # "General" questions are ones that apply school-wide / all works etc.
+        general_vals = ["", "all works", "school-wide", "corporate-wide", "all"]
+        general_mask = prod_lower.isin(general_vals)
+
         if current_production == "":
             # General: only general questions
-            general_vals = ["", "all works", "school-wide", "corporate-wide", "all"]
-            filtered = filtered[prod_col.str.lower().isin(general_vals)]
+            filtered = filtered[general_mask]
         else:
-            # Specific production: only that production's questions
-            filtered = filtered[prod_col == current_production]
+            # Specific production: include general + this production (case-insensitive)
+            cur_norm = current_production.strip()
+            specific_mask = prod_col.str.casefold() == cur_norm.casefold()
+
+            if specific_mask.any():
+                filtered = filtered[general_mask | specific_mask]
+            else:
+                # If there are no specific questions for this production,
+                # fall back to general only (better than "no questions").
+                filtered = filtered[general_mask]
 
     if filtered.empty:
         st.warning("No questions found for this combination. Try changing the production.")
