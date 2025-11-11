@@ -447,13 +447,6 @@ def main():
         st.warning("No questions found for this combination. Try changing the filters.")
         return
 
-    # Show loaded meta
-    draft = st.session_state.get("loaded_draft")
-    if draft:
-        st.sidebar.markdown("**Loaded draft meta**")
-        st.sidebar.json(draft.get("meta", {}))
-        st.sidebar.write("Loaded answers:", len(draft.get("answers", {})))
-
     # Debug: how many answers are currently set in session_state for visible questions?
     with st.expander("Debug: visible answers status"):
         set_count = 0
