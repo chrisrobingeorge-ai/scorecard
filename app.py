@@ -5,6 +5,15 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import date
+
+# Before (causes warning when session_state already has report_month_date)
+# month_date = st.date_input("Reporting month", value=date.today(), key="report_month_date")
+
+# After (safe)
+if "report_month_date" in st.session_state:
+    month_date = st.date_input("Reporting month", key="report_month_date")
+else:
+    month_date = st.date_input("Reporting month", value=date.today(), key="report_month_date")
 from typing import Dict, Tuple
 
 import pandas as pd
