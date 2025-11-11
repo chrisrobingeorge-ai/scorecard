@@ -699,32 +699,42 @@ def main():
         prod_col = filtered["production"].astype(str).fillna("").str.strip()
         prod_lower = prod_col.str.lower()
 
-        # "General" questions are ones that apply school-wide / all works etc.
-    if "production" in filtered.columns:
-        prod_col = filtered["production"].astype(str).fillna("").str.strip()
-        prod_lower = prod_col.str.lower()
-
         # General questions (apply broadly)
         general_vals = ["", "all works", "school-wide", "corporate-wide", "all"]
         # General-only questions: shown only when "General" is selected
         general_only_vals = ["general_only"]
+        # Production-only questions: shown only when a specific production is selected
+        production_only_vals = ["production_only"]
 
         general_mask = prod_lower.isin(general_vals + general_only_vals)
         general_only_mask = prod_lower.isin(general_only_vals)
+        production_only_mask = prod_lower.isin(production_only_vals)
 
         if current_production == "":
-            # General: show general + general-only
-            filtered = filtered[general_mask]
+            # General: show general + general-only, but NOT production-only
+            filtered = filtered[general_mask & ~production_only_mask]
         else:
-            # Specific production: include general (but NOT general-only) + this production
+            # Specific production: include
+            # - general (but NOT general-only or production-only),
+            # - this production's specific questions,
+            # - all PRODUCTION_ONLY questions
             cur_norm = current_production.strip()
             specific_mask = prod_col.str.casefold() == cur_norm.casefold()
 
             if specific_mask.any():
-                filtered = filtered[(general_mask & ~general_only_mask) | specific_mask]
+                filtered = filtered[
+                    (general_mask & ~general_only_mask & ~production_only_mask)
+                    | specific_mask
+                    | production_only_mask
+                ]
             else:
-                # If there are no specific questions, show only general (not general-only)
-                filtered = filtered[general_mask & ~general_only_mask]
+                # If there are no specific questions for this production:
+                # show general (not general-only / production-only) + PRODUCTION_ONLY
+                filtered = filtered[
+                    (general_mask & ~general_only_mask & ~production_only_mask)
+                    | production_only_mask
+                ]
+
 
 
     if filtered.empty:
