@@ -1,12 +1,14 @@
+# app.py
+
 from __future__ import annotations
 
-import streamlit as st
 import hashlib
 import json
 from datetime import date
 from typing import Dict, Tuple
 
 import pandas as pd
+import streamlit as st
 
 from config import DEPARTMENT_FILES, YES_NO_OPTIONS
 from ai_utils import interpret_scorecard
@@ -57,10 +59,8 @@ def _extract_state_entry(qid: str):
     """Return the current session_state entry for a question (primary + desc)."""
     has_primary = qid in st.session_state
     has_desc = f"{qid}_desc" in st.session_state
-
     if not (has_primary or has_desc):
         return None
-
     entry = {}
     if has_primary:
         entry["primary"] = st.session_state[qid]
@@ -87,18 +87,15 @@ def save_answers_for_show(show_key: str, question_ids):
     """Copy current widget values into a per-show store in session_state."""
     if not show_key:
         return
-
     question_ids = list(dict.fromkeys(question_ids or []))
     answers_by_show = st.session_state.get("answers_by_show", {})
     show_answers = dict(answers_by_show.get(show_key, {}))
-
     for qid in question_ids:
         entry = _extract_state_entry(qid)
         if entry is not None:
             show_answers[qid] = entry
         elif qid in show_answers:
             show_answers.pop(qid, None)
-
     answers_by_show[show_key] = show_answers
     st.session_state["answers_by_show"] = answers_by_show
 
@@ -107,19 +104,15 @@ def load_answers_for_show(show_key: str, question_ids):
     """Hydrate widget values from the per-show store (if any)."""
     if not show_key:
         return
-
     question_ids = list(dict.fromkeys(question_ids or []))
     answers_by_show = st.session_state.get("answers_by_show", {})
     show_answers = answers_by_show.get(show_key, {})
-
     for qid in question_ids:
         entry = _normalise_show_entry(show_answers.get(qid))
-
         if entry and "primary" in entry:
             st.session_state[qid] = entry["primary"]
         else:
             st.session_state.pop(qid, None)
-
         desc_key = f"{qid}_desc"
         if entry and "description" in entry:
             st.session_state[desc_key] = entry["description"]
@@ -183,7 +176,6 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
     """
     Render widgets for each question, grouped by pillar + production.
     Uses st.session_state for initial values. Returns {qid: {primary}}.
-    Descriptions are now explicit questions in the CSV only.
     """
     responses: Dict[str, dict] = {}
 
@@ -213,11 +205,10 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
             ):
                 st.markdown(f"**{prod_label}**")
 
-            # Single vertical column; outer layout controls width
             for _, row in prod_block.iterrows():
                 qid = row["question_id"]  # ALWAYS STRING
 
-                # Label resolution (CSV handles numbering, e.g. "1 a) ...")
+                # Label resolution
                 raw_label = str(row.get("question_text", "") or "").strip()
                 if not raw_label:
                     metric = str(row.get("metric", "") or "").strip()
@@ -245,9 +236,7 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
                         st.slider(label_display, min_value=1, max_value=5, key=qid)
                     )
                 elif rtype == "number":
-                    entry["primary"] = st.number_input(
-                        label_display, step=1.0, key=qid
-                    )
+                    entry["primary"] = st.number_input(label_display, step=1.0, key=qid)
                 elif (rtype in ("select", "dropdown")) and options:
                     entry["primary"] = st.selectbox(label_display, options, key=qid)
                 else:
@@ -270,8 +259,6 @@ def queue_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
         h = _hash_bytes(draft_bytes)
         if st.session_state.get("draft_hash") == h:
             return False, "This draft is already applied."
-
-        # Store raw bytes + hash and apply on next run
         st.session_state["pending_draft_bytes"] = draft_bytes
         st.session_state["pending_draft_hash"] = h
         return True, "Draft received; applying…"
@@ -280,18 +267,20 @@ def queue_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
 
 
 def _apply_pending_draft_if_any():
+    """
+    If a pending draft exists, apply it to session_state BEFORE any widgets are created.
+    """
     b = st.session_state.get("pending_draft_bytes")
     h = st.session_state.get("pending_draft_hash")
     if not b:
         return
-
     try:
         data = json.loads(b.decode("utf-8"))
         answers = data.get("answers", {}) or {}
         meta = data.get("meta", {}) or {}
         per_show_answers = data.get("per_show_answers", {}) or {}
 
-        # Load all questions for the department to get types/options
+        # Load questions for department to normalise types
         dept = meta.get("department")
         if dept and dept in DEPARTMENT_FILES:
             questions_df = load_questions(DEPARTMENT_FILES[dept])
@@ -303,13 +292,10 @@ def _apply_pending_draft_if_any():
             entry = _normalise_show_entry(raw_entry)
             if entry is None:
                 return {}
-
             row = qinfo.get(qid_str, {})
             rtype = str(row.get("response_type", "")).strip().lower()
             opts_raw = row.get("options", "")
-            options = [o.strip() for o in opts_raw.split(",") if o.strip()] if isinstance(
-                opts_raw, str
-            ) else []
+            options = [o.strip() for o in opts_raw.split(",") if o.strip()] if isinstance(opts_raw, str) else []
 
             normalized: Dict[str, object] = {}
             val = entry.get("primary") if isinstance(entry, dict) else None
@@ -341,22 +327,20 @@ def _apply_pending_draft_if_any():
 
             return normalized
 
-        # 1) Apply answers, normalising for widget type
+        # Apply current answers
         for qid_str, entry in answers.items():
             normalized = _normalise_loaded_entry(qid_str, entry)
-
             if "primary" in normalized:
                 st.session_state[qid_str] = normalized["primary"]
             else:
                 st.session_state.pop(qid_str, None)
-
             desc_key = f"{qid_str}_desc"
             if "description" in normalized:
                 st.session_state[desc_key] = normalized["description"]
             else:
                 st.session_state.pop(desc_key, None)
 
-        # 1b) Store per-show answers if provided
+        # Store per-show answers
         normalized_store: Dict[str, Dict[str, dict]] = {}
         if isinstance(per_show_answers, dict):
             for show_key, show_entries in per_show_answers.items():
@@ -375,7 +359,7 @@ def _apply_pending_draft_if_any():
         else:
             st.session_state.pop("answers_by_show", None)
 
-        # 2) Apply meta to bound UI keys (as before)
+        # Apply meta to bound UI keys
         if "staff_name" in meta:
             st.session_state["staff_name"] = meta["staff_name"]
         if "role" in meta:
@@ -399,15 +383,12 @@ def _apply_pending_draft_if_any():
     except Exception as e:
         st.session_state["pending_draft_error"] = str(e)
     finally:
-        # Clear pending draft markers so it doesn't re-apply every run
         st.session_state.pop("pending_draft_bytes", None)
         st.session_state.pop("pending_draft_hash", None)
 
 
 def clear_form(all_questions_df: pd.DataFrame):
-    """
-    Clears answers for the current department's questions and resets draft flags.
-    """
+    """Clears answers for the current department's questions and resets draft flags."""
     keys_to_clear = []
     for _, row in all_questions_df.iterrows():
         qid = row["question_id"]
@@ -421,8 +402,7 @@ def clear_form(all_questions_df: pd.DataFrame):
         st.session_state.pop(k, None)
 
     st.session_state.pop("answers_by_show", None)
-    st.session_state.pop("prev_show_key", None)
-    st.session_state.pop("prev_question_ids", None)
+    st.session_state.pop("active_show_key", None)
 
     st.session_state.pop("draft_applied", None)
     st.session_state.pop("draft_hash", None)
@@ -436,13 +416,11 @@ def _normalise_answers_for_export(answers: Dict[str, dict]) -> Dict[str, dict]:
         normalised = _normalise_show_entry(entry)
         if not normalised:
             continue
-
         payload: Dict[str, object] = {}
         if "primary" in normalised:
             payload["primary"] = normalised["primary"]
         if "description" in normalised and normalised["description"] not in (None, ""):
             payload["description"] = normalised["description"]
-
         export[qid] = payload
     return export
 
@@ -458,16 +436,15 @@ def build_draft_from_state(
     """
     question_ids = list(dict.fromkeys(question_ids or []))
 
+    # Always ensure current show's latest widget values are saved before export
     if current_show_key:
         save_answers_for_show(current_show_key, question_ids)
 
     answers_by_show = st.session_state.get("answers_by_show", {}) or {}
 
-    if current_show_key and current_show_key in answers_by_show:
-        current_answers = answers_by_show[current_show_key]
-    else:
+    current_answers = answers_by_show.get(current_show_key, {}) if current_show_key else {}
+    if not current_answers:
         # Fallback: gather directly from session_state
-        current_answers = {}
         for qid in question_ids:
             entry = _extract_state_entry(qid)
             if entry:
@@ -489,26 +466,14 @@ def build_draft_from_state(
 
 CUSTOM_CSS = """
 <style>
-/* Global base size a bit smaller */
-html, body, [class*="stMarkdown"] {
-    font-size: 1.0rem;
-}
-
-/* Title / headings slightly reduced */
+html, body, [class*="stMarkdown"] { font-size: 1.0rem; }
 h1 { font-size: 1.6rem !important; }
 h2 { font-size: 1.3rem !important; }
 h3 { font-size: 1.05rem !important; }
-
-/* Form labels and widget text */
 label, .stTextInput, .stNumberInput, .stSelectbox, .stRadio, .stDateInput, .stTextArea {
     font-size: 0.85rem !important;
 }
-
-/* Make cards feel a bit “tighter” */
-.block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 2rem;
-}
+.block-container { padding-top: 1.5rem; padding-bottom: 2rem; }
 </style>
 """
 
@@ -520,9 +485,10 @@ def main():
     if "draft_applied" not in st.session_state:
         st.session_state["draft_applied"] = False
 
+    # Apply any queued draft BEFORE widgets are created
     _apply_pending_draft_if_any()
 
-    # Smaller fonts + tighter layout
+    # Styles
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
     # Sidebar: Draft controls
@@ -591,7 +557,7 @@ def main():
     questions_all_df = load_questions(DEPARTMENT_FILES[dept_label])
     all_question_ids = questions_all_df["question_id"].astype(str).tolist()
 
-    # Scope filters
+    # Scope filters (production list from productions.csv)
     st.subheader("Scope of this report")
 
     pillars = ["All"] + sorted(questions_all_df["strategic_pillar"].dropna().unique().tolist())
@@ -606,22 +572,26 @@ def main():
     sel_pillar = st.selectbox("Strategic pillar (optional filter)", pillars, key="filter_pillar")
     sel_prod = st.selectbox("Production / area (optional filter)", prod_options, key="filter_production")
 
-    # Filter questions for display
+    # Determine current show key and LOAD once when the active show changes
+    current_show = get_current_show()
+    current_show_key = _build_show_key(dept_label, current_show)
+    if st.session_state.get("active_show_key") != current_show_key:
+        # Load any saved values for this show before rendering widgets
+        load_answers_for_show(current_show_key, all_question_ids)
+        st.session_state["active_show_key"] = current_show_key
+
+    # Filter questions for display (most rows in your CSV have production=ALL, so this typically shows all)
     filtered = questions_all_df.copy()
     if sel_pillar != "All":
         filtered = filtered[filtered["strategic_pillar"] == sel_pillar]
-    if (
-        sel_prod != "All"
-        and "production" in filtered.columns
-        and sel_prod in filtered["production"].unique()
-    ):
+    if sel_prod != "All" and "production" in filtered.columns and sel_prod in filtered["production"].unique():
         filtered = filtered[filtered["production"] == sel_prod]
 
     if filtered.empty:
         st.warning("No questions found for this combination. Try changing the filters.")
         return
 
-    # Debug
+    # Debug panel
     with st.expander("Debug: visible answers status"):
         set_count = 0
         missing_ids = []
@@ -636,38 +606,21 @@ def main():
             st.caption("IDs with no value yet (may be untouched or filtered previously):")
             st.code(", ".join(missing_ids), language="text")
 
-    # Per-show answer management (must run after filters)
-    current_show = get_current_show()
-    current_show_key = _build_show_key(dept_label, current_show)
-    prev_show_key = st.session_state.get("prev_show_key")
-    prev_question_ids = st.session_state.get("prev_question_ids", [])
-
-    if prev_show_key is None:
-        # First load: hydrate if we already have something stored for this show
-        load_answers_for_show(current_show_key, all_question_ids)
-    else:
-        if current_show_key != prev_show_key:
-            # Save old show's answers and load new show's answers
-            save_answers_for_show(prev_show_key, prev_question_ids)
-            load_answers_for_show(current_show_key, all_question_ids)
-
-    st.session_state["prev_show_key"] = current_show_key
-    st.session_state["prev_question_ids"] = all_question_ids
-
-    # Form section (narrow column + blank gutter)
+    # Render form (tabs per pillar)
     st.markdown("### Scorecard Questions")
-
     tab_pillars = filtered["strategic_pillar"].dropna().unique().tolist()
     tabs = st.tabs(tab_pillars)
 
     responses: Dict[str, dict] = {}
-
     for tab, p in zip(tabs, tab_pillars):
         with tab:
-            left_col, _ = st.columns([0.65, 0.35])  # narrow question column + blank gutter
+            left_col, _ = st.columns([0.65, 0.35])
             with left_col:
                 block = filtered[filtered["strategic_pillar"] == p]
                 responses.update(build_form_for_questions(block))
+
+    # IMPORTANT: Save current show's answers on every run AFTER rendering widgets
+    save_answers_for_show(current_show_key, all_question_ids)
 
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
@@ -683,7 +636,7 @@ def main():
     if meta["production"] == "All":
         meta["production"] = ""
 
-    # Save progress (downloads ALL department questions for the current show)
+    # Save progress (download JSON) — includes per-show store
     draft_dict = build_draft_from_state(
         questions_all_df,
         meta,
@@ -695,13 +648,13 @@ def main():
         data=json.dumps(draft_dict, indent=2),
         file_name=f"scorecard_draft_{meta['department'].replace(' ', '_')}_{month_str}.json",
         mime="application/json",
-        help="Downloads a snapshot of your current answers. Re-upload later to continue.",
+        help="Downloads a snapshot of your current answers (this and other productions). Re-upload later to continue.",
     )
 
     if not submitted:
         return
 
-    # Validation & AI
+    # Validation (visible questions only)
     missing_required = []
     for _, row in filtered.iterrows():
         if bool(row.get("required", False)):
@@ -719,15 +672,13 @@ def main():
                 st.write("• ", q)
         return
 
+    # AI call
     try:
         with st.spinner("Asking AI to interpret this scorecard..."):
             ai_result = interpret_scorecard(meta, filtered, responses)
     except RuntimeError as e:
         st.error(f"AI configuration error: {e}")
-        st.info(
-            "Check your OPENAI_API_KEY secret and that `openai>=1.51.0` "
-            "(or newer) is in requirements.txt."
-        )
+        st.info("Check your OPENAI_API_KEY secret and that `openai>=1.51.0` (or newer) is in requirements.txt.")
         st.stop()
     except Exception as e:
         st.error(f"Failed to generate AI summary: {e}")
@@ -737,7 +688,6 @@ def main():
 
     # AI Interpretation
     st.subheader("AI Interpretation")
-
     st.markdown("#### Overall Summary")
     st.write(ai_result.get("overall_summary", ""))
 
@@ -782,4 +732,3 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
