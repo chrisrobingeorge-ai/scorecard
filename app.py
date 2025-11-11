@@ -170,19 +170,26 @@ def main():
     # Optional filters for pillar / production
     st.subheader("Scope of this report")
 
-    # Pillar filter (same as before)
+    # Pillar filter (from questions CSV)
     pillars = ["All"] + sorted(
         questions_df["strategic_pillar"].dropna().unique().tolist()
     )
     sel_pillar = st.selectbox("Strategic pillar (optional filter)", pillars)
 
-    # Production filter now comes from productions.csv
-    productions_df = load_productions()  # <-- make sure this function exists above
+    # Production filter (from productions.csv)
+    productions_df = load_productions()
+
+    # normalise department strings for matching
+    dept_series = productions_df["department"].astype(str).str.strip().str.lower()
+    current_dept = (dept_label or "").strip().lower()
 
     dept_prods = productions_df[
-        (productions_df["department"] == dept_label)
-        & (productions_df["active"])
+        (dept_series == current_dept) & (productions_df["active"])
     ]
+
+    # Fallback: if nothing matched this department, just use all active productions
+    if dept_prods.empty:
+        dept_prods = productions_df[productions_df["active"]]
 
     prod_options = ["All"] + sorted(
         dept_prods["production_name"].dropna().unique().tolist()
@@ -198,14 +205,8 @@ def main():
     if sel_pillar != "All":
         filtered = filtered[filtered["strategic_pillar"] == sel_pillar]
 
-    # Only filter by production if your questions CSV actually uses it
     if sel_prod != "All" and "production" in filtered.columns:
         filtered = filtered[filtered["production"] == sel_prod]
-
-    if filtered.empty:
-        st.warning("No questions found for this combination. Try changing the filters.")
-        return
-
 
     if filtered.empty:
         st.warning("No questions found for this combination. Try changing the filters.")
