@@ -183,20 +183,9 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
                 else:
                     entry["primary"] = st.text_area(label_display, key=qid, height=60)
 
-                # Description control for certain types
-                show_desc = rtype in ("yes_no", "scale_1_5", "number", "select", "dropdown")
-                if show_desc:
-                    metric = str(row.get("metric", "") or "").strip()
-                    desc_label = (metric + " – description / notes") if metric else "Description / notes"
-                    entry["description"] = st.text_area(
-                        desc_label, key=f"{qid}_desc", height=60
-                    )
-
                 responses[qid] = entry
 
-
     return responses
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
