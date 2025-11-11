@@ -20,7 +20,7 @@ from pdf_utils import build_scorecard_pdf
 # ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Monthly Scorecard", layout="wide")
 
-GENERAL_PROD_LABEL = "General (school-wide / all works)"
+GENERAL_PROD_LABEL = "General"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
