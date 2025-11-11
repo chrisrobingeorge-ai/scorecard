@@ -1,8 +1,11 @@
 # app.py
 
+from __future__ import annotations
+
 import hashlib
 import json
 from datetime import date
+from typing import Dict, Tuple
 
 import pandas as pd
 import streamlit as st
@@ -11,16 +14,15 @@ from config import DEPARTMENT_FILES, YES_NO_OPTIONS
 from ai_utils import interpret_scorecard
 from pdf_utils import build_scorecard_pdf
 
-
-# -------------------------------------------------
-# MUST be the first Streamlit call in the script
-# -------------------------------------------------
+# ---------------------------------------------------------------------
+# Streamlit config MUST be the first Streamlit call
+# ---------------------------------------------------------------------
 st.set_page_config(page_title="Monthly Scorecard", layout="wide")
 
 
-# -------------------------------------------------
-# Utility: safe rerun for 1.51.0 and earlier
-# -------------------------------------------------
+# ---------------------------------------------------------------------
+# Utilities
+# ---------------------------------------------------------------------
 def safe_rerun():
     """Call st.rerun() if available, else fall back to st.experimental_rerun()."""
     if hasattr(st, "rerun"):
@@ -29,19 +31,31 @@ def safe_rerun():
         st.experimental_rerun()
 
 
-# -------------------------------------------------
-# Data loading helpers (cached)
-# -------------------------------------------------
+def _hash_bytes(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
+
+
+def _ensure_col(df: pd.DataFrame, col: str, default=""):
+    """Ensure a column exists and fill NA."""
+    if col not in df.columns:
+        df[col] = default
+    df[col] = df[col].fillna(default)
+
+
+# ---------------------------------------------------------------------
+# Data loading (cached)
+# ---------------------------------------------------------------------
 @st.cache_data
-def load_questions(file_path) -> pd.DataFrame:
+def load_questions(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path)
 
-    # NORMALIZE IDs TO STRINGS (important for drafts)
+    # Normalize ID
     if "question_id" in df.columns:
         df["question_id"] = df["question_id"].astype(str).str.strip()
     else:
         raise ValueError("questions CSV must contain a 'question_id' column")
 
+    # Normalize common columns
     if "required" in df.columns:
         df["required"] = df["required"].astype(str).str.upper().eq("TRUE")
     if "display_order" in df.columns:
@@ -50,25 +64,26 @@ def load_questions(file_path) -> pd.DataFrame:
     if "section" not in df.columns:
         df["section"] = df.get("strategic_pillar", "General")
 
-    df["section"] = df["section"].fillna("General")
-    df["strategic_pillar"] = df.get("strategic_pillar", "").fillna("")
-    df["production"] = df.get("production", "").fillna("")
-    df["metric"] = df.get("metric", "").fillna("")
-    df["question_text"] = df.get("question_text", "").fillna("")
-    df["response_type"] = df.get("response_type", "").fillna("text")
-    df["options"] = df.get("options", "").fillna("")
+    for c in ("section", "strategic_pillar", "production", "metric",
+              "question_text", "response_type", "options"):
+        _ensure_col(df, c, "")
+
+    # Defaults for grouping/rendering
+    df["section"] = df["section"].replace("", "General")
+    df["response_type"] = df["response_type"].replace("", "text")
+
     return df
 
 
 @st.cache_data
 def load_productions() -> pd.DataFrame:
     """
-    Load list of productions from data/productions.csv
+    data/productions.csv
     Expected columns: department, production_name, active (TRUE/FALSE)
     """
     df = pd.read_csv("data/productions.csv")
-    df["department"] = df["department"].fillna("")
-    df["production_name"] = df["production_name"].fillna("")
+    _ensure_col(df, "department", "")
+    _ensure_col(df, "production_name", "")
     if "active" in df.columns:
         df["active"] = df["active"].astype(str).str.upper().eq("TRUE")
     else:
@@ -76,22 +91,19 @@ def load_productions() -> pd.DataFrame:
     return df
 
 
-# -------------------------------------------------
-# Form building
-# -------------------------------------------------
-def build_form_for_questions(df: pd.DataFrame) -> dict:
+# ---------------------------------------------------------------------
+# Form rendering
+# ---------------------------------------------------------------------
+def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
     """
-    Render widgets for each question, grouped by pillar + production,
-    with a main answer plus a description field.
-
-    Initial values come from st.session_state (including loaded drafts).
-    Returns a dict of {qid: {"primary": ..., "description": ...}}
+    Render widgets for each question, grouped by pillar + production.
+    Uses st.session_state for initial values. Returns {qid: {primary, description}}.
     """
-    responses: dict = {}
+    responses: Dict[str, dict] = {}
 
     df = df.copy()
-    df["strategic_pillar"] = df["strategic_pillar"].fillna("General")
-    df["production"] = df["production"].fillna("All works")
+    df["strategic_pillar"] = df["strategic_pillar"].replace("", "General")
+    df["production"] = df["production"].replace("", "All works")
     df["metric"] = df["metric"].fillna("")
     df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
 
@@ -106,7 +118,7 @@ def build_form_for_questions(df: pd.DataFrame) -> dict:
         for production in pillar_block["production"].unique():
             prod_block = pillar_block[pillar_block["production"] == production]
 
-            # Sub-heading for specific productions
+            # Sub-heading for specific productions only
             if production and str(production).strip().lower() not in (
                 "school-wide",
                 "corporate-wide",
@@ -120,23 +132,16 @@ def build_form_for_questions(df: pd.DataFrame) -> dict:
                 with col:
                     qid = row["question_id"]  # ALWAYS STRING
 
-                    # Label
-                    raw_label = row.get("question_text", "")
-                    try:
-                        is_na = pd.isna(raw_label)
-                    except TypeError:
-                        is_na = False
-
-                    if is_na or str(raw_label).strip() == "":
+                    # Label resolution
+                    raw_label = str(row.get("question_text", "") or "").strip()
+                    if not raw_label:
                         metric = str(row.get("metric", "") or "").strip()
-                        fallback = metric or qid
-                        label = fallback
+                        label = metric or qid
                     else:
-                        label = str(raw_label).strip()
+                        label = raw_label
 
                     required = bool(row.get("required", False))
                     label_display = f"{label} *" if required else label
-                    label_display = str(label_display)
 
                     rtype = str(row.get("response_type", "")).strip().lower()
                     opts_raw = row.get("options", "")
@@ -149,33 +154,24 @@ def build_form_for_questions(df: pd.DataFrame) -> dict:
                     # Primary control by type
                     if rtype == "yes_no":
                         entry["primary"] = st.radio(
-                            label_display,
-                            YES_NO_OPTIONS,
-                            horizontal=True,
-                            key=qid,
+                            label_display, YES_NO_OPTIONS, horizontal=True, key=qid
                         )
                     elif rtype == "scale_1_5":
-                        entry["primary"] = int(
-                            st.slider(label_display, 1, 5, 3, key=qid)
-                        )
+                        entry["primary"] = int(st.slider(label_display, 1, 5, 3, key=qid))
                     elif rtype == "number":
-                        entry["primary"] = st.number_input(
-                            label_display, value=0.0, step=1.0, key=qid
-                        )
+                        entry["primary"] = st.number_input(label_display, value=0.0, step=1.0, key=qid)
                     elif rtype == "select" and options:
                         entry["primary"] = st.selectbox(label_display, options, key=qid)
                     else:
                         entry["primary"] = st.text_area(label_display, key=qid, height=60)
 
-                    # Description / context textbox for certain types
+                    # Description control for certain types
                     show_desc = rtype in ("yes_no", "scale_1_5", "number", "select")
                     if show_desc:
                         metric = str(row.get("metric", "") or "").strip()
                         desc_label = (metric + " – description / notes") if metric else "Description / notes"
                         entry["description"] = st.text_area(
-                            str(desc_label),
-                            key=f"{qid}_desc",
-                            height=60,
+                            desc_label, key=f"{qid}_desc", height=60
                         )
 
                     responses[qid] = entry
@@ -183,35 +179,10 @@ def build_form_for_questions(df: pd.DataFrame) -> dict:
     return responses
 
 
-# -------------------------------------------------
+# ---------------------------------------------------------------------
 # Draft helpers
-# -------------------------------------------------
-def build_draft_from_state(all_questions_df: pd.DataFrame, meta: dict) -> dict:
-    """
-    Build a draft by scanning session_state for ALL questions in the department,
-    not just the filtered subset (prevents 'partial save' confusion).
-    """
-    draft = {"meta": meta, "answers": {}}
-
-    for _, row in all_questions_df.iterrows():
-        qid = row["question_id"]  # STRING
-        primary = st.session_state.get(qid, None)
-        desc = st.session_state.get(f"{qid}_desc", None)
-
-        if primary is not None or (desc not in (None, "")):
-            draft["answers"][qid] = {
-                "primary": primary,
-                "description": desc,
-            }
-
-    return draft
-
-
-def _hash_bytes(b: bytes) -> str:
-    return hashlib.sha256(b).hexdigest()
-
-
-def apply_draft_bytes(draft_bytes: bytes) -> tuple[bool, str]:
+# ---------------------------------------------------------------------
+def apply_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
     """
     Apply a draft (bytes). Returns (applied, message).
     Applies even if a different draft was already applied in this session.
@@ -226,15 +197,40 @@ def apply_draft_bytes(draft_bytes: bytes) -> tuple[bool, str]:
 
         data = json.loads(content)
         answers = data.get("answers", {}) or {}
+        meta = data.get("meta", {}) or {}
 
-        # Populate session_state with the draft values
+        # 1) Apply answers into session_state
         for qid_str, entry in answers.items():
             st.session_state[qid_str] = entry.get("primary", None)
             st.session_state[f"{qid_str}_desc"] = entry.get("description", None)
 
+        # 2) Apply meta to bound UI keys so widgets reflect the draft immediately
+        if "staff_name" in meta:
+            st.session_state["staff_name"] = meta["staff_name"]
+        if "role" in meta:
+            st.session_state["role"] = meta["role"]
+
+        if "month" in meta and isinstance(meta["month"], str):
+            # "YYYY-MM" -> set to first of that month
+            try:
+                y, m = meta["month"].split("-")
+                st.session_state["report_month_date"] = date(int(y), int(m), 1)
+            except Exception:
+                pass
+
+        if "department" in meta and meta["department"] in DEPARTMENT_FILES:
+            st.session_state["dept_label"] = meta["department"]
+
+        # Filters
+        if "filter_pillar" in meta:
+            st.session_state["filter_pillar"] = meta["filter_pillar"]
+        st.session_state["filter_production"] = meta.get("production") or "All"
+
+        # Book-keeping
         st.session_state["loaded_draft"] = data
         st.session_state["draft_hash"] = h
         st.session_state["draft_applied"] = True
+
         return True, "Draft loaded and applied to the form."
 
     except Exception as e:
@@ -243,7 +239,7 @@ def apply_draft_bytes(draft_bytes: bytes) -> tuple[bool, str]:
 
 def clear_form(all_questions_df: pd.DataFrame):
     """
-    Clears form answers from session_state for the current department's questions.
+    Clears answers for the current department's questions and resets draft flags.
     """
     keys_to_clear = []
     for _, row in all_questions_df.iterrows():
@@ -252,19 +248,40 @@ def clear_form(all_questions_df: pd.DataFrame):
     for k in keys_to_clear:
         if k in st.session_state:
             del st.session_state[k]
-    # Keep meta/draft meta but clear applied flag so a new upload will set fields again
+
+    # Clear meta-bound keys (leave department so user doesn't lose context)
+    for k in ("staff_name", "role", "report_month_date",
+              "filter_pillar", "filter_production"):
+        st.session_state.pop(k, None)
+
     st.session_state.pop("draft_applied", None)
     st.session_state.pop("draft_hash", None)
+    st.session_state.pop("loaded_draft", None)
 
 
-# -------------------------------------------------
-# App
-# -------------------------------------------------
+def build_draft_from_state(all_questions_df: pd.DataFrame, meta: dict) -> dict:
+    """
+    Build a draft by scanning session_state for ALL questions in the department.
+    """
+    draft = {"meta": meta, "answers": {}}
+    for _, row in all_questions_df.iterrows():
+        qid = row["question_id"]  # STRING
+        primary = st.session_state.get(qid, None)
+        desc = st.session_state.get(f"{qid}_desc", None)
+        if primary is not None or (desc not in (None, "")):
+            draft["answers"][qid] = {"primary": primary, "description": desc}
+    return draft
+
+
+# ---------------------------------------------------------------------
+# Main App
+# ---------------------------------------------------------------------
 def main():
     st.title("Monthly Scorecard with AI Summary")
     st.caption(
-        ":information_source: On Streamlit Community Cloud, the server file system is **not persistent**. "
-        "To keep your progress, **download** a draft and **re-upload** it later."
+        ":information_source: On Streamlit Community Cloud, the server file system is "
+        "**not persistent**. To keep your progress, **download** a draft and "
+        "**re-upload** it later."
     )
     st.sidebar.info(f"Streamlit version: {st.__version__}")
 
@@ -272,43 +289,41 @@ def main():
     if "draft_applied" not in st.session_state:
         st.session_state["draft_applied"] = False
 
-    # Basic identity + month
-    staff_name = st.text_input("Your name")
-    role = st.text_input("Your role / department title")
+    # ------------- Identity & Date (BOUND TO SESSION STATE) -------------
+    staff_name = st.text_input("Your name", key="staff_name")
+    role = st.text_input("Your role / department title", key="role")
+    month_date = st.date_input("Reporting month", value=date.today(), key="report_month_date")
+    month_str = (st.session_state.get("report_month_date") or date.today()).strftime("%Y-%m")
 
-    month_date = st.date_input("Reporting month", value=date.today())
-    month_str = month_date.strftime("%Y-%m")
-
-    # Department selection
+    # ------------------------ Department (BOUND) ------------------------
     dept_label = st.selectbox(
         "Which area are you reporting on?",
         list(DEPARTMENT_FILES.keys()),
+        key="dept_label",
     )
-    # Load all questions for this department (for both form and full-save semantics)
+
+    # Load all questions for this department
     questions_all_df = load_questions(DEPARTMENT_FILES[dept_label])
 
-    # Scope filters
+    # ----------------------------- Filters ------------------------------
     st.subheader("Scope of this report")
 
     pillars = ["All"] + sorted(questions_all_df["strategic_pillar"].dropna().unique().tolist())
-    sel_pillar = st.selectbox("Strategic pillar (optional filter)", pillars)
-
     productions_df = load_productions()
     dept_series = productions_df["department"].astype(str).str.strip().str.lower()
     current_dept = (dept_label or "").strip().lower()
-
     dept_prods = productions_df[(dept_series == current_dept) & (productions_df["active"])]
     if dept_prods.empty:
         dept_prods = productions_df[productions_df["active"]]
-
     prod_options = ["All"] + sorted(dept_prods["production_name"].dropna().unique().tolist())
-    sel_prod = st.selectbox("Production / area (optional filter)", prod_options)
+
+    sel_pillar = st.selectbox("Strategic pillar (optional filter)", pillars, key="filter_pillar")
+    sel_prod = st.selectbox("Production / area (optional filter)", prod_options, key="filter_production")
 
     # Filter questions for display
     filtered = questions_all_df.copy()
     if sel_pillar != "All":
         filtered = filtered[filtered["strategic_pillar"] == sel_pillar]
-
     if (
         sel_prod != "All"
         and "production" in filtered.columns
@@ -320,10 +335,10 @@ def main():
         st.warning("No questions found for this combination. Try changing the filters.")
         return
 
-    # -------- DRAFT CONTROLS (SIDEBAR) --------
+    # -------------------------- Draft controls --------------------------
     st.sidebar.subheader("Drafts")
 
-    # File uploader loader
+    # File uploader
     draft_file = st.sidebar.file_uploader(
         "Load saved draft (JSON)",
         type="json",
@@ -335,7 +350,6 @@ def main():
             st.sidebar.success(msg)
             safe_rerun()
         else:
-            # If not applied because it's the same hash, just info; otherwise show error
             if "already applied" in msg:
                 st.sidebar.info(msg)
             else:
@@ -356,7 +370,13 @@ def main():
                     else:
                         st.error(msg)
 
-    # Clear form button
+    # Force re-apply helper (useful in testing same file repeatedly)
+    with st.sidebar.expander("Draft helpers"):
+        if st.button("Force re-apply last draft"):
+            st.session_state.pop("draft_hash", None)
+            st.sidebar.success("You can now re-upload the same draft to apply it again.")
+
+    # Clear form
     if st.sidebar.button("Clear current answers"):
         clear_form(questions_all_df)
         st.sidebar.success("Form cleared.")
@@ -369,32 +389,30 @@ def main():
         st.sidebar.json(draft.get("meta", {}))
         st.sidebar.write("Loaded answers:", len(draft.get("answers", {})))
 
-    # ------------------------------------------
-
+    # --------------------------- Form section ---------------------------
     st.markdown("### Scorecard Questions")
-
-    # Build the form widgets. Their initial values will come from st.session_state
-    # if a draft was applied in a previous rerun.
     with st.form("scorecard_form"):
         responses = build_form_for_questions(filtered)
         submitted = st.form_submit_button("Generate AI Summary & PDF")
 
-    # Meta used for drafts + AI
+    # Meta (built from bound keys)
     meta = {
-        "staff_name": staff_name or "Unknown",
-        "role": role or "",
-        "department": dept_label,
+        "staff_name": st.session_state.get("staff_name") or "Unknown",
+        "role": st.session_state.get("role") or "",
+        "department": st.session_state.get("dept_label"),
         "month": month_str,
-        "production": sel_prod if sel_prod != "All" else "",
-        "filter_pillar": sel_pillar,
+        "production": (st.session_state.get("filter_production") or ""),
+        "filter_pillar": st.session_state.get("filter_pillar", "All"),
     }
+    if meta["production"] == "All":
+        meta["production"] = ""
 
-    # Save progress (draft download) – captures ALL questions for the department
+    # Save progress (downloads ALL department questions)
     draft_dict = build_draft_from_state(questions_all_df, meta)
     st.sidebar.download_button(
         "💾 Save progress (download JSON)",
         data=json.dumps(draft_dict, indent=2),
-        file_name=f"scorecard_draft_{dept_label.replace(' ', '_')}_{month_str}.json",
+        file_name=f"scorecard_draft_{meta['department'].replace(' ', '_')}_{month_str}.json",
         mime="application/json",
         help="Downloads a snapshot of your current answers. Re-upload later to continue.",
     )
@@ -402,7 +420,7 @@ def main():
     if not submitted:
         return
 
-    # Basic validation (only for the visible/filtered questions)
+    # ------------------------ Validation & AI ---------------------------
     missing_required = []
     for _, row in filtered.iterrows():
         if bool(row.get("required", False)):
@@ -410,7 +428,6 @@ def main():
             val = responses.get(qid, None)
             primary_val = val.get("primary", None) if isinstance(val, dict) else val
             if primary_val in (None, "", []):
-                # Prefer question_text; otherwise show qid
                 qt = str(row.get("question_text") or "").strip()
                 missing_required.append(qt or qid)
 
@@ -421,13 +438,21 @@ def main():
                 st.write("• ", q)
         return
 
-    # AI call
-    with st.spinner("Asking AI to interpret this scorecard..."):
-        ai_result = interpret_scorecard(meta, filtered, responses)
+    # AI call (with graceful error if key/SDK not configured)
+    try:
+        with st.spinner("Asking AI to interpret this scorecard..."):
+            ai_result = interpret_scorecard(meta, filtered, responses)
+    except RuntimeError as e:
+        st.error(f"AI configuration error: {e}")
+        st.info("Check your OPENAI_API_KEY secret and that `openai>=1.51.0` is in requirements.txt.")
+        st.stop()
+    except Exception as e:
+        st.error(f"Failed to generate AI summary: {e}")
+        st.stop()
 
     st.success("AI summary generated.")
 
-    # Display AI result
+    # --------------------------- Output UI -----------------------------
     st.subheader("AI Interpretation")
 
     st.markdown("#### Overall Summary")
@@ -459,15 +484,18 @@ def main():
         st.markdown("#### Notes for Leadership")
         st.write(nfl)
 
-    # Build PDF
-    pdf_bytes = build_scorecard_pdf(meta, filtered, responses, ai_result)
-
-    st.download_button(
-        label="Download PDF report",
-        data=pdf_bytes,
-        file_name=f"scorecard_{dept_label.replace(' ', '_')}_{month_str}.pdf",
-        mime="application/pdf",
-    )
+    # PDF
+    try:
+        pdf_bytes = build_scorecard_pdf(meta, filtered, responses, ai_result)
+        st.download_button(
+            label="Download PDF report",
+            data=pdf_bytes,
+            file_name=f"scorecard_{meta['department'].replace(' ', '_')}_{month_str}.pdf",
+            mime="application/pdf",
+        )
+    except Exception as e:
+        st.warning(f"PDF export failed: {e}")
+        st.info("If this persists, check pdf_utils.py dependencies (reportlab or fpdf2).")
 
 
 if __name__ == "__main__":
