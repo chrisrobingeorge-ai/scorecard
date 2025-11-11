@@ -120,12 +120,15 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
             prod_block = pillar_block[pillar_block["production"] == production]
 
             # Sub-heading for specific productions only
-            if production and str(production).strip().lower() not in (
+            prod_label = str(production).strip()
+            if prod_label and prod_label.lower() not in (
                 "school-wide",
                 "corporate-wide",
                 "all works",
+                "all",          # ← added
             ):
-                st.markdown(f"**{production}**")
+                st.markdown(f"**{prod_label}**")
+
 
             # ONE column: each question full width (inside whatever column we call this in)
             for _, row in prod_block.iterrows():
