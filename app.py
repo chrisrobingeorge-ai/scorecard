@@ -473,6 +473,8 @@ def main():
     tabs = st.tabs(tab_pillars)
     
     responses: Dict[str, dict] = {}
+    
+    # This is the show you pick in "Production / area (optional filter)"
     current_show = st.session_state.get("filter_production", "")
     
     for tab, p in zip(tabs, tab_pillars):
@@ -483,7 +485,6 @@ def main():
                 responses.update(build_form_for_questions(block, key_prefix=current_show))
     
     submitted = st.button("Generate AI Summary & PDF", type="primary")
-
 
     # Meta (built from bound keys)
     meta = {
