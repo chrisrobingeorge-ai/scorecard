@@ -362,8 +362,21 @@ def main():
             safe_rerun()
         else:
             st.sidebar.info(msg)
+    with st.sidebar.expander("Paste draft JSON"):
+        txt = st.text_area("Paste JSON here", height=120, key="paste_json")
+        if st.button("Load pasted draft"):
+            if txt.strip():
+                queued, msg = queue_draft_bytes(txt.encode("utf-8"))
+                if queued:
+                    st.success(msg)
+                    safe_rerun()
+                else:
+                    st.info(msg)
 
-    # Optional advanced draft helpers (paste JSON / force reapply) were removed to simplify the UI.
+    with st.sidebar.expander("Draft helpers"):
+        if st.button("Force re-apply last draft"):
+            st.session_state.pop("draft_hash", None)
+            st.sidebar.success("You can now re-upload the same draft to apply it again.")
     
     # Show any pending draft error from last cycle
     if "pending_draft_error" in st.session_state:
