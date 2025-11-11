@@ -387,6 +387,7 @@ def main():
             safe_rerun()
         else:
             st.sidebar.info(msg)
+
     with st.sidebar.expander("Paste draft JSON"):
         txt = st.text_area("Paste JSON here", height=120, key="paste_json")
         if st.button("Load pasted draft"):
@@ -402,7 +403,7 @@ def main():
         if st.button("Force re-apply last draft"):
             st.session_state.pop("draft_hash", None)
             st.sidebar.success("You can now re-upload the same draft to apply it again.")
-    
+
     # Show any pending draft error from last cycle
     if "pending_draft_error" in st.session_state:
         st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
@@ -417,11 +418,9 @@ def main():
     st.sidebar.info(f"Streamlit version: {st.__version__}")
 
     # --- Identity & Date (BOUND TO SESSION STATE) ---
-    # Name and role: only use key=... (no value=...), so they hydrate from session_state if a draft set them
     staff_name = st.text_input("Your name", key="staff_name")
     role = st.text_input("Your role / department title", key="role")
 
-    # Date: avoid passing value= when the key already exists (draft loader may have set it)
     from datetime import date as _date
     if "report_month_date" in st.session_state:
         month_date = st.date_input("Reporting month", key="report_month_date")
@@ -453,7 +452,6 @@ def main():
         dept_prods = productions_df[productions_df["active"]]
     prod_options = ["All"] + sorted(dept_prods["production_name"].dropna().unique().tolist())
 
-    # Filters (already bound to session_state via key=...)
     sel_pillar = st.selectbox("Strategic pillar (optional filter)", pillars, key="filter_pillar")
     sel_prod = st.selectbox("Production / area (optional filter)", prod_options, key="filter_production")
 
@@ -487,66 +485,19 @@ def main():
             st.caption("IDs with no value yet (may be untouched or filtered previously):")
             st.code(", ".join(missing_ids), language="text")
 
-    # ----------------- Main body: questions (left) vs AI (right) -----------------
-    form_col, summary_col = st.columns([2.3, 1])
+    # --------------------------- Form section (single column) ---------------------------
+    st.markdown("### Scorecard Questions")
 
-    # Left: questions in tabs by strategic pillar
-    with form_col:
-        st.markdown("### Scorecard Questions")
+    tab_pillars = filtered["strategic_pillar"].dropna().unique().tolist()
+    tabs = st.tabs(tab_pillars)
 
-        tab_pillars = filtered["strategic_pillar"].dropna().unique().tolist()
-        tabs = st.tabs(tab_pillars)
+    responses: Dict[str, dict] = {}
+    for tab, p in zip(tabs, tab_pillars):
+        with tab:
+            block = filtered[filtered["strategic_pillar"] == p]
+            responses.update(build_form_for_questions(block))
 
-        responses = {}
-        for tab, p in zip(tabs, tab_pillars):
-            with tab:
-                block = filtered[filtered["strategic_pillar"] == p]
-                # build_form_for_questions already groups by pillar + production;
-                # giving it only this pillar keeps each tab focused.
-                responses.update(build_form_for_questions(block))
-
-        submitted = st.button("Generate AI Summary & PDF", type="primary")
-
-    # Right: AI interpretation panel (we'll fill it after AI runs)
-    with summary_col:
-        st.markdown("### AI Interpretation")
-        ai_overall_placeholder = st.empty()
-        ai_pillars_placeholder = st.empty()
-        ai_risks_placeholder = st.empty()
-        ai_priorities_placeholder = st.empty()
-        ai_notes_placeholder = st.empty()
-
-        # Show previous result (if any) so the panel isn't blank on reload
-        prev_ai = st.session_state.get("ai_result")
-        if prev_ai and not submitted:
-            ai_overall_placeholder.markdown("#### Overall Summary")
-            ai_overall_placeholder.write(prev_ai.get("overall_summary", ""))
-
-            pillar_summaries = prev_ai.get("pillar_summaries", []) or []
-            if pillar_summaries:
-                ai_pillars_placeholder.markdown("#### By Strategic Pillar")
-                for ps in pillar_summaries:
-                    st.markdown(
-                        f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
-                    )
-                    st.write(ps.get("summary", ""))
-
-            risks = prev_ai.get("risks", []) or []
-            if risks:
-                ai_risks_placeholder.markdown("#### Key Risks / Concerns")
-                for r in risks:
-                    st.write(f"- {r}")
-
-            priorities = prev_ai.get("priorities_next_month", []) or []
-            if priorities:
-                ai_priorities_placeholder.markdown("#### Priorities for Next Month")
-                for p in priorities:
-                    st.write(f"- {p}")
-
-            nfl = prev_ai.get("notes_for_leadership", "")
-            if nfl:
-                ai_notes_placeholder.markdown("#### Notes for Leadership")
-                ai_notes_placeholder.write(nfl)
+    submitted = st.button("Generate AI Summary & PDF", type="primary")
 
     # Meta (built from bound keys)
     meta = {
@@ -574,7 +525,22 @@ def main():
         return
 
     # ------------------------ Validation & AI ---------------------------
-    # (after the "if not submitted: return" and meta/draft logic)
+    missing_required = []
+    for _, row in filtered.iterrows():
+        if bool(row.get("required", False)):
+            qid = row["question_id"]
+            val = responses.get(qid, None)
+            primary_val = val.get("primary", None) if isinstance(val, dict) else val
+            if primary_val in (None, "", []):
+                qt = str(row.get("question_text") or "").strip()
+                missing_required.append(qt or qid)
+
+    if missing_required:
+        st.error("Please answer all required questions before generating the summary.")
+        with st.expander("Missing required questions"):
+            for q in missing_required:
+                st.write("• ", q)
+        return
 
     try:
         with st.spinner("Asking AI to interpret this scorecard..."):
@@ -591,15 +557,16 @@ def main():
         st.stop()
 
     st.success("AI summary generated.")
-    st.session_state["ai_result"] = ai_result  # so the right panel can reuse it
 
-    # Fill the right-hand placeholders we created above
-    ai_overall_placeholder.markdown("#### Overall Summary")
-    ai_overall_placeholder.write(ai_result.get("overall_summary", ""))
+    # --------------------------- AI Interpretation (full width) ---------------------------
+    st.subheader("AI Interpretation")
+
+    st.markdown("#### Overall Summary")
+    st.write(ai_result.get("overall_summary", ""))
 
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
     if pillar_summaries:
-        ai_pillars_placeholder.markdown("#### By Strategic Pillar")
+        st.markdown("#### By Strategic Pillar")
         for ps in pillar_summaries:
             st.markdown(
                 f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
@@ -608,21 +575,20 @@ def main():
 
     risks = ai_result.get("risks", []) or []
     if risks:
-        ai_risks_placeholder.markdown("#### Key Risks / Concerns")
+        st.markdown("#### Key Risks / Concerns")
         for r in risks:
             st.write(f"- {r}")
 
     priorities = ai_result.get("priorities_next_month", []) or []
     if priorities:
-        ai_priorities_placeholder.markdown("#### Priorities for Next Month")
+        st.markdown("#### Priorities for Next Month")
         for p in priorities:
             st.write(f"- {p}")
 
     nfl = ai_result.get("notes_for_leadership", "")
     if nfl:
-        ai_notes_placeholder.markdown("#### Notes for Leadership")
-        ai_notes_placeholder.write(nfl)
-
+        st.markdown("#### Notes for Leadership")
+        st.write(nfl)
 
     # PDF
     try:
@@ -636,6 +602,7 @@ def main():
     except Exception as e:
         st.warning(f"PDF export failed: {e}")
         st.info("If this persists, check pdf_utils.py dependencies (reportlab or fpdf2).")
+
 
 
 if __name__ == "__main__":
