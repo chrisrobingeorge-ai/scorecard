@@ -42,35 +42,46 @@ def _ensure_col(df: pd.DataFrame, col: str, default=""):
 
 
 def get_current_show() -> str:
-    """Use the Production / area filter as the current show key."""
+    """Use the Production / area filter as the current show name."""
     return st.session_state.get("filter_production", "All")
 
 
-def save_answers_for_show(show: str, questions_df: pd.DataFrame):
-    """Copy current widget values into a per-show store in session_state."""
-    if not show:
-        return
-    answers_by_show = st.session_state.get("answers_by_show", {})
-    show_answers = answers_by_show.get(show, {})
+def _build_show_key(department: str, show: str) -> str:
+    """Create a unique key for storing answers by department and show."""
+    dept_clean = (department or "").strip()
+    show_clean = (show or "").strip()
+    return f"{dept_clean}::{show_clean}"
 
-    for _, row in questions_df.iterrows():
-        qid = row["question_id"]
+
+def save_answers_for_show(show_key: str, question_ids):
+    """Copy current widget values into a per-show store in session_state."""
+    if not show_key:
+        return
+
+    question_ids = list(dict.fromkeys(question_ids or []))
+    answers_by_show = st.session_state.get("answers_by_show", {})
+    show_answers = dict(answers_by_show.get(show_key, {}))
+
+    for qid in question_ids:
         if qid in st.session_state:
             show_answers[qid] = st.session_state[qid]
+        elif qid in show_answers:
+            show_answers.pop(qid, None)
 
-    answers_by_show[show] = show_answers
+    answers_by_show[show_key] = show_answers
     st.session_state["answers_by_show"] = answers_by_show
 
 
-def load_answers_for_show(show: str, questions_df: pd.DataFrame):
+def load_answers_for_show(show_key: str, question_ids):
     """Hydrate widget values from the per-show store (if any)."""
-    if not show:
+    if not show_key:
         return
-    answers_by_show = st.session_state.get("answers_by_show", {})
-    show_answers = answers_by_show.get(show, {})
 
-    for _, row in questions_df.iterrows():
-        qid = row["question_id"]
+    question_ids = list(dict.fromkeys(question_ids or []))
+    answers_by_show = st.session_state.get("answers_by_show", {})
+    show_answers = answers_by_show.get(show_key, {})
+
+    for qid in question_ids:
         if qid in show_answers:
             st.session_state[qid] = show_answers[qid]
         else:
@@ -329,6 +340,10 @@ def clear_form(all_questions_df: pd.DataFrame):
               "filter_pillar", "filter_production"):
         st.session_state.pop(k, None)
 
+    st.session_state.pop("answers_by_show", None)
+    st.session_state.pop("prev_show_key", None)
+    st.session_state.pop("prev_question_ids", None)
+    
     st.session_state.pop("draft_applied", None)
     st.session_state.pop("draft_hash", None)
     st.session_state.pop("loaded_draft", None)
@@ -451,6 +466,7 @@ def main():
     )
 
     questions_all_df = load_questions(DEPARTMENT_FILES[dept_label])
+    all_question_ids = questions_all_df["question_id"].astype(str).tolist()
 
     # Scope filters
     st.subheader("Scope of this report")
@@ -499,18 +515,21 @@ def main():
 
     # Per-show answer management (must run after filters)
     current_show = get_current_show()
-    prev_show = st.session_state.get("prev_show")
+    current_show_key = _build_show_key(dept_label, current_show)
+    prev_show_key = st.session_state.get("prev_show_key")
+    prev_question_ids = st.session_state.get("prev_question_ids", [])
 
-    if prev_show is None:
+    if prev_show_key is None:
         # First load: hydrate if we already have something stored for this show
-        load_answers_for_show(current_show, questions_all_df)
-        st.session_state["prev_show"] = current_show
+        load_answers_for_show(current_show_key, all_question_ids)
     else:
-        if current_show != prev_show:
+        if current_show_key != prev_show_key:
             # Save old show's answers and load new show's answers
-            save_answers_for_show(prev_show, questions_all_df)
-            load_answers_for_show(current_show, questions_all_df)
-            st.session_state["prev_show"] = current_show
+            save_answers_for_show(prev_show_key, prev_question_ids)
+            load_answers_for_show(current_show_key, all_question_ids)
+
+    st.session_state["prev_show_key"] = current_show_key
+    st.session_state["prev_question_ids"] = all_question_ids
 
     # Form section (narrow column + blank gutter)
     st.markdown("### Scorecard Questions")
