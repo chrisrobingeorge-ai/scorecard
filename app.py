@@ -347,6 +347,14 @@ def main():
 
     draft = st.session_state.get("loaded_draft")
     initial_answers = draft.get("answers", {}) if draft else {}
+    
+    # DEBUG: show what we actually loaded
+    if draft:
+        st.sidebar.markdown("**Loaded draft meta**")
+        st.sidebar.json(draft.get("meta", {}))
+        st.sidebar.write("Loaded answers:", len(initial_answers))
+
+    
     # ------------------------------------------
 
     st.markdown("### Scorecard Questions")
