@@ -82,6 +82,11 @@ def _normalise_show_entry(entry):
         return None
     return {"primary": entry}
 
+def clear_question_widgets(question_ids):
+    """Remove all question widget keys from session_state."""
+    for qid in question_ids:
+        st.session_state.pop(qid, None)
+        st.session_state.pop(f"{qid}_desc", None)
 
 def save_answers_for_show(show_key: str, question_ids):
     """Copy current widget values into a per-show store in session_state."""
@@ -119,7 +124,12 @@ def load_answers_for_show(show_key: str, question_ids):
         else:
             st.session_state.pop(desc_key, None)
 
-
+def clear_question_widgets(question_ids):
+    """Remove all question widget keys from session_state."""
+    for qid in question_ids:
+        st.session_state.pop(qid, None)
+        st.session_state.pop(f"{qid}_desc", None)
+        
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -576,7 +586,8 @@ def main():
     current_show = get_current_show()
     current_show_key = _build_show_key(dept_label, current_show)
     if st.session_state.get("active_show_key") != current_show_key:
-        # Load any saved values for this show before rendering widgets
+        # Clear all question widgets before loading new answers
+        clear_question_widgets(all_question_ids)
         load_answers_for_show(current_show_key, all_question_ids)
         st.session_state["active_show_key"] = current_show_key
 
