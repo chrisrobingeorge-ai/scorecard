@@ -731,21 +731,6 @@ def main():
         st.warning("No questions found for this combination. Try changing the production.")
         return
 
-    # Debug panel (based on answers_df)
-    with st.expander("Debug: visible answers status"):
-        answers_df = get_answers_df()
-        mask = (
-            (answers_df["department"] == dept_label) &
-            (answers_df["production"] == current_production)
-        )
-        have = set(answers_df[mask]["question_id"].astype(str).tolist())
-        qids_visible = filtered["question_id"].astype(str).tolist()
-        set_count = sum(1 for qid in qids_visible if qid in have)
-        missing_ids = [qid for qid in qids_visible if qid not in have]
-        st.write(f"Answers set for visible questions: {set_count} / {len(qids_visible)}")
-        if missing_ids:
-            st.caption("IDs with no value yet for this production:")
-            st.code(", ".join(missing_ids), language="text")
 
     # Render form (tabs per pillar)
     st.markdown("### Scorecard Questions")
