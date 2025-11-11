@@ -16,7 +16,7 @@ from pdf_utils import build_scorecard_pdf
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Streamlit config MUST be the first Streamlit call
+# MUST be the first Streamlit call
 # ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Monthly Scorecard", layout="wide")
 
@@ -161,13 +161,13 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
                         entry["primary"] = int(st.slider(label_display, 1, 5, 3, key=qid))
                     elif rtype == "number":
                         entry["primary"] = st.number_input(label_display, value=0.0, step=1.0, key=qid)
-                    elif rtype == "select" and options:
+                    elif (rtype in ("select", "dropdown")) and options:
                         entry["primary"] = st.selectbox(label_display, options, key=qid)
                     else:
                         entry["primary"] = st.text_area(label_display, key=qid, height=60)
 
                     # Description control for certain types
-                    show_desc = rtype in ("yes_no", "scale_1_5", "number", "select")
+                    show_desc = rtype in ("yes_no", "scale_1_5", "number", "select", "dropdown")
                     if show_desc:
                         metric = str(row.get("metric", "") or "").strip()
                         desc_label = (metric + " – description / notes") if metric else "Description / notes"
@@ -348,19 +348,17 @@ def main():
     st.sidebar.info(f"Streamlit version: {st.__version__}")
 
     # --- Identity & Date (BOUND TO SESSION STATE) ---
-    
     # Name and role: only use key=... (no value=...), so they hydrate from session_state if a draft set them
     staff_name = st.text_input("Your name", key="staff_name")
     role = st.text_input("Your role / department title", key="role")
-    
+
     # Date: avoid passing value= when the key already exists (draft loader may have set it)
     from datetime import date as _date
-    
     if "report_month_date" in st.session_state:
         month_date = st.date_input("Reporting month", key="report_month_date")
     else:
         month_date = st.date_input("Reporting month", value=_date.today(), key="report_month_date")
-    
+
     # Derive YYYY-MM for downstream use
     month_str = (st.session_state.get("report_month_date") or _date.today()).strftime("%Y-%m")
 
@@ -410,6 +408,21 @@ def main():
         st.sidebar.markdown("**Loaded draft meta**")
         st.sidebar.json(draft.get("meta", {}))
         st.sidebar.write("Loaded answers:", len(draft.get("answers", {})))
+
+    # Debug: how many answers are currently set in session_state for visible questions?
+    with st.expander("Debug: visible answers status"):
+        set_count = 0
+        missing_ids = []
+        for _, row in filtered.iterrows():
+            qid = row["question_id"]
+            if qid in st.session_state or f"{qid}_desc" in st.session_state:
+                set_count += 1
+            else:
+                missing_ids.append(qid)
+        st.write(f"Answers set for visible questions: {set_count} / {len(filtered)}")
+        if missing_ids:
+            st.caption("IDs with no value yet (may be untouched or filtered previously):")
+            st.code(", ".join(missing_ids), language="text")
 
     # --------------------------- Form section ---------------------------
     st.markdown("### Scorecard Questions")
@@ -466,7 +479,7 @@ def main():
             ai_result = interpret_scorecard(meta, filtered, responses)
     except RuntimeError as e:
         st.error(f"AI configuration error: {e}")
-        st.info("Check your OPENAI_API_KEY secret and that `openai>=1.51.0` is in requirements.txt.")
+        st.info("Check your OPENAI_API_KEY secret and that `openai>=1.51.0` (or newer) is in requirements.txt.")
         st.stop()
     except Exception as e:
         st.error(f"Failed to generate AI summary: {e}")
