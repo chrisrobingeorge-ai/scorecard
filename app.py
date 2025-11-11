@@ -397,7 +397,7 @@ def _apply_pending_draft_if_any():
     except Exception as e:
         st.session_state["pending_draft_error"] = str(e)
     finally:
-@@ -327,62 +404,106 @@ def _apply_pending_draft_if_any():
+    @@ -327,62 +404,106 @@ def _apply_pending_draft_if_any():
 def clear_form(all_questions_df: pd.DataFrame):
     """
     Clears answers for the current department's questions and resets draft flags.
