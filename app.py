@@ -121,13 +121,30 @@ def build_form_for_questions(df: pd.DataFrame):
                             key=qid,
                         )
                     elif rtype == "scale_1_5":
+                        existing = st.session_state.get(qid, 3)
+                        try:
+                            default_val = int(existing)
+                        except (TypeError, ValueError):
+                            default_val = 3
+                    
                         entry["primary"] = int(
-                            st.slider(label_display, 1, 5, 3, key=qid)
+                            st.slider(label_display, 1, 5, default_val, key=qid)
                         )
                     elif rtype == "number":
+                        # If we already have a value in session_state (e.g. from a loaded draft),
+                        # use that as the default. Otherwise fall back to 0.0.
+                        existing = st.session_state.get(qid, 0.0)
+                        try:
+                            default_val = float(existing)
+                        except (TypeError, ValueError):
+                            default_val = 0.0
+                    
                         entry["primary"] = st.number_input(
-                            label_display, value=0.0, step=1.0, key=qid
-                        )
+                            label_display,
+                            value=default_val,
+                            step=1.0,
+                            key=qid,
+                       )
                     elif rtype == "select" and options:
                         entry["primary"] = st.selectbox(
                             label_display, options, key=qid
