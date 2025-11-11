@@ -226,20 +226,20 @@ def build_form_for_questions(
 
     pillars = df["strategic_pillar"].unique()
 
-        for _, row in pillar_block.iterrows():
-            qid = row["question_id"]  # ALWAYS STRING
+    for _, row in pillar_block.iterrows():
+        qid = row["question_id"]  # ALWAYS STRING
 
-            # NEW: conditional visibility
-            if not should_show_question(qid, dept_label, production):
-                continue
+        # NEW: conditional visibility
+        if not should_show_question(qid, dept_label, production):
+            continue
 
-            # Label resolution
-            raw_label = str(row.get("question_text", "") or "").strip()
-            if not raw_label:
-                metric = str(row.get("metric", "") or "").strip()
-                label = metric or qid
-            else:
-                label = raw_label
+        # Label resolution
+        raw_label = str(row.get("question_text", "") or "").strip()
+        if not raw_label:
+            metric = str(row.get("metric", "") or "").strip()
+            label = metric or qid
+        else:
+            label = raw_label
 
             required = bool(row.get("required", False))
             label_display = f"{label} *" if required else label
