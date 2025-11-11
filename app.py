@@ -722,7 +722,7 @@ def main():
         question_ids=all_question_ids,
     )
     st.sidebar.download_button(
-        "💾 Save progress (download JSON)",
+        "💾 Save progress (JSON)",
         data=json.dumps(draft_dict, indent=2),
         file_name=f"scorecard_draft_{meta['department'].replace(' ', '_')}_{month_str}.json",
         mime="application/json",
