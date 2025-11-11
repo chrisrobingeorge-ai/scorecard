@@ -205,7 +205,12 @@ def main():
     if sel_pillar != "All":
         filtered = filtered[filtered["strategic_pillar"] == sel_pillar]
 
-    if sel_prod != "All" and "production" in filtered.columns:
+    # Only filter by production if the questions CSV actually uses those names
+    if (
+        sel_prod != "All"
+        and "production" in filtered.columns
+        and sel_prod in filtered["production"].unique()
+    ):
         filtered = filtered[filtered["production"] == sel_prod]
 
     if filtered.empty:
