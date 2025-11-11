@@ -473,7 +473,7 @@ def main():
     tabs = st.tabs(tab_pillars)
     
     responses: Dict[str, dict] = {}
-    current_show = st.session_state.get("dept_label", "")  # e.g., "Nijinsky", "Romeo & Juliet"
+    current_show = st.session_state.get("filter_production", "")
     
     for tab, p in zip(tabs, tab_pillars):
         with tab:
