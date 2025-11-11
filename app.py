@@ -95,10 +95,10 @@ def load_productions() -> pd.DataFrame:
 # ─────────────────────────────────────────────────────────────────────────────
 # Form rendering
 # ─────────────────────────────────────────────────────────────────────────────
-def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
+def build_form_for_questions(df: pd.DataFrame, key_prefix: str = "") -> Dict[str, dict]:
     """
     Render widgets for each question, grouped by pillar + production.
-    Uses st.session_state for initial values. Returns {qid: {primary, description}}.
+    key_prefix lets us keep separate answers per show (e.g., 'Nutcracker::ATI01').
     """
     responses: Dict[str, dict] = {}
 
@@ -119,22 +119,21 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
         for production in pillar_block["production"].unique():
             prod_block = pillar_block[pillar_block["production"] == production]
 
-            # Sub-heading for specific productions only
             prod_label = str(production).strip()
             if prod_label and prod_label.lower() not in (
                 "school-wide",
                 "corporate-wide",
                 "all works",
-                "all",          # ← added
+                "all",
             ):
-                st.markdown(f"**{production}**")
+                st.markdown(f"**{prod_label}**")
 
-
-            # ONE column: each question full width (inside whatever column we call this in)
             for _, row in prod_block.iterrows():
                 qid = row["question_id"]  # ALWAYS STRING
+                widget_key = f"{key_prefix}::{qid}" if key_prefix else qid
+                desc_key = f"{widget_key}_desc"
 
-                # Label resolution (now using your numbered CSV text)
+                # Label resolution (uses your numbered CSV text)
                 raw_label = str(row.get("question_text", "") or "").strip()
                 if not raw_label:
                     metric = str(row.get("metric", "") or "").strip()
@@ -156,36 +155,27 @@ def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
                 # Primary control by type
                 if rtype == "yes_no":
                     entry["primary"] = st.radio(
-                        label_display, YES_NO_OPTIONS, horizontal=True, key=qid
+                        label_display, YES_NO_OPTIONS, horizontal=True, key=widget_key
                     )
                 elif rtype == "scale_1_5":
-                    if qid in st.session_state:
-                        entry["primary"] = int(
-                            st.slider(label_display, min_value=1, max_value=5, key=qid)
-                        )
-                    else:
-                        entry["primary"] = int(
-                            st.slider(
-                                label_display, min_value=1, max_value=5, value=3, key=qid
-                            )
-                        )
+                    entry["primary"] = int(
+                        st.slider(label_display, min_value=1, max_value=5, key=widget_key)
+                    )
                 elif rtype == "number":
-                    if qid in st.session_state:
-                        entry["primary"] = st.number_input(
-                            label_display, step=1.0, key=qid
-                        )
-                    else:
-                        entry["primary"] = st.number_input(
-                            label_display, value=0.0, step=1.0, key=qid
-                        )
+                    entry["primary"] = st.number_input(
+                        label_display, value=float(st.session_state.get(widget_key, 0.0) or 0.0),
+                        step=1.0, key=widget_key
+                    )
                 elif (rtype in ("select", "dropdown")) and options:
-                    entry["primary"] = st.selectbox(label_display, options, key=qid)
+                    entry["primary"] = st.selectbox(label_display, options, key=widget_key)
                 else:
-                    entry["primary"] = st.text_area(label_display, key=qid, height=60)
+                    entry["primary"] = st.text_area(label_display, key=widget_key, height=60)
 
+                # (no auto description anymore – you removed that)
                 responses[qid] = entry
 
     return responses
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
@@ -483,13 +473,14 @@ def main():
     tabs = st.tabs(tab_pillars)
 
     responses: Dict[str, dict] = {}
+    
+    current_prod = st.session_state.get("filter_production", "All")  # the show you chose at the top
+    
     for tab, p in zip(tabs, tab_pillars):
         with tab:
-            # Left column for questions, right column left blank to tighten width
-            left_col, _ = st.columns([0.65, 0.35])  # tweak numbers to taste
-            with left_col:
-                block = filtered[filtered["strategic_pillar"] == p]
-                responses.update(build_form_for_questions(block))
+            block = filtered[filtered["strategic_pillar"] == p]
+            responses.update(build_form_for_questions(block, key_prefix=current_prod))
+
 
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
