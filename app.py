@@ -22,6 +22,12 @@ st.title("Monthly Scorecard with AI Summary")
 def load_questions(file_path) -> pd.DataFrame:
     df = pd.read_csv(file_path)
 
+    # NORMALISE IDs TO STRINGS (important for drafts)
+    if "question_id" in df.columns:
+        df["question_id"] = df["question_id"].astype(str).str.strip()
+    else:
+        raise ValueError("questions CSV must contain a 'question_id' column")
+
     if "required" in df.columns:
         df["required"] = df["required"].astype(str).str.upper().eq("TRUE")
     if "display_order" in df.columns:
@@ -63,17 +69,15 @@ def load_productions() -> pd.DataFrame:
 # -----------------------------
 # Form building
 # -----------------------------
-def build_form_for_questions(
-    df: pd.DataFrame, initial_answers: dict | None = None
-) -> dict:
+def build_form_for_questions(df: pd.DataFrame) -> dict:
     """
     Render widgets for each question, grouped by pillar + production,
     with a main answer plus a description field.
-    `initial_answers` is used only as initial values (from a loaded draft).
+
+    NOTE: We don't pass initial values in here; we rely on st.session_state
+    being populated (either by the user or by a loaded draft).
     """
     responses: dict = {}
-    if initial_answers is None:
-        initial_answers = {}
 
     df = df.copy()
     df["strategic_pillar"] = df["strategic_pillar"].fillna("General")
@@ -107,12 +111,7 @@ def build_form_for_questions(
             for idx, (_, row) in enumerate(prod_block.iterrows()):
                 col = cols[idx % 2]
                 with col:
-                    qid = row["question_id"]
-
-                    # draft defaults for this question
-                    draft_entry = initial_answers.get(qid, {}) or {}
-                    draft_primary = draft_entry.get("primary", None)
-                    draft_desc = draft_entry.get("description", "")
+                    qid = row["question_id"]  # ALWAYS STRING NOW
 
                     # ----- Label (no 'nan') -----
                     raw_label = row.get("question_text", "")
@@ -145,72 +144,31 @@ def build_form_for_questions(
 
                     # ---- primary control by type ----
                     if rtype == "yes_no":
-                        opts = YES_NO_OPTIONS
-                        if draft_primary in opts:
-                            default_index = opts.index(draft_primary)
-                        else:
-                            default_index = 0
                         entry["primary"] = st.radio(
                             label_display,
-                            opts,
-                            index=default_index,
+                            YES_NO_OPTIONS,
                             horizontal=True,
                             key=qid,
                         )
 
                     elif rtype == "scale_1_5":
-                        try:
-                            default_val = (
-                                int(draft_primary)
-                                if draft_primary is not None
-                                else 3
-                            )
-                        except (TypeError, ValueError):
-                            default_val = 3
                         entry["primary"] = int(
-                            st.slider(label_display, 1, 5, default_val, key=qid)
+                            st.slider(label_display, 1, 5, 3, key=qid)
                         )
 
                     elif rtype == "number":
-                        try:
-                            default_val = (
-                                float(draft_primary)
-                                if draft_primary is not None
-                                else 0.0
-                            )
-                        except (TypeError, ValueError):
-                            default_val = 0.0
                         entry["primary"] = st.number_input(
-                            label_display,
-                            value=default_val,
-                            step=1.0,
-                            key=qid,
+                            label_display, value=0.0, step=1.0, key=qid
                         )
 
                     elif rtype == "select" and options:
-                        if draft_primary in options:
-                            default_index = options.index(draft_primary)
-                        else:
-                            default_index = 0
                         entry["primary"] = st.selectbox(
-                            label_display,
-                            options,
-                            index=default_index,
-                            key=qid,
+                            label_display, options, key=qid
                         )
 
                     else:
-                        # Fallback: free-text as the primary answer
-                        default_text = (
-                            str(draft_primary)
-                            if draft_primary is not None
-                            else ""
-                        )
                         entry["primary"] = st.text_area(
-                            label_display,
-                            value=default_text,
-                            key=qid,
-                            height=60,
+                            label_display, key=qid, height=60
                         )
                     # ---------------------------------
 
@@ -228,12 +186,8 @@ def build_form_for_questions(
                             if metric
                             else "Description / notes"
                         )
-                        default_desc = (
-                            str(draft_desc) if draft_desc is not None else ""
-                        )
                         entry["description"] = st.text_area(
                             str(desc_label),
-                            value=default_desc,
                             key=f"{qid}_desc",
                             height=60,
                         )
@@ -255,7 +209,7 @@ def build_draft_from_state(questions_df: pd.DataFrame, meta: dict) -> dict:
     draft = {"meta": meta, "answers": {}}
 
     for _, row in questions_df.iterrows():
-        qid = row["question_id"]
+        qid = row["question_id"]  # STRING
         primary = st.session_state.get(qid, None)
         desc = st.session_state.get(f"{qid}_desc", None)
 
@@ -272,6 +226,10 @@ def build_draft_from_state(questions_df: pd.DataFrame, meta: dict) -> dict:
 # Main app
 # -----------------------------
 def main():
+    # Init flags
+    if "draft_applied" not in st.session_state:
+        st.session_state["draft_applied"] = False
+
     # Basic identity + month
     staff_name = st.text_input("Your name")
     role = st.text_input("Your role / department title")
@@ -329,43 +287,48 @@ def main():
     # -------- DRAFT CONTROLS (SIDEBAR) --------
     st.sidebar.subheader("Drafts")
 
-    # Reset flag if not present
-    if "draft_used_once" not in st.session_state:
-        st.session_state["draft_used_once"] = False
-
     draft_file = st.sidebar.file_uploader(
         "Load saved draft",
         type="json",
         help="Upload a JSON draft you previously saved.",
     )
 
-    if draft_file is not None:
+    if draft_file is not None and not st.session_state.get("draft_applied", False):
         try:
             draft_data = json.loads(draft_file.getvalue().decode("utf-8"))
             st.session_state["loaded_draft"] = draft_data
-            # allow it to be used again for initial defaults
-            st.session_state["draft_used_once"] = False
-            st.sidebar.success(
-                "Draft loaded. The form will use these answers as defaults."
-            )
+
+            # Apply draft into session_state EXACTLY ONCE, then rerun
+            answers = draft_data.get("answers", {}) or {}
+            for qid_str, entry in answers.items():
+                # qid_str is already a string
+                st.session_state[qid_str] = entry.get("primary", None)
+                st.session_state[f"{qid_str}_desc"] = entry.get(
+                    "description", None
+                )
+
+            st.session_state["draft_applied"] = True
+            st.sidebar.success("Draft loaded and applied to the form.")
+            st.experimental_rerun()
+
         except Exception as e:
             st.sidebar.error(f"Could not load draft: {e}")
 
+    # DEBUG: show loaded meta (optional, can remove later)
     draft = st.session_state.get("loaded_draft")
-    if draft and not st.session_state.get("draft_used_once", False):
-        initial_answers = draft.get("answers", {})
-    else:
-        initial_answers = {}
+    if draft:
+        st.sidebar.markdown("**Loaded draft meta**")
+        st.sidebar.json(draft.get("meta", {}))
+        st.sidebar.write("Loaded answers:", len(draft.get("answers", {})))
     # ------------------------------------------
 
     st.markdown("### Scorecard Questions")
 
-    # Build the form widgets (no st.form, so values always go into session_state)
-    responses = build_form_for_questions(filtered, initial_answers=initial_answers)
-
-    # Mark draft as used so that subsequent reruns don't keep overwriting user edits
-    if draft and not st.session_state.get("draft_used_once", False):
-        st.session_state["draft_used_once"] = True
+    # Build the form widgets. Their initial values now come from st.session_state
+    # if a draft was applied in a previous rerun.
+    with st.form("scorecard_form"):
+        responses = build_form_for_questions(filtered)
+        submitted = st.form_submit_button("Generate AI Summary & PDF")
 
     # Meta used for drafts + AI
     meta = {
@@ -385,9 +348,6 @@ def main():
         mime="application/json",
         help="Download a snapshot of your current answers so you can finish later.",
     )
-
-    # Submit button (outside of any form)
-    submitted = st.button("Generate AI Summary & PDF")
 
     if not submitted:
         return
