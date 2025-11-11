@@ -1,5 +1,6 @@
 # app.py
 
+import json
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -154,6 +155,41 @@ def build_form_for_questions(df: pd.DataFrame):
 
     return responses
 
+def build_draft_from_state(questions_df: pd.DataFrame, meta: dict) -> dict:
+    """
+    Walk all questions and pull current widget values from st.session_state.
+    This lets the user save a partial form as a JSON draft.
+    """
+    draft = {
+        "meta": meta,
+        "answers": {},
+    }
+
+    for _, row in questions_df.iterrows():
+        qid = row["question_id"]
+        primary = st.session_state.get(qid, None)
+        desc = st.session_state.get(f"{qid}_desc", None)
+
+        if primary is not None or (desc not in (None, "")):
+            draft["answers"][qid] = {
+                "primary": primary,
+                "description": desc,
+            }
+
+    return draft
+
+def apply_draft_to_state(draft: dict):
+    """
+    Take a draft dict and push values into st.session_state so that
+    widgets (keyed by question_id and question_id_desc) are prefilled.
+    """
+    answers = draft.get("answers", {})
+    for qid, entry in answers.items():
+        if "primary" in entry:
+            st.session_state[qid] = entry["primary"]
+        if "description" in entry:
+            st.session_state[f"{qid}_desc"] = entry["description"]
+
 def main():
     # Basic identity + month
     staff_name = st.text_input("Your name")
@@ -219,6 +255,22 @@ def main():
 
     st.markdown("### Scorecard Questions")
 
+    # -------- DRAFT CONTROLS (SIDEBAR) --------
+    st.sidebar.subheader("Drafts")
+
+    draft_file = st.sidebar.file_uploader(
+        "Load saved draft",
+        type="json",
+        help="Upload a JSON draft you previously saved."
+    )
+    if draft_file is not None:
+        try:
+            draft_data = json.loads(draft_file.read().decode("utf-8"))
+            apply_draft_to_state(draft_data)
+            st.sidebar.success("Draft loaded. Your answers have been restored.")
+        except Exception as e:
+            st.sidebar.error(f"Could not load draft: {e}")
+    # ------------------------------------------
     with st.form("scorecard_form"):
         responses = build_form_for_questions(filtered)
         submitted = st.form_submit_button("Generate AI Summary & PDF")
@@ -258,6 +310,19 @@ def main():
         "production": sel_prod if sel_prod != "All" else "",
     }
 
+    # Build the form and collect responses
+    responses = build_form_for_questions(filtered)
+
+    # ---- Save progress (download draft) ----
+    draft_dict = build_draft_from_state(questions_df, meta)
+    st.sidebar.download_button(
+        "💾 Save progress",
+        data=json.dumps(draft_dict, indent=2),
+        file_name="scorecard_draft.json",
+        mime="application/json",
+        help="Download a snapshot of your current answers so you can finish later.",
+    )
+    # ----------------------------------------
 
     with st.spinner("Asking AI to interpret this scorecard..."):
         ai_result = interpret_scorecard(meta, filtered, responses)
