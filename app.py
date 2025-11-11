@@ -42,6 +42,41 @@ def _ensure_col(df: pd.DataFrame, col: str, default=""):
         df[col] = default
     df[col] = df[col].fillna(default)
 
+def get_current_show() -> str:
+    """Use the Production / area filter as the current show key."""
+    return st.session_state.get("filter_production", "All")
+
+
+def save_answers_for_show(show: str, questions_df: pd.DataFrame):
+    """Copy current widget values into a per-show store in session_state."""
+    if not show:
+        return
+    answers_by_show = st.session_state.get("answers_by_show", {})
+    show_answers = answers_by_show.get(show, {})
+
+    for _, row in questions_df.iterrows():
+        qid = row["question_id"]
+        if qid in st.session_state:
+            show_answers[qid] = st.session_state[qid]
+
+    answers_by_show[show] = show_answers
+    st.session_state["answers_by_show"] = answers_by_show
+
+
+def load_answers_for_show(show: str, questions_df: pd.DataFrame):
+    """Hydrate widget values from the per-show store (if any)."""
+    if not show:
+        return
+    answers_by_show = st.session_state.get("answers_by_show", {})
+    show_answers = answers_by_show.get(show, {})
+
+    for _, row in questions_df.iterrows():
+        qid = row["question_id"]
+        if qid in show_answers:
+            st.session_state[qid] = show_answers[qid]
+        else:
+            # clear any leftover value for this question
+            st.session_state.pop(qid, None)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
@@ -95,11 +130,7 @@ def load_productions() -> pd.DataFrame:
 # ─────────────────────────────────────────────────────────────────────────────
 # Form rendering
 # ─────────────────────────────────────────────────────────────────────────────
-def build_form_for_questions(df: pd.DataFrame, key_prefix: str = "") -> Dict[str, dict]:
-    """
-    Render widgets for each question, grouped by pillar + production.
-    key_prefix lets us keep separate answers per show (e.g., 'Nutcracker::ATI01').
-    """
+def build_form_for_questions(df: pd.DataFrame) -> Dict[str, dict]:
     responses: Dict[str, dict] = {}
 
     df = df.copy()
@@ -130,10 +161,7 @@ def build_form_for_questions(df: pd.DataFrame, key_prefix: str = "") -> Dict[str
 
             for _, row in prod_block.iterrows():
                 qid = row["question_id"]  # ALWAYS STRING
-                widget_key = f"{key_prefix}::{qid}" if key_prefix else qid
-                desc_key = f"{widget_key}_desc"
 
-                # Label resolution (uses your numbered CSV text)
                 raw_label = str(row.get("question_text", "") or "").strip()
                 if not raw_label:
                     metric = str(row.get("metric", "") or "").strip()
@@ -152,29 +180,27 @@ def build_form_for_questions(df: pd.DataFrame, key_prefix: str = "") -> Dict[str
 
                 entry = {"primary": None, "description": None}
 
-                # Primary control by type
                 if rtype == "yes_no":
                     entry["primary"] = st.radio(
-                        label_display, YES_NO_OPTIONS, horizontal=True, key=widget_key
+                        label_display, YES_NO_OPTIONS, horizontal=True, key=qid
                     )
                 elif rtype == "scale_1_5":
                     entry["primary"] = int(
-                        st.slider(label_display, min_value=1, max_value=5, key=widget_key)
+                        st.slider(label_display, min_value=1, max_value=5, key=qid)
                     )
                 elif rtype == "number":
                     entry["primary"] = st.number_input(
-                        label_display, value=float(st.session_state.get(widget_key, 0.0) or 0.0),
-                        step=1.0, key=widget_key
+                        label_display, step=1.0, key=qid
                     )
                 elif (rtype in ("select", "dropdown")) and options:
-                    entry["primary"] = st.selectbox(label_display, options, key=widget_key)
+                    entry["primary"] = st.selectbox(label_display, options, key=qid)
                 else:
-                    entry["primary"] = st.text_area(label_display, key=widget_key, height=60)
+                    entry["primary"] = st.text_area(label_display, key=qid, height=60)
 
-                # (no auto description anymore – you removed that)
                 responses[qid] = entry
 
     return responses
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
