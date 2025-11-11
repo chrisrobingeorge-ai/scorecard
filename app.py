@@ -53,6 +53,36 @@ def _build_show_key(department: str, show: str) -> str:
     return f"{dept_clean}::{show_clean}"
 
 
+def _extract_state_entry(qid: str):
+    """Return the current session_state entry for a question (primary + desc)."""
+    has_primary = qid in st.session_state
+    has_desc = f"{qid}_desc" in st.session_state
+
+    if not (has_primary or has_desc):
+        return None
+
+    entry = {}
+    if has_primary:
+        entry["primary"] = st.session_state[qid]
+    if has_desc:
+        entry["description"] = st.session_state[f"{qid}_desc"]
+    return entry
+
+
+def _normalise_show_entry(entry):
+    """Convert stored show answers into the dict format used across the app."""
+    if isinstance(entry, dict):
+        cleaned = {}
+        if "primary" in entry:
+            cleaned["primary"] = entry.get("primary")
+        if "description" in entry:
+            cleaned["description"] = entry.get("description")
+        return cleaned if cleaned else None
+    if entry is None:
+        return None
+    return {"primary": entry}
+
+
 def save_answers_for_show(show_key: str, question_ids):
     """Copy current widget values into a per-show store in session_state."""
     if not show_key:
@@ -63,8 +93,9 @@ def save_answers_for_show(show_key: str, question_ids):
     show_answers = dict(answers_by_show.get(show_key, {}))
 
     for qid in question_ids:
-        if qid in st.session_state:
-            show_answers[qid] = st.session_state[qid]
+        entry = _extract_state_entry(qid)
+        if entry is not None:
+            show_answers[qid] = entry
         elif qid in show_answers:
             show_answers.pop(qid, None)
 
@@ -82,11 +113,18 @@ def load_answers_for_show(show_key: str, question_ids):
     show_answers = answers_by_show.get(show_key, {})
 
     for qid in question_ids:
-        if qid in show_answers:
-            st.session_state[qid] = show_answers[qid]
+        entry = _normalise_show_entry(show_answers.get(qid))
+
+        if entry and "primary" in entry:
+            st.session_state[qid] = entry["primary"]
         else:
-            # clear any leftover value for this question
             st.session_state.pop(qid, None)
+
+        desc_key = f"{qid}_desc"
+        if entry and "description" in entry:
+            st.session_state[desc_key] = entry["description"]
+        else:
+            st.session_state.pop(desc_key, None)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -251,6 +289,7 @@ def _apply_pending_draft_if_any():
         data = json.loads(b.decode("utf-8"))
         answers = data.get("answers", {}) or {}
         meta = data.get("meta", {}) or {}
+        per_show_answers = data.get("per_show_answers", {}) or {}
 
         # Load all questions for the department to get types/options
         dept = meta.get("department")
@@ -260,41 +299,79 @@ def _apply_pending_draft_if_any():
         else:
             qinfo = {}
 
-        # 1) Apply answers, normalising for widget type
-        for qid_str, entry in answers.items():
-            val = entry.get("primary", None)
-            desc = entry.get("description", None)
+        def _normalise_loaded_entry(qid_str: str, raw_entry):
+            entry = _normalise_show_entry(raw_entry)
+            if entry is None:
+                return {}
+
             row = qinfo.get(qid_str, {})
             rtype = str(row.get("response_type", "")).strip().lower()
             opts_raw = row.get("options", "")
             options = [o.strip() for o in opts_raw.split(",") if o.strip()] if isinstance(opts_raw, str) else []
 
-            # Normalise value for widget type
+            normalized: Dict[str, object] = {}
+            val = entry.get("primary") if isinstance(entry, dict) else None
+
             if rtype == "yes_no":
                 if val in YES_NO_OPTIONS:
-                    st.session_state[qid_str] = val
+                    normalized["primary"] = val
             elif rtype in ("select", "dropdown"):
                 if val in options:
-                    st.session_state[qid_str] = val
+                    normalized["primary"] = val
             elif rtype == "scale_1_5":
                 try:
                     ival = int(val)
                     if 1 <= ival <= 5:
-                        st.session_state[qid_str] = ival
+                        normalized["primary"] = ival
                 except Exception:
                     pass
             elif rtype == "number":
                 try:
-                    st.session_state[qid_str] = float(val)
+                    normalized["primary"] = float(val)
                 except Exception:
                     pass
             else:
                 if val is not None:
-                    st.session_state[qid_str] = str(val)
+                    normalized["primary"] = str(val)
 
-            # Description is always text (legacy support)
-            if desc is not None:
-                st.session_state[f"{qid_str}_desc"] = str(desc)
+            if isinstance(entry, dict) and "description" in entry and entry["description"] is not None:
+                normalized["description"] = str(entry["description"])
+
+            return normalized
+
+        # 1) Apply answers, normalising for widget type
+        for qid_str, entry in answers.items():
+            normalized = _normalise_loaded_entry(qid_str, entry)
+
+            if "primary" in normalized:
+                st.session_state[qid_str] = normalized["primary"]
+            else:
+                st.session_state.pop(qid_str, None)
+
+            desc_key = f"{qid_str}_desc"
+            if "description" in normalized:
+                st.session_state[desc_key] = normalized["description"]
+            else:
+                st.session_state.pop(desc_key, None)
+
+        # 1b) Store per-show answers if provided
+        normalized_store: Dict[str, Dict[str, dict]] = {}
+        if isinstance(per_show_answers, dict):
+            for show_key, show_entries in per_show_answers.items():
+                if not isinstance(show_entries, dict):
+                    continue
+                normalised_show: Dict[str, dict] = {}
+                for qid_str, raw_entry in show_entries.items():
+                    normalized = _normalise_loaded_entry(qid_str, raw_entry)
+                    if normalized:
+                        normalised_show[qid_str] = normalized
+                if normalised_show:
+                    normalized_store[show_key] = normalised_show
+
+        if normalized_store:
+            st.session_state["answers_by_show"] = normalized_store
+        else:
+            st.session_state.pop("answers_by_show", None)
 
         # 2) Apply meta to bound UI keys (as before)
         if "staff_name" in meta:
@@ -320,10 +397,7 @@ def _apply_pending_draft_if_any():
     except Exception as e:
         st.session_state["pending_draft_error"] = str(e)
     finally:
-        st.session_state.pop("pending_draft_bytes", None)
-        st.session_state.pop("pending_draft_hash", None)
-
-
+@@ -327,62 +404,106 @@ def _apply_pending_draft_if_any():
 def clear_form(all_questions_df: pd.DataFrame):
     """
     Clears answers for the current department's questions and resets draft flags.
@@ -349,18 +423,62 @@ def clear_form(all_questions_df: pd.DataFrame):
     st.session_state.pop("loaded_draft", None)
 
 
-def build_draft_from_state(all_questions_df: pd.DataFrame, meta: dict) -> dict:
+def _normalise_answers_for_export(answers: Dict[str, dict]) -> Dict[str, dict]:
+    """Ensure exported answers contain only supported keys and non-null entries."""
+    export: Dict[str, dict] = {}
+    for qid, entry in (answers or {}).items():
+        normalised = _normalise_show_entry(entry)
+        if not normalised:
+            continue
+
+        payload: Dict[str, object] = {}
+        if "primary" in normalised:
+            payload["primary"] = normalised["primary"]
+        if "description" in normalised and normalised["description"] not in (None, ""):
+            payload["description"] = normalised["description"]
+
+        export[qid] = payload
+    return export
+
+
+def build_draft_from_state(
+    all_questions_df: pd.DataFrame,
+    meta: dict,
+    current_show_key: str | None = None,
+    question_ids=None,
+) -> dict:
     """
-    Build a draft by scanning session_state for ALL questions in the department.
-    (Per-show answers are not merged; this captures the current show's values.)
+    Build a draft including the current show plus any saved per-show answers.
     """
-    draft = {"meta": meta, "answers": {}}
-    for _, row in all_questions_df.iterrows():
-        qid = row["question_id"]  # STRING
-        primary = st.session_state.get(qid, None)
-        desc = st.session_state.get(f"{qid}_desc", None)
-        if primary is not None or (desc not in (None, "")):
-            draft["answers"][qid] = {"primary": primary, "description": desc}
+
+    question_ids = list(dict.fromkeys(question_ids or []))
+
+    if current_show_key:
+        save_answers_for_show(current_show_key, question_ids)
+
+    answers_by_show = st.session_state.get("answers_by_show", {}) or {}
+
+    if current_show_key and current_show_key in answers_by_show:
+        current_answers = answers_by_show[current_show_key]
+    else:
+        # Fallback: gather directly from session_state
+        current_answers = {}
+        for qid in question_ids:
+            entry = _extract_state_entry(qid)
+            if entry:
+                current_answers[qid] = entry
+
+    draft = {"meta": meta, "answers": _normalise_answers_for_export(current_answers)}
+
+    per_show_export: Dict[str, Dict[str, dict]] = {}
+    for show_key, answers in answers_by_show.items():
+        normalised = _normalise_answers_for_export(answers)
+        if normalised:
+            per_show_export[show_key] = normalised
+
+    if per_show_export:
+        draft["per_show_answers"] = per_show_export
+
     return draft
 
 
@@ -386,6 +504,7 @@ label, .stTextInput, .stNumberInput, .stSelectbox, .stRadio, .stDateInput, .stTe
     padding-top: 1.5rem;
     padding-bottom: 2rem;
 }
+
 </style>
 """
 
@@ -561,7 +680,12 @@ def main():
         meta["production"] = ""
 
     # Save progress (downloads ALL department questions for the current show)
-    draft_dict = build_draft_from_state(questions_all_df, meta)
+    draft_dict = build_draft_from_state(
+        questions_all_df,
+        meta,
+        current_show_key=current_show_key,
+        question_ids=all_question_ids,
+    )
     st.sidebar.download_button(
         "💾 Save progress (download JSON)",
         data=json.dumps(draft_dict, indent=2),
