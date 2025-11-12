@@ -28,15 +28,15 @@ DEPARTMENT_CONFIGS: Dict[str, DepartmentConfig] = {
     "Artistic": DepartmentConfig(
         key="Artistic",
         label="Artistic",
-        questions_csv="data/questions_artistic.csv",
+        questions_csv="data/artistic_scorecard_questions.csv",
         has_productions=True,
-        productions_csv="data/productions_artistic.csv",  # or shared file
+        productions_csv="data/productions.csv",  # or shared file
         scope_label="Production",
     ),
     "School": DepartmentConfig(
         key="School",
         label="School",
-        questions_csv="data/questions_school.csv",
+        questions_csv="data/school_scorecard_questions.csv",
         has_productions=True,
         productions_csv="data/productions_school.csv",    # programmes/levels
         scope_label="Programme / Level",
@@ -44,7 +44,7 @@ DEPARTMENT_CONFIGS: Dict[str, DepartmentConfig] = {
     "Community": DepartmentConfig(
         key="Community",
         label="Community",
-        questions_csv="data/questions_community.csv",
+        questions_csv="data/community_scorecard_questions.csv",
         has_productions=False,
         productions_csv=None,
         scope_label="Area",
@@ -52,7 +52,7 @@ DEPARTMENT_CONFIGS: Dict[str, DepartmentConfig] = {
     "Corporate": DepartmentConfig(
         key="Corporate",
         label="Corporate",
-        questions_csv="data/questions_corporate.csv",
+        questions_csv="data/corporate_scorecard_questions.csv",
         has_productions=False,
         productions_csv=None,
         scope_label="Area",
