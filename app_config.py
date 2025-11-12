@@ -36,9 +36,9 @@ DEPARTMENT_CONFIGS: Dict[str, DepartmentConfig] = {
     "School": DepartmentConfig(
         key="School",
         label="School",
-        questions_csv="data/questions_school.csv",
-        has_productions=False,       # ← no productions list for School
-        productions_csv=None,        # ← nothing to read
+        questions_csv="data/school_scorecard_questions.csv",
+        has_productions=False,     
+        productions_csv=None,       
         scope_label="Programme / Level", 
     ),
     "Community": DepartmentConfig(
