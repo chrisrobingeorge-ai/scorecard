@@ -9,7 +9,7 @@ from typing import Dict, Tuple
 import pandas as pd
 import streamlit as st
 
-from config import DEPARTMENT_CONFIGS, YES_NO_OPTIONS, GENERAL_PROD_LABEL
+from app_config import DEPARTMENT_CONFIGS, YES_NO_OPTIONS, GENERAL_PROD_LABEL
 from ai_utils import interpret_scorecard
 from pdf_utils import build_scorecard_pdf
 
