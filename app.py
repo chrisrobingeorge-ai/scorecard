@@ -898,7 +898,11 @@ def main():
     # Reset production when dept changes, but DO NOT clobber a draft-applied selection
     if "last_dept_label" not in st.session_state or st.session_state["last_dept_label"] != dept_label:
         if not st.session_state.get("draft_applied", False):
-            st.session_state["filter_production"] = GENERAL_PROD_LABEL
+            if getattr(DEPARTMENT_CONFIGS[dept_label], "allow_general_option", True):
+                st.session_state["filter_production"] = GENERAL_PROD_LABEL
+            else:
+                # Default to first available programme once we compute prod_options (done below)
+                st.session_state.pop("filter_production", None)
         st.session_state["last_dept_label"] = dept_label
 
     # ── 2) Load questions for this department (disk first, upload only if missing)
@@ -926,54 +930,60 @@ def main():
 
     all_question_ids = questions_all_df["question_id"].astype(str).tolist()
 
-    # ── 3) Scope selector (production / programme / general)
-    st.subheader("Scope of this report")
+# ── 3) Scope selector (production / programme / general)
+st.subheader("Scope of this report")
 
-    if dept_cfg.has_productions and dept_cfg.productions_csv:
-        resolved_prod = _resolve_path(dept_cfg.productions_csv)
-        if resolved_prod and os.path.exists(resolved_prod):
-            productions_df = pd.read_csv(resolved_prod)
-        else:
-            productions_df = pd.DataFrame(columns=["department", "production_name", "active"])
-
-        _ensure_col(productions_df, "department", "")
-        _ensure_col(productions_df, "production_name", "")
-        if "active" in productions_df.columns:
-            productions_df["active"] = productions_df["active"].astype(str).str.upper().eq("TRUE")
-        else:
-            productions_df["active"] = True
-
-        dept_series = productions_df["department"].astype(str).str.strip().str.casefold()
-        current_dept = (dept_label or "").strip().casefold()
-        dept_prods = productions_df[(dept_series == current_dept) & (productions_df["active"])]
-
-        prod_list = sorted(dept_prods["production_name"].dropna().unique().tolist())
-
-        if getattr(dept_cfg, "allow_general_option", True):
-            prod_options = [GENERAL_PROD_LABEL] + prod_list if prod_list else [GENERAL_PROD_LABEL]
-        else:
-            # No "General" option for this department
-            prod_options = prod_list or []
-            if not prod_options:
-                st.error(f"No active {dept_cfg.scope_label.lower()}s configured for {dept_label}. "
-                         "Add rows to productions.csv.")
-                st.stop()
-
-        # Preserve a preloaded selection from a draft even if it isn't in the CSV (e.g., inactive/missing)
-        preselected = st.session_state.get("filter_production", GENERAL_PROD_LABEL)
-        if preselected and preselected != GENERAL_PROD_LABEL and preselected not in prod_options:
-            # Keep General first; append the preselected one so Streamlit accepts the state
-            prod_options = [GENERAL_PROD_LABEL] + sorted(set(prod_options[1:] + [preselected]))
-
-        sel_prod = st.selectbox(dept_cfg.scope_label, prod_options, key="filter_production")
-
+if dept_cfg.has_productions and dept_cfg.productions_csv:
+    resolved_prod = _resolve_path(dept_cfg.productions_csv)
+    if resolved_prod and os.path.exists(resolved_prod):
+        productions_df = pd.read_csv(resolved_prod)
     else:
-        # No productions for this department → always general
-        sel_prod = GENERAL_PROD_LABEL
-        st.info(f"This area uses general questions only (no specific {dept_cfg.scope_label.lower()}s).")
+        productions_df = pd.DataFrame(columns=["department", "production_name", "active"])
 
-    # Normalised production key for storage: "" for General, or the production/programme name
-    current_production = "" if sel_prod == GENERAL_PROD_LABEL else sel_prod
+    _ensure_col(productions_df, "department", "")
+    _ensure_col(productions_df, "production_name", "")
+    if "active" in productions_df.columns:
+        productions_df["active"] = productions_df["active"].astype(str).str.upper().eq("TRUE")
+    else:
+        productions_df["active"] = True
+
+    dept_series = productions_df["department"].astype(str).str.strip().str.casefold()
+    current_dept = (dept_label or "").strip().casefold()
+    dept_prods = productions_df[(dept_series == current_dept) & (productions_df["active"])]
+
+    # Build prod_options (with/without General, depending on config)
+    prod_list = sorted(dept_prods["production_name"].dropna().unique().tolist())
+    if getattr(dept_cfg, "allow_general_option", True):
+        prod_options = [GENERAL_PROD_LABEL] + prod_list if prod_list else [GENERAL_PROD_LABEL]
+    else:
+        prod_options = prod_list or []
+        if not prod_options:
+            st.error(
+                f"No active {dept_cfg.scope_label.lower()}s configured for {dept_label}. "
+                "Add rows to productions.csv."
+            )
+            st.stop()
+
+    # ▼ INSERTED RIGHT HERE: pick a default when General is disallowed
+    preselected = st.session_state.get("filter_production")
+    if preselected is None or preselected not in prod_options:
+        # If General isn’t allowed, pick first programme; otherwise we’ll handle below
+        if not getattr(dept_cfg, "allow_general_option", True) and prod_options:
+            preselected = prod_options[0]
+            st.session_state["filter_production"] = preselected
+
+    # Preserve a preloaded selection from a draft even if it isn't in the CSV (e.g., inactive/missing)
+    preselected = st.session_state.get("filter_production", GENERAL_PROD_LABEL)
+    if preselected and getattr(dept_cfg, "allow_general_option", True) and preselected != GENERAL_PROD_LABEL and preselected not in prod_options:
+        # Keep General first; append the preselected one so Streamlit accepts the state
+        prod_options = [GENERAL_PROD_LABEL] + sorted(set(prod_options[1:] + [preselected]))
+
+    sel_prod = st.selectbox(dept_cfg.scope_label, prod_options, key="filter_production")
+
+else:
+    # No productions for this department → always general
+    sel_prod = GENERAL_PROD_LABEL
+    st.info(f"This area uses general questions only (no specific {dept_cfg.scope_label.lower()}s).")
     
    
     # ── 4) Filter questions for display
