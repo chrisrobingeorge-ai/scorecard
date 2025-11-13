@@ -4,11 +4,12 @@ GENERAL_PROD_LABEL = "General"
 YES_NO_OPTIONS = ["Yes", "No"]  # global default
 
 @dataclass
-class DeptConfig:
+class DepartmentConfig:
     questions_csv: str
-    has_productions: bool
-    productions_csv: str | None
-    scope_label: str | None = "Production"  # cosmetic only
+    has_productions: bool = True
+    productions_csv: Optional[str] = None
+    scope_label: str = "Production / area"
+    allow_general_option: bool = True   # ← NEW
 
 DEPARTMENT_CONFIGS = {
     "Artistic": DeptConfig(
@@ -23,11 +24,12 @@ DEPARTMENT_CONFIGS = {
         productions_csv=None,
         scope_label="Programme",
     ),
-    "Community": DeptConfig(
+    "Community": DepartmentConfig(
         questions_csv="data/community_scorecard_questions.csv",
         has_productions=True,
         productions_csv="data/productions.csv",
         scope_label="Programme",
+        allow_general_option=False, 
     ),
     "Corporate": DeptConfig(
         questions_csv="data/corporate_scorecard_questions.csv",
