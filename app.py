@@ -6,7 +6,7 @@ from pathlib import Path
 import json
 from dataclasses import dataclass
 from datetime import date
-from typing import Dict, Tuple, List, Any, Optional
+from typing import Dict, Tuple, List, Any
 
 import pandas as pd
 import streamlit as st
@@ -14,33 +14,22 @@ import streamlit as st
 # ─────────────────────────────────────────────────────────────────────────────
 # Config imports + safe fallbacks
 # ─────────────────────────────────────────────────────────────────────────────
-# Try the original working module name first ("config"), then fall back to "app_config".
 try:
-    from config import DEPARTMENT_CONFIGS as _DEPT_CFGS
+    from app_config import DEPARTMENT_CONFIGS as _DEPT_CFGS
 except Exception:
-    try:
-        from app_config import DEPARTMENT_CONFIGS as _DEPT_CFGS
-    except Exception:
-        _DEPT_CFGS = None
+    _DEPT_CFGS = None
 
 try:
-    from config import YES_NO_OPTIONS as _YNO
+    from app_config import YES_NO_OPTIONS as _YNO
+    YES_NO_OPTIONS = list(_YNO)
 except Exception:
-    try:
-        from app_config import YES_NO_OPTIONS as _YNO
-    except Exception:
-        _YNO = None
-YES_NO_OPTIONS = list(_YNO) if _YNO else ["Yes", "No"]
+    YES_NO_OPTIONS = ["Yes", "No"]
 
 try:
-    from config import GENERAL_PROD_LABEL as _GPL
+    from app_config import GENERAL_PROD_LABEL as _GPL
+    GENERAL_PROD_LABEL = _GPL
 except Exception:
-    try:
-        from app_config import GENERAL_PROD_LABEL as _GPL
-    except Exception:
-        _GPL = None
-GENERAL_PROD_LABEL = _GPL or "General"
-
+    GENERAL_PROD_LABEL = "General"
 
 try:
     from ai_utils import interpret_scorecard
@@ -63,14 +52,6 @@ except Exception:
         return b"%PDF-1.4\n% Stub PDF - pdf_utils not configured.\n"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Streamlit cache guard (supports older Streamlit)
-# ─────────────────────────────────────────────────────────────────────────────
-try:
-    cache_data = st.cache_data
-except AttributeError:  # Streamlit < 1.18
-    cache_data = st.cache
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Config normalization (robust to dicts, SimpleNamespace, or custom objects)
 # ─────────────────────────────────────────────────────────────────────────────
 from collections.abc import Mapping
@@ -79,7 +60,7 @@ from collections.abc import Mapping
 class DepartmentConfig:
     questions_csv: str
     has_productions: bool = True
-    productions_csv: Optional[str] = None
+    productions_csv: str | None = None
     scope_label: str = "Production / area"
 
 def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
@@ -127,13 +108,13 @@ def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
 
         # If dict-like
         if isinstance(v, Mapping):
-            questions_csv   = v.get("questions_csv")
+            questions_csv  = v.get("questions_csv")
             has_productions = v.get("has_productions", True)
             productions_csv = v.get("productions_csv")
             scope_label     = v.get("scope_label", "Production / area")
         else:
             # Generic object (SimpleNamespace, pydantic model, etc.)
-            questions_csv   = getattr(v, "questions_csv", None)
+            questions_csv  = getattr(v, "questions_csv", None)
             has_productions = getattr(v, "has_productions", True)
             productions_csv = getattr(v, "productions_csv", None)
             scope_label     = getattr(v, "scope_label", "Production / area")
@@ -168,13 +149,13 @@ def _hash_bytes(b: bytes) -> str:
     import hashlib as _hl
     return _hl.sha256(b).hexdigest()
 
-def _ensure_col(df: pd.DataFrame, col: str, default: Any = ""):
+def _ensure_col(df: pd.DataFrame, col: str, default=""):
     """Ensure a column exists and fill NA."""
     if col not in df.columns:
         df[col] = default
     df[col] = df[col].fillna(default)
 
-def _resolve_path(p: str) -> Optional[str]:
+def _resolve_path(p: str) -> str | None:
     """Try several locations for a relative CSV path; return the first that exists."""
     if not p:
         return None
@@ -207,7 +188,7 @@ def get_answers_df() -> pd.DataFrame:
         )
     return st.session_state["answers_df"]
 
-def get_answer_value(dept: str, production: str, qid: str) -> Tuple[Optional[object], Optional[str]]:
+def get_answer_value(dept: str, production: str, qid: str) -> Tuple[object | None, str | None]:
     df = get_answers_df()
     mask = (
         (df["department"] == dept) &
@@ -219,7 +200,7 @@ def get_answer_value(dept: str, production: str, qid: str) -> Tuple[Optional[obj
     row = df[mask].iloc[0]
     return row.get("primary", None), row.get("description", None)
 
-def upsert_answer(dept: str, production: str, qid: str, primary, description: Optional[str] = None):
+def upsert_answer(dept: str, production: str, qid: str, primary, description=None):
     df = get_answers_df()
     mask = (
         (df["department"] == dept) &
@@ -236,19 +217,19 @@ def upsert_answer(dept: str, production: str, qid: str, primary, description: Op
     }
 
     if mask.any():
-        # Separate column assignments to avoid shape errors
-        st.session_state["answers_df"].loc[mask, "primary"] = primary
-        st.session_state["answers_df"].loc[mask, "description"] = (description or "")
+        st.session_state["answers_df"].loc[mask, ["primary", "description"]] = [
+            (primary, description or "")
+        ]
     else:
         st.session_state["answers_df"] = pd.concat(
             [df, pd.DataFrame([new_row])],
             ignore_index=True,
         )
 
-def _normalise_show_entry(entry: Any) -> Optional[dict]:
+def _normalise_show_entry(entry):
     """Convert stored show answers into the dict format used across the app."""
     if isinstance(entry, dict):
-        cleaned: Dict[str, Any] = {}
+        cleaned = {}
         if "primary" in entry:
             cleaned["primary"] = entry.get("primary")
         if "description" in entry:
@@ -261,7 +242,7 @@ def _normalise_show_entry(entry: Any) -> Optional[dict]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
 # ─────────────────────────────────────────────────────────────────────────────
-@cache_data
+@st.cache_data
 def load_questions_from_bytes(csv_bytes: bytes) -> pd.DataFrame:
     from io import BytesIO
     df = pd.read_csv(BytesIO(csv_bytes))
@@ -298,7 +279,7 @@ def load_questions_from_bytes(csv_bytes: bytes) -> pd.DataFrame:
 
     return df
 
-@cache_data
+@st.cache_data
 def load_questions(file_path: str) -> pd.DataFrame:
     resolved = _resolve_path(file_path)
     if not resolved:
@@ -332,7 +313,7 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
     if not parts:
         return True
 
-    def _parse_list(s: str) -> List[str]:
+    def _parse_list(s: str):
         s = s.strip()
         if s.startswith('[') and s.endswith(']'):
             s = s[1:-1]
@@ -347,7 +328,7 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
             return False
         return str(lhs).strip().casefold() == str(rhs).strip().casefold()
 
-    def _in(lhs, options: List[str]) -> bool:
+    def _in(lhs, options) -> bool:
         if lhs is None:
             return False
         l = str(lhs).strip().casefold()
@@ -404,38 +385,28 @@ def build_form_for_questions(
 
     # Normalize & base sort
     df = df.copy()
-    # Guard against .get returning a scalar default
-    if "strategic_pillar" in df.columns:
-        df["strategic_pillar"] = df["strategic_pillar"].fillna("").replace("", "General")
-    else:
-        df["strategic_pillar"] = "General"
-
-    if "metric" not in df.columns:
-        df["metric"] = ""
-    df["metric"] = df["metric"].fillna("")
-
-    if "display_order" in df.columns:
-        df["display_order"] = pd.to_numeric(df["display_order"], errors="coerce").fillna(0)
-    else:
-        df["display_order"] = 0
+    df["strategic_pillar"] = df.get("strategic_pillar", "General").replace("", "General")
+    df["metric"] = df.get("metric", "").fillna("")
+    df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
 
     # Split parents/children by depends_on presence
-    dep_series = df["depends_on"] if "depends_on" in df.columns else pd.Series([""] * len(df))
+    dep_series = df.get("depends_on", "")
+    dep_series = dep_series if isinstance(dep_series, pd.Series) else pd.Series([""] * len(df))
     dep_series = dep_series.fillna("").astype(str).str.strip()
     is_child = dep_series.ne("")
 
     parents_df = df[~is_child].sort_values("display_order").reset_index(drop=True)
     children_df = df[is_child].copy()
     # Parent id is the token before any operator (e.g., QID in [..], QID=..., QID!=...)
-    children_df["__parent_qid__"] = children_df["depends_on"].astype(str).str.split(r"[ !><=]", n=1, regex=True).str[0].str.strip()
+    children_df["__parent_qid__"] = children_df["depends_on"].str.split(r"[ !><=]", n=1, regex=True).str[0].str.strip()
     children_df = children_df.sort_values("display_order")
 
     from collections import defaultdict
-    kids: Dict[str, List[pd.Series]] = defaultdict(list)
+    kids: dict[str, list[pd.Series]] = defaultdict(list)
     for _, crow in children_df.iterrows():
         kids[str(crow["__parent_qid__"])].append(crow)
 
-    rendered: set = set()
+    rendered: set[str] = set()
 
     def _widget_key(qid: str) -> str:
         return f"{dept_label}::{production}::{qid}"
@@ -473,12 +444,12 @@ def build_form_for_questions(
 
         # Unique key
         widget_key = _widget_key(qid)
-        entry: Dict[str, Any] = {"primary": None, "description": prev_desc}
+        entry = {"primary": None, "description": prev_desc}
 
         # Widgets
         if rtype == "yes_no":
             opts_display = ["— Select —"] + list(yes_no_opts)
-            default_index = opts_display.index(prev_primary) if (prev_primary in yes_no_opts) else 0
+            default_index = opts_display.index(prev_primary) if prev_primary in yes_no_opts else 0
             chosen = st.radio(
                 label_display,
                 opts_display,
@@ -613,7 +584,7 @@ def _apply_pending_draft_if_any():
 
             return normalized
 
-        rows: List[Dict[str, Any]] = []
+        rows = []
 
         def _add_entries_for(dept_val: str, prod_val: str, answers_dict: dict):
             if not isinstance(answers_dict, dict):
@@ -656,9 +627,6 @@ def _apply_pending_draft_if_any():
             ]
         else:
             st.session_state.pop("answers_df", None)
-        # IMPORTANT: hydrate widget keys so visibility/defaults work on first render
-        _seed_all_widget_state_from_answers()
-
 
         # Apply meta to bound UI keys
         if "staff_name" in meta:
@@ -750,7 +718,7 @@ def _build_show_key(department: str, show: str) -> str:
 def build_draft_from_state(
     all_questions_df: pd.DataFrame,
     meta: dict,
-    current_production: Optional[str] = None,
+    current_production: str | None = None,
     question_ids=None,
 ) -> dict:
     question_ids = [str(q) for q in (question_ids or [])]
@@ -777,7 +745,7 @@ def build_draft_from_state(
             curr_df = df[df["production"] == ""]
         for _, row in curr_df.iterrows():
             qid = str(row["question_id"])
-            entry: Dict[str, Any] = {}
+            entry = {}
             if row["primary"] not in (None, ""):
                 entry["primary"] = row["primary"]
             desc = row.get("description", "")
@@ -817,58 +785,6 @@ def build_draft_from_state(
 
     return draft
 
-def _seed_all_widget_state_from_answers():
-    """
-    Populate session_state keys from answers_df exactly once per key.
-    Never overwrite keys that already exist (so user interaction isn't lost).
-    """
-    try:
-        df = get_answers_df()
-        if df.empty:
-            return
-        df = df.copy()
-        df["department"] = df["department"].astype(str)
-        df["production"]  = df["production"].astype(str)
-        df["question_id"] = df["question_id"].astype(str)
-        for _, r in df.iterrows():
-            key = f"{r['department']}::{r['production']}::{r['question_id']}"
-            if key not in st.session_state:
-                st.session_state[key] = r.get("primary")
-    except Exception:
-        pass
-
-
-def _seed_scope_widget_state_from_answers(dept_label: str, production: str):
-    """
-    Seed only for the current dept+production, and only for keys that are missing.
-    """
-    try:
-        df = get_answers_df()
-        if df.empty:
-            return
-        scope = df[
-            (df["department"] == dept_label) &
-            (df["production"]  == production)
-        ]
-        if scope.empty:
-            return
-
-        # Prevent reseeding the same scope on every rerun
-        scope_id = f"{dept_label}::{production}"
-        if st.session_state.get("_seeded_scope_id") == scope_id:
-            return
-
-        for _, r in scope.astype({"question_id":"str"}).iterrows():
-            key = f"{dept_label}::{production}::{r['question_id']}"
-            if key not in st.session_state:
-                st.session_state[key] = r.get("primary")
-
-        st.session_state["_seeded_scope_id"] = scope_id
-
-    except Exception:
-        pass
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Styling
 # ─────────────────────────────────────────────────────────────────────────────
@@ -889,7 +805,6 @@ label, .stTextInput, .stNumberInput, .stSelectbox, .stRadio, .stDateInput, .stTe
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
-    # Initialize flags
     if "draft_applied" not in st.session_state:
         st.session_state["draft_applied"] = False
 
@@ -899,139 +814,25 @@ def main():
     # Styles
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-    # ─────────────────────────────────────────────────────────────────────
-    # Sidebar: Draft controls (immediate apply)
-    # ─────────────────────────────────────────────────────────────────────
+    # Sidebar: Draft controls
     st.sidebar.subheader("Drafts")
     draft_file = st.sidebar.file_uploader(
         "Load saved draft (JSON)",
         type="json",
         help="Upload a JSON draft you previously downloaded.",
-        key="draft_file_uploader",
     )
     if draft_file is not None:
-        try:
-            data = json.loads(draft_file.getvalue().decode("utf-8")) or {}
-            answers = data.get("answers", {}) or {}
-            meta = data.get("meta", {}) or {}
-            per_show_answers = data.get("per_show_answers", {}) or {}
-
-            dept_meta = meta.get("department")
-            if dept_meta and dept_meta in DEPARTMENT_CONFIGS:
-                questions_df = load_questions(DEPARTMENT_CONFIGS[dept_meta].questions_csv)
-                qinfo = {str(row["question_id"]): row for _, row in questions_df.iterrows()}
-            else:
-                qinfo = {}
-
-            def _normalise_loaded_entry(qid_str: str, raw_entry):
-                entry = _normalise_show_entry(raw_entry)
-                if entry is None:
-                    return {}
-                row = qinfo.get(str(qid_str), {})
-                rtype = str(row.get("response_type", "")).strip().lower()
-                opts_raw = row.get("options", "")
-                options = [o.strip() for o in str(opts_raw).split(",") if o.strip()]
-
-                normalized: Dict[str, object] = {}
-                val = entry.get("primary") if isinstance(entry, dict) else None
-
-                if rtype in ("yes_no", "select_yes_no", "radio_yes_no"):
-                    if val in YES_NO_OPTIONS:
-                        normalized["primary"] = val
-                elif rtype in ("select", "dropdown", "dropdownlist"):
-                    if val in options:
-                        normalized["primary"] = val
-                elif rtype == "scale_1_5":
-                    try:
-                        ival = int(val)
-                        if 1 <= ival <= 5:
-                            normalized["primary"] = ival
-                    except Exception:
-                        pass
-                elif rtype == "number":
-                    try:
-                        normalized["primary"] = float(val)
-                    except Exception:
-                        pass
-                else:
-                    if val is not None:
-                        normalized["primary"] = str(val)
-
-                if isinstance(entry, dict) and entry.get("description") not in (None, ""):
-                    normalized["description"] = str(entry["description"])
-                return normalized
-
-            rows: List[Dict[str, Any]] = []
-
-            def _add_entries_for(dept_val: str, prod_val: str, answers_dict: dict):
-                if not isinstance(answers_dict, dict):
-                    return
-                for qid_str, raw_entry in answers_dict.items():
-                    normalized = _normalise_loaded_entry(str(qid_str), raw_entry)
-                    if not normalized:
-                        continue
-                    rows.append(
-                        {
-                            "department": dept_val or "",
-                            "production": prod_val or "",
-                            "question_id": str(qid_str),
-                            "primary": normalized.get("primary"),
-                            "description": normalized.get("description", ""),
-                        }
-                    )
-
-            for show_key, show_entries in per_show_answers.items():
-                if isinstance(show_key, str) and "::" in show_key:
-                    dept_val, prod_val = show_key.split("::", 1)
-                else:
-                    dept_val = meta.get("department", "")
-                    prod_val = meta.get("production", "") or ""
-                _add_entries_for(dept_val, prod_val, show_entries)
-
-            if answers:
-                dept_val = meta.get("department", "")
-                prod_val = meta.get("production", "") or ""
-                _add_entries_for(dept_val, prod_val, answers)
-
-            if rows:
-                df = pd.DataFrame(rows)
-                df["question_id"] = df["question_id"].astype(str)
-                df = df.drop_duplicates(subset=["department", "production", "question_id"], keep="last")
-                st.session_state["answers_df"] = df[
-                    ["department", "production", "question_id", "primary", "description"]
-                ]
-            else:
-                st.session_state.pop("answers_df", None)
-
-            # Apply meta to bound UI keys and dropdowns
-            if "staff_name" in meta:
-                st.session_state["staff_name"] = meta["staff_name"]
-            if "role" in meta:
-                st.session_state["role"] = meta["role"]
-            if "month" in meta and isinstance(meta["month"], str):
-                try:
-                    y, m = meta["month"].split("-")
-                    st.session_state["report_month_date"] = date(int(y), int(m), 1)
-                except Exception:
-                    pass
-            if "department" in meta and meta["department"] in DEPARTMENT_CONFIGS:
-                st.session_state["dept_label"] = meta["department"]
-
-            prod_norm = meta.get("production") or ""
-            st.session_state["filter_production"] = prod_norm or GENERAL_PROD_LABEL
-
-            # Hydrate widget keys so visibility/defaults work on first render
-            _seed_all_widget_state_from_answers()
-
-            st.sidebar.success("Draft applied.")
+        queued, msg = queue_draft_bytes(draft_file.getvalue())
+        if queued:
+            st.sidebar.success(msg)
             safe_rerun()
+        else:
+            st.sidebar.info(msg)
 
-        except Exception as e:
-            st.sidebar.error(f"Could not load draft: {e}")
+    if "pending_draft_error" in st.session_state:
+        st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
 
-    # ─────────────────────────────────────────────────────────────────────
     # Main UI
-    # ─────────────────────────────────────────────────────────────────────
     st.title("Monthly Scorecard with AI Summary")
     st.caption(
         ":information_source: On Streamlit Community Cloud, the server file system is "
@@ -1042,11 +843,13 @@ def main():
     # Identity & Date
     staff_name = st.text_input("Your name", key="staff_name")
     role = st.text_input("Your role / department title", key="role")
+
     from datetime import date as _date
     if "report_month_date" in st.session_state:
-        _ = st.date_input("Reporting month", key="report_month_date")
+        month_date = st.date_input("Reporting month", key="report_month_date")
     else:
-        _ = st.date_input("Reporting month", value=_date.today(), key="report_month_date")
+        month_date = st.date_input("Reporting month", value=_date.today(), key="report_month_date")
+
     month_str = (st.session_state.get("report_month_date") or _date.today()).strftime("%Y-%m")
 
     # ── 1) Department selector
@@ -1057,35 +860,32 @@ def main():
     )
     dept_cfg = DEPARTMENT_CONFIGS[dept_label]
 
-    # Reset production when dept changes, but DO NOT clobber a draft-applied selection
+    # Reset production when dept changes
     if "last_dept_label" not in st.session_state or st.session_state["last_dept_label"] != dept_label:
-        if not st.session_state.get("draft_applied", False):
-            st.session_state["filter_production"] = GENERAL_PROD_LABEL
+        st.session_state["filter_production"] = GENERAL_PROD_LABEL
         st.session_state["last_dept_label"] = dept_label
 
-    # ── 2) Load questions for this department (disk first, upload only if missing)
+    questions_all_df: pd.DataFrame
+    if uploaded_csv is not None:
+        try:
+            questions_all_df = load_questions_from_bytes(uploaded_csv.getvalue())
+            st.sidebar.success(f"Using uploaded CSV for {dept_label}.")
+        except Exception as e:
+            st.sidebar.error(f"Uploaded CSV couldn’t be parsed: {e}")
+            # Fall back to disk below
+            questions_all_df = load_questions(dept_cfg.questions_csv)
+    
+    # ── 2) Load questions for this department (disk only; no sidebar uploader)
     try:
         questions_all_df = load_questions(dept_cfg.questions_csv)
     except FileNotFoundError:
-        st.warning(
-            f"Couldn’t find the {dept_label} questions CSV at `{dept_cfg.questions_csv}`.\n"
-            "If you have it locally, upload it below. (This prompt only appears when the file is missing.)"
+        st.error(
+            f"Couldn’t find the {dept_label} questions CSV at `{dept_cfg.questions_csv}`.\n\n"
+            "Place the file there (e.g., `school_scorecard_questions.csv`) or update "
+            f"`app_config.DEPARTMENT_CONFIGS['{dept_label}'].questions_csv` to the correct path."
         )
-        missing_csv = st.file_uploader(
-            f"Upload {dept_label} questions CSV",
-            type=["csv"],
-            key=f"fallback_questions_uploader::{dept_label}",
-            help="Temporary fallback—upload only if the configured file isn’t available on disk.",
-        )
-        if missing_csv is None:
-            st.stop()
-        try:
-            questions_all_df = load_questions_from_bytes(missing_csv.getvalue())
-            st.success(f"Using uploaded {dept_label} questions CSV for this session.")
-        except Exception as e:
-            st.error(f"Uploaded CSV couldn’t be parsed: {e}")
-            st.stop()
-
+        st.stop()
+    
     all_question_ids = questions_all_df["question_id"].astype(str).tolist()
 
     # ── 3) Scope selector (production / programme / general)
@@ -1115,27 +915,21 @@ def main():
             prod_list = sorted(dept_prods["production_name"].dropna().unique().tolist())
             prod_options = [GENERAL_PROD_LABEL] + prod_list
 
-        # Preserve a preloaded selection from a draft even if it isn't in the CSV (e.g., inactive/missing)
-        preselected = st.session_state.get("filter_production", GENERAL_PROD_LABEL)
-        if preselected and preselected != GENERAL_PROD_LABEL and preselected not in prod_options:
-            prod_options = [GENERAL_PROD_LABEL] + sorted(set(prod_options[1:] + [preselected]))
-
         sel_prod = st.selectbox(dept_cfg.scope_label, prod_options, key="filter_production")
     else:
+        # No productions for this department → always general
         sel_prod = GENERAL_PROD_LABEL
         st.info(f"This area uses general questions only (no specific {dept_cfg.scope_label.lower()}s).")
 
-    # Normalised production key for storage
+    # Normalised production key for storage: "" for General, or the production/programme name
     current_production = "" if sel_prod == GENERAL_PROD_LABEL else sel_prod
-
-    # Hydrate widget state for the current scope so parents/children render correctly
-    _seed_scope_widget_state_from_answers(dept_label, current_production)
 
     # ── 4) Filter questions for display
     filtered = filter_questions_for_scope(questions_all_df, current_production)
+
     if filtered.empty:
         st.warning("No questions found for this combination. Try changing the scope.")
-        st.stop()
+        return
 
     # Render form (tabs per pillar)
     st.markdown("### Scorecard Questions")
@@ -1173,7 +967,7 @@ def main():
         "role": st.session_state.get("role") or "",
         "department": st.session_state.get("dept_label"),
         "month": month_str,
-        "production": current_production,
+        "production": current_production,  # normalised: "" for General, else name
     }
 
     # Save progress (download JSON)
@@ -1198,10 +992,10 @@ def main():
     )
 
     if not submitted:
-        st.stop()
+        return
 
     # visible-only validation
-    missing_required: List[str] = []
+    missing_required = []
     for _, row in filtered.iterrows():
         if not question_is_visible(row, dept_label, current_production):
             continue
@@ -1219,7 +1013,7 @@ def main():
         with st.expander("Missing required questions"):
             for q in missing_required:
                 st.write("• ", q)
-        st.stop()
+        return
 
     # AI call
     try:
@@ -1244,7 +1038,9 @@ def main():
     if pillar_summaries:
         st.markdown("#### By Strategic Pillar")
         for ps in pillar_summaries:
-            st.markdown(f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**")
+            st.markdown(
+                f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
+            )
             st.write(ps.get("summary", ""))
 
     risks = ai_result.get("risks", []) or []
@@ -1276,7 +1072,6 @@ def main():
     except Exception as e:
         st.warning(f"PDF export failed: {e}")
         st.info("If this persists, check pdf_utils.py dependencies (reportlab or fpdf2).")
-
 
 
 if __name__ == "__main__":
