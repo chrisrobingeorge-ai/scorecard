@@ -171,32 +171,46 @@ def build_form_for_questions(
     Reads/writes values via answers_df. Returns {qid: {primary, description}}.
 
     Rendering order:
-      1) All questions WITHOUT depends_on (parents), sorted by display_order
-      2) All questions WITH depends_on (children),  sorted by display_order
+      - Iterate parents (no depends_on) in display_order.
+      - Immediately after a parent, render its visible children (depends_on == parent qid),
+        ordered by their display_order. Nested dependencies are rendered depth-first.
     """
     responses: Dict[str, dict] = {}
 
-    # --- Normalise & sort bases
+    # Normalize & base sort
     df = df.copy()
     df["strategic_pillar"] = df.get("strategic_pillar", "General").replace("", "General")
     df["metric"] = df.get("metric", "").fillna("")
     df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
 
-    # Split into parents (no depends_on) and children (has depends_on)
-    depcol = df.get("depends_on", "")
-    has_dep = depcol.fillna("").astype(str).str.strip().ne("")
-    parents = df[~has_dep].sort_values("display_order")
-    children = df[has_dep].sort_values("display_order")
+    # Determine dependency column
+    dep_series = df.get("depends_on", "")
+    dep_series = dep_series if isinstance(dep_series, pd.Series) else pd.Series([""] * len(df))
+    dep_series = dep_series.fillna("").astype(str).str.strip()
 
-    # Helper to render one row
-    def _render_row(row: pd.Series):
-        # Respect conditional visibility
-        if not question_is_visible(row, dept_label, production):
-            return
+    # Split parents/children
+    is_child = dep_series.ne("")
+    parents_df = df[~is_child].sort_values("display_order").reset_index(drop=True)
+    children_df = df[is_child].copy()
+    children_df["__parent_qid__"] = children_df["depends_on"].str.split("=").str[0].str.strip()
 
+    # Map: parent_qid -> list[child rows sorted by display_order]
+    from collections import defaultdict
+    children_by_parent: dict[str, list[pd.Series]] = defaultdict(list)
+    for _, crow in children_df.sort_values("display_order").iterrows():
+        parent_qid = str(crow["__parent_qid__"])
+        children_by_parent[parent_qid].append(crow)
+
+    rendered: set[str] = set()
+
+    def _render_one(row: pd.Series):
+        """Render a single question row and store in responses."""
         qid = str(row.get("question_id", "")).strip()
         if not qid:
-            return  # skip malformed
+            return
+        # Respect conditional visibility (incl. depends_on)
+        if not question_is_visible(row, dept_label, production):
+            return
 
         # Label
         raw_label = str(row.get("question_text", "") or "").strip()
@@ -216,16 +230,15 @@ def build_form_for_questions(
         if isinstance(opts_raw, str) and opts_raw.strip():
             options = [o.strip() for o in opts_raw.split(",") if o.strip()]
 
-        # Previous value for this (dept, production, qid)
+        # Previous value
         prev_primary, prev_desc = get_answer_value(dept_label, production, qid)
 
-        # Unique widget key
+        # Unique key
         widget_key = f"{dept_label}::{production}::{qid}"
         entry = {"primary": None, "description": prev_desc}
 
-        # --- Widgets
+        # Widgets
         if rtype == "yes_no":
-            # Radio with placeholder so it never defaults to "Yes"
             options_display = ["— Select —"] + YES_NO_OPTIONS
             default_index = options_display.index(prev_primary) if prev_primary in YES_NO_OPTIONS else 0
             chosen = st.radio(
@@ -253,7 +266,6 @@ def build_form_for_questions(
             entry["primary"] = st.number_input(label_display, step=1.0, key=widget_key, value=default_val)
 
         elif rtype in ("dropdown", "select") and options:
-            # Dropdown with placeholder (prepend if not supplied in CSV)
             opts = options if (len(options) > 0 and options[0] == "— Select —") else (["— Select —"] + options)
             default_index = opts.index(prev_primary) if prev_primary in opts else 0
             chosen = st.selectbox(label_display, opts, key=widget_key, index=default_index)
@@ -264,17 +276,42 @@ def build_form_for_questions(
             entry["primary"] = st.text_area(label_display, key=widget_key, value=default_text, height=60)
 
         responses[qid] = entry
+        rendered.add(qid)
 
-    # Pass 1: parents first
-    for _, row in parents.iterrows():
-        _render_row(row)
+    def _render_with_children(parent_row: pd.Series):
+        """Render parent, then any visible children (depth-first)."""
+        _render_one(parent_row)
+        pqid = str(parent_row.get("question_id", "")).strip()
+        if not pqid:
+            return
+        for child_row in children_by_parent.get(pqid, []):
+            # Only render each child once
+            cqid = str(child_row.get("question_id", "")).strip()
+            if not cqid or cqid in rendered:
+                continue
+            if question_is_visible(child_row, dept_label, production):
+                _render_one(child_row)
+                # Support nested dependencies (grandchildren) depth-first
+                _render_descendants(child_row)
 
-    # Pass 2: children after parents (so visibility reads current parent value)
-    for _, row in children.iterrows():
-        _render_row(row)
+    def _render_descendants(row: pd.Series):
+        """Render children of a child (grandchildren), if any, after it."""
+        qid = str(row.get("question_id", "")).strip()
+        if not qid:
+            return
+        for c2 in children_by_parent.get(qid, []):
+            c2id = str(c2.get("question_id", "")).strip()
+            if not c2id or c2id in rendered:
+                continue
+            if question_is_visible(c2, dept_label, production):
+                _render_one(c2)
+                _render_descendants(c2)
+
+    # Iterate parents in display_order; render each followed by its (visible) children
+    for _, prow in parents_df.iterrows():
+        _render_with_children(prow)
 
     return responses
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
