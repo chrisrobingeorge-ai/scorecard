@@ -969,7 +969,22 @@ def main():
     # Normalised production key for storage: "" for General, or the production/programme name
     current_production = "" if sel_prod == GENERAL_PROD_LABEL else sel_prod
     
-   
+   # Hydrate only if keys are missing (first load or after draft applied)
+    answers_df = get_answers_df()
+    mask = (
+        (answers_df["department"] == dept_label) &
+        (answers_df["production"] == current_production)
+    )
+    for _, row in answers_df[mask].iterrows():
+        qid = str(row["question_id"])
+        key_primary = f"{dept_label}::{current_production}::{qid}"
+        key_desc = f"{dept_label}::{current_production}::{qid}_desc"
+    
+        if key_primary not in st.session_state:
+            st.session_state[key_primary] = row["primary"]
+        if row.get("description") and key_desc not in st.session_state:
+            st.session_state[key_desc] = row["description"]
+
     # ── 4) Filter questions for display
     filtered = filter_questions_for_scope(questions_all_df, current_production)
 
