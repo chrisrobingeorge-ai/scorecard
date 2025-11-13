@@ -947,11 +947,17 @@ def main():
         current_dept = (dept_label or "").strip().casefold()
         dept_prods = productions_df[(dept_series == current_dept) & (productions_df["active"])]
 
-        if dept_prods.empty:
-            prod_options = [GENERAL_PROD_LABEL]
+        prod_list = sorted(dept_prods["production_name"].dropna().unique().tolist())
+
+        if getattr(dept_cfg, "allow_general_option", True):
+            prod_options = [GENERAL_PROD_LABEL] + prod_list if prod_list else [GENERAL_PROD_LABEL]
         else:
-            prod_list = sorted(dept_prods["production_name"].dropna().unique().tolist())
-            prod_options = [GENERAL_PROD_LABEL] + prod_list
+            # No "General" option for this department
+            prod_options = prod_list or []
+            if not prod_options:
+                st.error(f"No active {dept_cfg.scope_label.lower()}s configured for {dept_label}. "
+                         "Add rows to productions.csv.")
+                st.stop()
 
         # Preserve a preloaded selection from a draft even if it isn't in the CSV (e.g., inactive/missing)
         preselected = st.session_state.get("filter_production", GENERAL_PROD_LABEL)
