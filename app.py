@@ -161,157 +161,93 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
 # ─────────────────────────────────────────────────────────────────────────────
 # Form rendering
 # ─────────────────────────────────────────────────────────────────────────────
-def build_form_for_questions(
-    df: pd.DataFrame,
-    dept_label: str,
-    production: str,
-) -> Dict[str, dict]:
+def question_is_visible(row: pd.Series, dept_label: str, production: str) -> bool:
     """
-    Render widgets for each question in the provided DataFrame.
-    Reads/writes values via answers_df. Returns {qid: {primary, description}}.
+    Visibility logic controlled by CSV 'depends_on'.
 
-    Rendering order:
-      - Iterate parents (no depends_on) in display_order.
-      - Immediately after a parent, render its visible children (depends_on == parent qid),
-        ordered by their display_order. Nested dependencies are rendered depth-first.
+    Supported forms (case-insensitive for values):
+      - "QID"                      → show if parent == "Yes"
+      - "QID=Value"               → show if parent equals Value
+      - "QID!=Value"              → show if parent not equals Value
+      - "QID in [A,B,C]"          → show if parent is any of A,B,C
+      - "QID not in [A,B]"        → show if parent not in A,B
+      - Combine multiple with ';' or '&&' for AND: "Q1=Yes; Q2 in [A,B]"
+
+    Parent lookup key is f"{dept_label}::{production}::{QID}" (same scope).
     """
-    responses: Dict[str, dict] = {}
+    rule = str(row.get("depends_on", "") or "").strip()
+    if not rule:
+        return True  # no dependency
 
-    # Normalize & base sort
-    df = df.copy()
-    df["strategic_pillar"] = df.get("strategic_pillar", "General").replace("", "General")
-    df["metric"] = df.get("metric", "").fillna("")
-    df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
+    # Normalize: split multiple conditions on ';' or '&&'
+    import re
+    parts = [p.strip() for p in re.split(r';|&&', rule) if p.strip()]
+    if not parts:
+        return True
 
-    # Determine dependency column
-    dep_series = df.get("depends_on", "")
-    dep_series = dep_series if isinstance(dep_series, pd.Series) else pd.Series([""] * len(df))
-    dep_series = dep_series.fillna("").astype(str).str.strip()
+    def _parse_list(s: str):
+        # accepts: [A,B,C] or A,B,C
+        s = s.strip()
+        if s.startswith('[') and s.endswith(']'):
+            s = s[1:-1]
+        return [x.strip() for x in s.split(',') if x.strip()]
 
-    # Split parents/children
-    is_child = dep_series.ne("")
-    parents_df = df[~is_child].sort_values("display_order").reset_index(drop=True)
-    children_df = df[is_child].copy()
-    children_df["__parent_qid__"] = children_df["depends_on"].str.split("=").str[0].str.strip()
+    def _get(parent_qid: str):
+        key = f"{dept_label}::{production}::{parent_qid}"
+        return st.session_state.get(key)
 
-    # Map: parent_qid -> list[child rows sorted by display_order]
-    from collections import defaultdict
-    children_by_parent: dict[str, list[pd.Series]] = defaultdict(list)
-    for _, crow in children_df.sort_values("display_order").iterrows():
-        parent_qid = str(crow["__parent_qid__"])
-        children_by_parent[parent_qid].append(crow)
+    def _cmp(lhs, rhs) -> bool:
+        if lhs is None or rhs is None:
+            return False
+        return str(lhs).strip().casefold() == str(rhs).strip().casefold()
 
-    rendered: set[str] = set()
+    def _in(lhs, options) -> bool:
+        if lhs is None:
+            return False
+        l = str(lhs).strip().casefold()
+        return any(l == str(o).strip().casefold() for o in options)
 
-    def _render_one(row: pd.Series):
-        """Render a single question row and store in responses."""
-        qid = str(row.get("question_id", "")).strip()
-        if not qid:
-            return
-        # Respect conditional visibility (incl. depends_on)
-        if not question_is_visible(row, dept_label, production):
-            return
+    for cond in parts:
+        # Forms to recognize:
+        # 1) QID (defaults to == "Yes")
+        # 2) QID=Value
+        # 3) QID!=Value
+        # 4) QID in [A,B]
+        # 5) QID not in [A,B]
+        m_in = re.match(r'^(\w+)\s+in\s+\[(.*?)\]$', cond, flags=re.I)
+        m_not_in = re.match(r'^(\w+)\s+not\s+in\s+\[(.*?)\]$', cond, flags=re.I)
+        m_ne = re.match(r'^(\w+)\s*!=\s*(.+)$', cond)
+        m_eq = re.match(r'^(\w+)\s*=\s*(.+)$', cond)
+        m_simple = re.match(r'^(\w+)$', cond)
 
-        # Label
-        raw_label = str(row.get("question_text", "") or "").strip()
-        label = raw_label or str(row.get("metric", "") or "").strip() or qid
-        required = bool(row.get("required", False))
-        label_display = f"{label} *" if required else label
-
-        # Response type & options
-        rtype = str(row.get("response_type", "") or "").strip().lower()
-        if rtype in ("select_yes_no", "radio_yes_no"):
-            rtype = "yes_no"
-        if rtype in ("select", "dropdownlist"):
-            rtype = "dropdown"
-
-        opts_raw = row.get("options", "")
-        options: list[str] = []
-        if isinstance(opts_raw, str) and opts_raw.strip():
-            options = [o.strip() for o in opts_raw.split(",") if o.strip()]
-
-        # Previous value
-        prev_primary, prev_desc = get_answer_value(dept_label, production, qid)
-
-        # Unique key
-        widget_key = f"{dept_label}::{production}::{qid}"
-        entry = {"primary": None, "description": prev_desc}
-
-        # Widgets
-        if rtype == "yes_no":
-            options_display = ["— Select —"] + YES_NO_OPTIONS
-            default_index = options_display.index(prev_primary) if prev_primary in YES_NO_OPTIONS else 0
-            chosen = st.radio(
-                label_display,
-                options_display,
-                horizontal=True,
-                key=widget_key,
-                index=default_index,
-            )
-            entry["primary"] = chosen if chosen in YES_NO_OPTIONS else None
-
-        elif rtype == "scale_1_5":
-            default_val = 3
-            try:
-                if isinstance(prev_primary, (int, float)) and 1 <= int(prev_primary) <= 5:
-                    default_val = int(prev_primary)
-            except Exception:
-                pass
-            entry["primary"] = int(
-                st.slider(label_display, min_value=1, max_value=5, key=widget_key, value=default_val)
-            )
-
-        elif rtype == "number":
-            default_val = float(prev_primary) if isinstance(prev_primary, (int, float)) else 0.0
-            entry["primary"] = st.number_input(label_display, step=1.0, key=widget_key, value=default_val)
-
-        elif rtype in ("dropdown", "select") and options:
-            opts = options if (len(options) > 0 and options[0] == "— Select —") else (["— Select —"] + options)
-            default_index = opts.index(prev_primary) if prev_primary in opts else 0
-            chosen = st.selectbox(label_display, opts, key=widget_key, index=default_index)
-            entry["primary"] = chosen if (chosen and chosen != "— Select —") else None
-
+        ok = True
+        if m_in:
+            qid, list_str = m_in.groups()
+            want = _parse_list(list_str)
+            ok = _in(_get(qid), want)
+        elif m_not_in:
+            qid, list_str = m_not_in.groups()
+            want = _parse_list(list_str)
+            ok = not _in(_get(qid), want)
+        elif m_ne:
+            qid, val = m_ne.groups()
+            ok = not _cmp(_get(qid), val)
+        elif m_eq:
+            qid, val = m_eq.groups()
+            ok = _cmp(_get(qid), val)
+        elif m_simple:
+            # default to Yes for plain "QID"
+            qid = m_simple.group(1)
+            ok = _cmp(_get(qid), "Yes")
         else:
-            default_text = str(prev_primary) if prev_primary is not None else ""
-            entry["primary"] = st.text_area(label_display, key=widget_key, value=default_text, height=60)
+            # Unrecognized condition → be permissive
+            ok = True
 
-        responses[qid] = entry
-        rendered.add(qid)
+        if not ok:
+            return False
 
-    def _render_with_children(parent_row: pd.Series):
-        """Render parent, then any visible children (depth-first)."""
-        _render_one(parent_row)
-        pqid = str(parent_row.get("question_id", "")).strip()
-        if not pqid:
-            return
-        for child_row in children_by_parent.get(pqid, []):
-            # Only render each child once
-            cqid = str(child_row.get("question_id", "")).strip()
-            if not cqid or cqid in rendered:
-                continue
-            if question_is_visible(child_row, dept_label, production):
-                _render_one(child_row)
-                # Support nested dependencies (grandchildren) depth-first
-                _render_descendants(child_row)
+    return True
 
-    def _render_descendants(row: pd.Series):
-        """Render children of a child (grandchildren), if any, after it."""
-        qid = str(row.get("question_id", "")).strip()
-        if not qid:
-            return
-        for c2 in children_by_parent.get(qid, []):
-            c2id = str(c2.get("question_id", "")).strip()
-            if not c2id or c2id in rendered:
-                continue
-            if question_is_visible(c2, dept_label, production):
-                _render_one(c2)
-                _render_descendants(c2)
-
-    # Iterate parents in display_order; render each followed by its (visible) children
-    for _, prow in parents_df.iterrows():
-        _render_with_children(prow)
-
-    return responses
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
