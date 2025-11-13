@@ -169,39 +169,43 @@ def build_form_for_questions(
     """
     Render widgets for each question in the provided DataFrame.
     Reads/writes values via answers_df. Returns {qid: {primary, description}}.
+
+    Rendering order:
+      1) All questions WITHOUT depends_on (parents), sorted by display_order
+      2) All questions WITH depends_on (children),  sorted by display_order
     """
     responses: Dict[str, dict] = {}
 
-    # Normalize & sort
+    # --- Normalise & sort bases
     df = df.copy()
     df["strategic_pillar"] = df.get("strategic_pillar", "General").replace("", "General")
     df["metric"] = df.get("metric", "").fillna("")
     df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
-    df = df.sort_values("display_order")
 
-    for _, row in df.iterrows():
+    # Split into parents (no depends_on) and children (has depends_on)
+    depcol = df.get("depends_on", "")
+    has_dep = depcol.fillna("").astype(str).str.strip().ne("")
+    parents = df[~has_dep].sort_values("display_order")
+    children = df[has_dep].sort_values("display_order")
+
+    # Helper to render one row
+    def _render_row(row: pd.Series):
         # Respect conditional visibility
         if not question_is_visible(row, dept_label, production):
-            continue
+            return
 
         qid = str(row.get("question_id", "")).strip()
         if not qid:
-            continue  # skip malformed rows
+            return  # skip malformed
 
-        # Label resolution
+        # Label
         raw_label = str(row.get("question_text", "") or "").strip()
-        if not raw_label:
-            metric = str(row.get("metric", "") or "").strip()
-            label = metric or qid
-        else:
-            label = raw_label
-
+        label = raw_label or str(row.get("metric", "") or "").strip() or qid
         required = bool(row.get("required", False))
         label_display = f"{label} *" if required else label
 
         # Response type & options
         rtype = str(row.get("response_type", "") or "").strip().lower()
-        # Allow a couple aliases from CSV
         if rtype in ("select_yes_no", "radio_yes_no"):
             rtype = "yes_no"
         if rtype in ("select", "dropdownlist"):
@@ -215,12 +219,11 @@ def build_form_for_questions(
         # Previous value for this (dept, production, qid)
         prev_primary, prev_desc = get_answer_value(dept_label, production, qid)
 
-        # Widget key unique per dept+production+question
+        # Unique widget key
         widget_key = f"{dept_label}::{production}::{qid}"
-
         entry = {"primary": None, "description": prev_desc}
 
-        # ── Widget renderers ──────────────────────────────────────────────────
+        # --- Widgets
         if rtype == "yes_no":
             # Radio with placeholder so it never defaults to "Yes"
             options_display = ["— Select —"] + YES_NO_OPTIONS
@@ -257,13 +260,21 @@ def build_form_for_questions(
             entry["primary"] = chosen if (chosen and chosen != "— Select —") else None
 
         else:
-            # Default to text area
             default_text = str(prev_primary) if prev_primary is not None else ""
             entry["primary"] = st.text_area(label_display, key=widget_key, value=default_text, height=60)
 
         responses[qid] = entry
 
+    # Pass 1: parents first
+    for _, row in parents.iterrows():
+        _render_row(row)
+
+    # Pass 2: children after parents (so visibility reads current parent value)
+    for _, row in children.iterrows():
+        _render_row(row)
+
     return responses
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
