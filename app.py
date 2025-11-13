@@ -1,12 +1,12 @@
 # app.py
 from __future__ import annotations
 
-import hashlib
+import os
+from pathlib import Path
 import json
 from dataclasses import dataclass
 from datetime import date
-from types import SimpleNamespace
-from typing import Dict, Tuple, List, Any
+from typing import Dict, Tuple, List, Any, Optional
 
 import pandas as pd
 import streamlit as st
@@ -47,67 +47,93 @@ except Exception:
 try:
     from pdf_utils import build_scorecard_pdf
 except Exception:
-    def build_scorecard_pdf(meta, filtered_df, responses, ai_result) -> bytes:
-        # Simple stub PDF replacement
-        return b"%PDF-1.4\n% Stub PDF — pdf_utils not configured.\n"
+    def build_scorecard_pdf(*args, **kwargs):
+        # ASCII-only stub to avoid SyntaxError on some hosts
+        return b"%PDF-1.4\n% Stub PDF - pdf_utils not configured.\n"
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Streamlit cache guard (supports older Streamlit)
+# ─────────────────────────────────────────────────────────────────────────────
+try:
+    cache_data = st.cache_data
+except AttributeError:  # Streamlit < 1.18
+    cache_data = st.cache
 
-# Normalize DEPARTMENT_CONFIGS shape (accepts dict or objects)
+# ─────────────────────────────────────────────────────────────────────────────
+# Config normalization (robust to dicts, SimpleNamespace, or custom objects)
+# ─────────────────────────────────────────────────────────────────────────────
+from collections.abc import Mapping
+
 @dataclass
 class DepartmentConfig:
     questions_csv: str
     has_productions: bool = True
-    productions_csv: str | None = None
+    productions_csv: Optional[str] = None
     scope_label: str = "Production / area"
 
 def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
-    if not raw:
-        # Minimal fallback to help first launch
+    # Default scaffold if nothing provided
+    def _defaults() -> Dict[str, DepartmentConfig]:
         return {
             "Artistic": DepartmentConfig(
-                questions_csv="artistic_scorecard_questions.csv",
+                questions_csv="data/artistic_scorecard_questions.csv",
                 has_productions=True,
-                productions_csv="artistic_productions.csv",
+                productions_csv="data/productions.csv",
                 scope_label="Production",
             ),
             "School": DepartmentConfig(
-                questions_csv="school_scorecard_questions.csv",
+                questions_csv="data/school_scorecard_questions.csv",
                 has_productions=False,
                 productions_csv=None,
                 scope_label="Programme",
             ),
             "Community": DepartmentConfig(
-                questions_csv="community_scorecard_questions.csv",
+                questions_csv="data/community_scorecard_questions.csv",
                 has_productions=True,
-                productions_csv="community_programmes.csv",
+                productions_csv="data/productions.csv",
                 scope_label="Programme",
             ),
             "Corporate": DepartmentConfig(
-                questions_csv="corporate_scorecard_questions.csv",
+                questions_csv="data/corporate_scorecard_questions.csv",
                 has_productions=False,
                 productions_csv=None,
                 scope_label="Area",
             ),
         }
 
+    if not raw:
+        return _defaults()
+
+    if not isinstance(raw, Mapping):
+        # If someone exported it as a list/tuple/etc, bail to defaults
+        return _defaults()
+
     out: Dict[str, DepartmentConfig] = {}
     for k, v in raw.items():
         if isinstance(v, DepartmentConfig):
             out[k] = v
             continue
-        # allow dict or SimpleNamespace
-        questions_csv = getattr(v, "questions_csv", None) or v.get("questions_csv")
-        has_productions = getattr(v, "has_productions", None)
-        if has_productions is None:
+
+        # If dict-like
+        if isinstance(v, Mapping):
+            questions_csv   = v.get("questions_csv")
             has_productions = v.get("has_productions", True)
-        productions_csv = getattr(v, "productions_csv", None) or v.get("productions_csv", None)
-        scope_label = getattr(v, "scope_label", None) or v.get("scope_label", "Production / area")
+            productions_csv = v.get("productions_csv")
+            scope_label     = v.get("scope_label", "Production / area")
+        else:
+            # Generic object (SimpleNamespace, pydantic model, etc.)
+            questions_csv   = getattr(v, "questions_csv", None)
+            has_productions = getattr(v, "has_productions", True)
+            productions_csv = getattr(v, "productions_csv", None)
+            scope_label     = getattr(v, "scope_label", "Production / area")
+
         out[k] = DepartmentConfig(
             questions_csv=questions_csv,
             has_productions=bool(has_productions),
             productions_csv=productions_csv,
-            scope_label=scope_label,
+            scope_label=scope_label or "Production / area",
         )
+
     return out
 
 DEPARTMENT_CONFIGS: Dict[str, DepartmentConfig] = _normalize_dept_cfgs(_DEPT_CFGS)
@@ -131,11 +157,33 @@ def _hash_bytes(b: bytes) -> str:
     import hashlib as _hl
     return _hl.sha256(b).hexdigest()
 
-def _ensure_col(df: pd.DataFrame, col: str, default=""):
+def _ensure_col(df: pd.DataFrame, col: str, default: Any = ""):
     """Ensure a column exists and fill NA."""
     if col not in df.columns:
         df[col] = default
     df[col] = df[col].fillna(default)
+
+def _resolve_path(p: str) -> Optional[str]:
+    """Try several locations for a relative CSV path; return the first that exists."""
+    if not p:
+        return None
+    if os.path.isabs(p) and os.path.exists(p):
+        return p
+    candidates = [
+        p,
+        str(Path(p)),
+        str(Path.cwd() / p),
+        str(Path.cwd() / "data" / Path(p).name),
+        "/mount/src/scorecard/" + p,
+        "/mount/src/scorecard/data/" + Path(p).name,
+    ]
+    for c in candidates:
+        try:
+            if os.path.exists(c):
+                return c
+        except Exception:
+            pass
+    return None
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Answers storage
@@ -148,7 +196,7 @@ def get_answers_df() -> pd.DataFrame:
         )
     return st.session_state["answers_df"]
 
-def get_answer_value(dept: str, production: str, qid: str) -> Tuple[object | None, str | None]:
+def get_answer_value(dept: str, production: str, qid: str) -> Tuple[Optional[object], Optional[str]]:
     df = get_answers_df()
     mask = (
         (df["department"] == dept) &
@@ -160,7 +208,7 @@ def get_answer_value(dept: str, production: str, qid: str) -> Tuple[object | Non
     row = df[mask].iloc[0]
     return row.get("primary", None), row.get("description", None)
 
-def upsert_answer(dept: str, production: str, qid: str, primary, description=None):
+def upsert_answer(dept: str, production: str, qid: str, primary, description: Optional[str] = None):
     df = get_answers_df()
     mask = (
         (df["department"] == dept) &
@@ -177,19 +225,19 @@ def upsert_answer(dept: str, production: str, qid: str, primary, description=Non
     }
 
     if mask.any():
-        st.session_state["answers_df"].loc[mask, ["primary", "description"]] = [
-            (primary, description or "")
-        ]
+        # Separate column assignments to avoid shape errors
+        st.session_state["answers_df"].loc[mask, "primary"] = primary
+        st.session_state["answers_df"].loc[mask, "description"] = (description or "")
     else:
         st.session_state["answers_df"] = pd.concat(
             [df, pd.DataFrame([new_row])],
             ignore_index=True,
         )
 
-def _normalise_show_entry(entry):
+def _normalise_show_entry(entry: Any) -> Optional[dict]:
     """Convert stored show answers into the dict format used across the app."""
     if isinstance(entry, dict):
-        cleaned = {}
+        cleaned: Dict[str, Any] = {}
         if "primary" in entry:
             cleaned["primary"] = entry.get("primary")
         if "description" in entry:
@@ -202,9 +250,10 @@ def _normalise_show_entry(entry):
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
 # ─────────────────────────────────────────────────────────────────────────────
-@st.cache_data
-def load_questions(file_path: str) -> pd.DataFrame:
-    df = pd.read_csv(file_path)
+@cache_data
+def load_questions_from_bytes(csv_bytes: bytes) -> pd.DataFrame:
+    from io import BytesIO
+    df = pd.read_csv(BytesIO(csv_bytes))
 
     # Normalize ID
     if "question_id" in df.columns:
@@ -228,13 +277,23 @@ def load_questions(file_path: str) -> pd.DataFrame:
 
     for c in ("section", "strategic_pillar", "production", "metric",
               "question_text", "response_type", "options", "depends_on"):
-        _ensure_col(df, c, "")
+        if c not in df.columns:
+            df[c] = ""
+        df[c] = df[c].fillna("")
 
     # Defaults for grouping/rendering
     df["section"] = df["section"].replace("", "General")
     df["response_type"] = df["response_type"].replace("", "text")
 
     return df
+
+@cache_data
+def load_questions(file_path: str) -> pd.DataFrame:
+    resolved = _resolve_path(file_path)
+    if not resolved:
+        raise FileNotFoundError(f"Could not find CSV: {file_path}")
+    with open(resolved, "rb") as f:
+        return load_questions_from_bytes(f.read())
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Visibility rules (CSV-driven)
@@ -262,7 +321,7 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
     if not parts:
         return True
 
-    def _parse_list(s: str):
+    def _parse_list(s: str) -> List[str]:
         s = s.strip()
         if s.startswith('[') and s.endswith(']'):
             s = s[1:-1]
@@ -277,7 +336,7 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
             return False
         return str(lhs).strip().casefold() == str(rhs).strip().casefold()
 
-    def _in(lhs, options) -> bool:
+    def _in(lhs, options: List[str]) -> bool:
         if lhs is None:
             return False
         l = str(lhs).strip().casefold()
@@ -330,33 +389,42 @@ def build_form_for_questions(
     Parents render first; each parent's visible children render immediately after.
     """
     responses: Dict[str, dict] = {}
-
     yes_no_opts = YES_NO_OPTIONS if isinstance(YES_NO_OPTIONS, (list, tuple)) and len(YES_NO_OPTIONS) >= 2 else ["Yes", "No"]
 
     # Normalize & base sort
     df = df.copy()
-    df["strategic_pillar"] = df.get("strategic_pillar", "General").replace("", "General")
-    df["metric"] = df.get("metric", "").fillna("")
-    df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
+    # Guard against .get returning a scalar default
+    if "strategic_pillar" in df.columns:
+        df["strategic_pillar"] = df["strategic_pillar"].fillna("").replace("", "General")
+    else:
+        df["strategic_pillar"] = "General"
+
+    if "metric" not in df.columns:
+        df["metric"] = ""
+    df["metric"] = df["metric"].fillna("")
+
+    if "display_order" in df.columns:
+        df["display_order"] = pd.to_numeric(df["display_order"], errors="coerce").fillna(0)
+    else:
+        df["display_order"] = 0
 
     # Split parents/children by depends_on presence
-    dep_series = df.get("depends_on", "")
-    dep_series = dep_series if isinstance(dep_series, pd.Series) else pd.Series([""] * len(df))
+    dep_series = df["depends_on"] if "depends_on" in df.columns else pd.Series([""] * len(df))
     dep_series = dep_series.fillna("").astype(str).str.strip()
     is_child = dep_series.ne("")
 
     parents_df = df[~is_child].sort_values("display_order").reset_index(drop=True)
     children_df = df[is_child].copy()
     # Parent id is the token before any operator (e.g., QID in [..], QID=..., QID!=...)
-    children_df["__parent_qid__"] = children_df["depends_on"].str.split(r"[ !><=]", n=1, regex=True).str[0].str.strip()
+    children_df["__parent_qid__"] = children_df["depends_on"].astype(str).str.split(r"[ !><=]", n=1, regex=True).str[0].str.strip()
     children_df = children_df.sort_values("display_order")
 
     from collections import defaultdict
-    kids: dict[str, list[pd.Series]] = defaultdict(list)
+    kids: Dict[str, List[pd.Series]] = defaultdict(list)
     for _, crow in children_df.iterrows():
         kids[str(crow["__parent_qid__"])].append(crow)
 
-    rendered: set[str] = set()
+    rendered: set = set()
 
     def _widget_key(qid: str) -> str:
         return f"{dept_label}::{production}::{qid}"
@@ -394,12 +462,12 @@ def build_form_for_questions(
 
         # Unique key
         widget_key = _widget_key(qid)
-        entry = {"primary": None, "description": prev_desc}
+        entry: Dict[str, Any] = {"primary": None, "description": prev_desc}
 
         # Widgets
         if rtype == "yes_no":
             opts_display = ["— Select —"] + list(yes_no_opts)
-            default_index = opts_display.index(prev_primary) if prev_primary in yes_no_opts else 0
+            default_index = opts_display.index(prev_primary) if (prev_primary in yes_no_opts) else 0
             chosen = st.radio(
                 label_display,
                 opts_display,
@@ -534,7 +602,7 @@ def _apply_pending_draft_if_any():
 
             return normalized
 
-        rows = []
+        rows: List[Dict[str, Any]] = []
 
         def _add_entries_for(dept_val: str, prod_val: str, answers_dict: dict):
             if not isinstance(answers_dict, dict):
@@ -668,7 +736,7 @@ def _build_show_key(department: str, show: str) -> str:
 def build_draft_from_state(
     all_questions_df: pd.DataFrame,
     meta: dict,
-    current_production: str | None = None,
+    current_production: Optional[str] = None,
     question_ids=None,
 ) -> dict:
     question_ids = [str(q) for q in (question_ids or [])]
@@ -695,7 +763,7 @@ def build_draft_from_state(
             curr_df = df[df["production"] == ""]
         for _, row in curr_df.iterrows():
             qid = str(row["question_id"])
-            entry = {}
+            entry: Dict[str, Any] = {}
             if row["primary"] not in (None, ""):
                 entry["primary"] = row["primary"]
             desc = row.get("description", "")
@@ -810,22 +878,45 @@ def main():
     )
     dept_cfg = DEPARTMENT_CONFIGS[dept_label]
 
-    # Reset production when dept changes
+    # Reset production when dept changes, but DO NOT clobber a draft-applied selection
     if "last_dept_label" not in st.session_state or st.session_state["last_dept_label"] != dept_label:
-        st.session_state["filter_production"] = GENERAL_PROD_LABEL
+        if not st.session_state.get("draft_applied", False):
+            st.session_state["filter_production"] = GENERAL_PROD_LABEL
         st.session_state["last_dept_label"] = dept_label
 
-    # ── 2) Load questions for this department
-    questions_all_df = load_questions(dept_cfg.questions_csv)
+    # ── 2) Load questions for this department (disk first, upload only if missing)
+    try:
+        questions_all_df = load_questions(dept_cfg.questions_csv)
+    except FileNotFoundError:
+        st.warning(
+            f"Couldn’t find the {dept_label} questions CSV at `{dept_cfg.questions_csv}`.\n"
+            "If you have it locally, upload it below. (This prompt only appears when the file is missing.)"
+        )
+        missing_csv = st.file_uploader(
+            f"Upload {dept_label} questions CSV",
+            type=["csv"],
+            key=f"fallback_questions_uploader::{dept_label}",
+            help="Temporary fallback—upload only if the configured file isn’t available on disk."
+        )
+        if missing_csv is None:
+            st.stop()
+        try:
+            questions_all_df = load_questions_from_bytes(missing_csv.getvalue())
+            st.success(f"Using uploaded {dept_label} questions CSV for this session.")
+        except Exception as e:
+            st.error(f"Uploaded CSV couldn’t be parsed: {e}")
+            st.stop()
+
     all_question_ids = questions_all_df["question_id"].astype(str).tolist()
 
     # ── 3) Scope selector (production / programme / general)
     st.subheader("Scope of this report")
 
     if dept_cfg.has_productions and dept_cfg.productions_csv:
-        try:
-            productions_df = pd.read_csv(dept_cfg.productions_csv)
-        except FileNotFoundError:
+        resolved_prod = _resolve_path(dept_cfg.productions_csv)
+        if resolved_prod and os.path.exists(resolved_prod):
+            productions_df = pd.read_csv(resolved_prod)
+        else:
             productions_df = pd.DataFrame(columns=["department", "production_name", "active"])
 
         _ensure_col(productions_df, "department", "")
@@ -845,7 +936,14 @@ def main():
             prod_list = sorted(dept_prods["production_name"].dropna().unique().tolist())
             prod_options = [GENERAL_PROD_LABEL] + prod_list
 
+        # Preserve a preloaded selection from a draft even if it isn't in the CSV (e.g., inactive/missing)
+        preselected = st.session_state.get("filter_production", GENERAL_PROD_LABEL)
+        if preselected and preselected != GENERAL_PROD_LABEL and preselected not in prod_options:
+            # Keep General first; append the preselected one so Streamlit accepts the state
+            prod_options = [GENERAL_PROD_LABEL] + sorted(set(prod_options[1:] + [preselected]))
+
         sel_prod = st.selectbox(dept_cfg.scope_label, prod_options, key="filter_production")
+
     else:
         # No productions for this department → always general
         sel_prod = GENERAL_PROD_LABEL
@@ -925,7 +1023,7 @@ def main():
         return
 
     # visible-only validation
-    missing_required = []
+    missing_required: List[str] = []
     for _, row in filtered.iterrows():
         if not question_is_visible(row, dept_label, current_production):
             continue
