@@ -12,7 +12,7 @@ section,department,strategic_pillar,production,metric,question_id,question_text,
 ,School,Classical Training,School-wide,Guest Teachers and Choreographers,SCH_CT_Q11,Did we host guest teachers and choreographers to enrich the School's dance repertoire and techniques this reporting period?,yes_no,"Yes,No",TRUE,11,artistic_enrichment,1,
 ,School,Classical Training,School-wide,Guest Teachers and Choreographers,SCH_CT_Q12,"If yes, who were the guest teachers or choreographers and what did they teach?",text,,FALSE,12,artistic_enrichment,1,SCH_CT_Q11
 ,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q1,Did Alberta Ballet perform internationally this reporting period?,yes_no,"Yes,No",TRUE,13,recruitment_marketing,1,
-,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q2,"If yes, which performance and in which country?",yes_no,"Yes,No",FALSE,14,recruitment_marketing,1,SCH_AS_Q1
+,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q2,"If yes, which performance and in which country?",text,,FALSE,14,recruitment_marketing,1,SCH_AS_Q1
 ,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q3,Did we promote Alberta Ballet School at the performance?,text,,FALSE,15,recruitment_marketing,1,SCH_AS_Q1
 ,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q4,Did we secure any auditioning students in that country as a result?,text,,FALSE,16,recruitment_marketing,1,SCH_AS_Q1
 ,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q5,Did we participate in international recruitment events this reporting period?,yes_no,"Yes,No",TRUE,17,recruitment_marketing,1,
