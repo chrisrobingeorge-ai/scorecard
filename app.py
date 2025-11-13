@@ -879,9 +879,9 @@ def main():
 
     from datetime import date as _date
     if "report_month_date" in st.session_state:
-        month_date = st.date_input("Reporting month", key="report_month_date")
+        month_date = st.date_input("Reporting period", key="report_month_date")
     else:
-        month_date = st.date_input("Reporting month", value=_date.today(), key="report_month_date")
+        month_date = st.date_input("Reporting period", value=_date.today(), key="report_month_date")
 
     month_str = (st.session_state.get("report_month_date") or _date.today()).strftime("%Y-%m")
 
