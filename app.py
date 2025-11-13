@@ -968,7 +968,19 @@ def main():
 
     # Normalised production key for storage: "" for General, or the production/programme name
     current_production = "" if sel_prod == GENERAL_PROD_LABEL else sel_prod
-
+    
+    # Hydrate widgets for this department/production from answers_df
+    answers_df = get_answers_df()
+    mask = (
+        (answers_df["department"] == dept_label) &
+        (answers_df["production"] == current_production)
+    )
+    for _, row in answers_df[mask].iterrows():
+        qid = str(row["question_id"])
+        st.session_state[f"{dept_label}::{current_production}::{qid}"] = row["primary"]
+        if row.get("description"):
+            st.session_state[f"{dept_label}::{current_production}::{qid}_desc"] = row["description"]
+   
     # ── 4) Filter questions for display
     filtered = filter_questions_for_scope(questions_all_df, current_production)
 
