@@ -865,14 +865,6 @@ def main():
         st.session_state["filter_production"] = GENERAL_PROD_LABEL
         st.session_state["last_dept_label"] = dept_label
 
-    # Optional: upload override for missing questions CSV
-    st.sidebar.subheader(f"{dept_label} questions CSV")
-    uploaded_csv = st.sidebar.file_uploader(
-        f"Override {dept_label} questions CSV",
-        type=["csv"],
-        key=f"uploader::{dept_label}",
-        help="If your questions CSV isn’t on disk, upload it here and I’ll use it instead.",
-    )
     questions_all_df: pd.DataFrame
     if uploaded_csv is not None:
         try:
@@ -883,19 +875,20 @@ def main():
             # Fall back to disk below
             questions_all_df = load_questions(dept_cfg.questions_csv)
     else:
-        # ── 2) Load questions for this department
-        try:
-            questions_all_df = load_questions(dept_cfg.questions_csv)
-        except FileNotFoundError:
-            st.error(
-                f"Couldn’t find the {dept_label} questions CSV at "
-                f"`{dept_cfg.questions_csv}`.\n\n"
-                "Place the file there (e.g., `data/school_scorecard_questions.csv`) "
-                "or upload it via the sidebar."
-            )
-            st.stop()
-
+    
+    # ── 2) Load questions for this department (disk only; no sidebar uploader)
+    try:
+        questions_all_df = load_questions(dept_cfg.questions_csv)
+    except FileNotFoundError:
+        st.error(
+            f"Couldn’t find the {dept_label} questions CSV at `{dept_cfg.questions_csv}`.\n\n"
+            "Place the file there (e.g., `school_scorecard_questions.csv`) or update "
+            "`app_config.DEPARTMENT_CONFIGS['{dept_label}'].questions_csv` to the correct path."
+        )
+        st.stop()
+    
     all_question_ids = questions_all_df["question_id"].astype(str).tolist()
+
 
     # ── 3) Scope selector (production / programme / general)
     st.subheader("Scope of this report")
