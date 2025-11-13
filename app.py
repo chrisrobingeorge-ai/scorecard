@@ -940,6 +940,7 @@ def main():
         else:
             productions_df = pd.DataFrame(columns=["department", "production_name", "active"])
     
+        # Ensure required columns exist
         _ensure_col(productions_df, "department", "")
         _ensure_col(productions_df, "production_name", "")
         if "active" in productions_df.columns:
@@ -947,15 +948,18 @@ def main():
         else:
             productions_df["active"] = True
     
+        # Filter productions for current department
         dept_series = productions_df["department"].astype(str).str.strip().str.casefold()
         current_dept = (dept_label or "").strip().casefold()
         dept_prods = productions_df[(dept_series == current_dept) & (productions_df["active"])]
     
-        # Build prod_options (with/without General, depending on config)
+        # Build production options
         prod_list = sorted(dept_prods["production_name"].dropna().unique().tolist())
         if getattr(dept_cfg, "allow_general_option", True):
+            # Include General if allowed
             prod_options = [GENERAL_PROD_LABEL] + prod_list if prod_list else [GENERAL_PROD_LABEL]
         else:
+            # Exclude General completely
             prod_options = prod_list or []
             if not prod_options:
                 st.error(
@@ -964,20 +968,21 @@ def main():
                 )
                 st.stop()
     
-        # ▼ Handle preselected value
+        # Handle preselected value from session state
         preselected = st.session_state.get("filter_production")
         if preselected is None or preselected not in prod_options:
-            # If General isn’t allowed, pick first programme; otherwise we’ll handle below
+            # If General isn’t allowed, pick first programme automatically
             if not getattr(dept_cfg, "allow_general_option", True) and prod_options:
                 preselected = prod_options[0]
                 st.session_state["filter_production"] = preselected
     
-        # Preserve a preloaded selection from a draft even if it isn't in the CSV (e.g., inactive/missing)
+        # Preserve a preloaded selection from a draft even if it isn't in the CSV
         preselected = st.session_state.get("filter_production", GENERAL_PROD_LABEL)
         if preselected and getattr(dept_cfg, "allow_general_option", True) and preselected != GENERAL_PROD_LABEL and preselected not in prod_options:
             # Keep General first; append the preselected one so Streamlit accepts the state
             prod_options = [GENERAL_PROD_LABEL] + sorted(set(prod_options[1:] + [preselected]))
     
+        # Render dropdown
         sel_prod = st.selectbox(dept_cfg.scope_label, prod_options, key="filter_production")
     
     else:
