@@ -1,44 +1,44 @@
 section,department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight,depends_on
-,School,Classical Training,School-wide,Exemplary Classical Technique,SCH_CT_Q1,Did any students achieve exemplary (90%+) technical scores in the classical ballet training curriculum (internal evaluation)?,yes_no,"Yes,No",TRUE,10,student_achievement,1.2,
-,School,Classical Training,School-wide,Exemplary Classical Technique,SCH_CT_Q2,"If yes, tell more (name, grade, achievement mark)",text,,FALSE,,,,SCH_CT_Q1
-,School,Classical Training,School-wide,Exemplary Classical Technique,SCH_CT_Q3,"If not, why not?",text,,FALSE,,,,SCH_CT_Q1=No
-,School,Classical Training,School-wide,Exemplary Contemporary Technique,SCH_CT_Q4,Did any students achieve exemplary (90%+) technical scores in the contemporary dance training curriculum (internal evaluation)?,yes_no,"Yes,No",TRUE,20,student_achievement,1.2,
-,School,Classical Training,School-wide,Exemplary Contemporary Technique,SCH_CT_Q5,"If yes, tell more (name, grade, achievement mark)",text,,FALSE,,,,SCH_CT_Q4
-,School,Classical Training,School-wide,Exemplary Contemporary Technique,SCH_CT_Q6,"If not, why not?",text,,FALSE,,,,SCH_CT_Q4=No
-,School,Classical Training,School-wide,Artistic Director Masterclasses,SCH_CT_Q7,Did the Artistic Director deliver student master classes to ABS this reporting period?,yes_no,"Yes,No",TRUE,30,leadership_engagement,1,
-,School,Classical Training,School-wide,Artistic Director Masterclasses,SCH_CT_Q8,"If yes, how many master classes and how many students received the master class?",text,,FALSE,,,,SCH_CT_Q7
-,School,Classical Training,School-wide,Graduate Employment,SCH_CT_Q9,Did any graduates receive employment in professional dance companies this reporting period?,yes_no,"Yes,No",TRUE,40,career_outcomes,1.3,
-,School,Classical Training,School-wide,Graduate Employment,SCH_CT_Q10,"If yes, what are their names and which company did they secure employment?",text,,FALSE,,,,SCH_CT_Q9
-,School,Classical Training,School-wide,Guest Teachers and Choreographers,SCH_CT_Q11,Did we host guest teachers and choreographers to enrich the School's dance repertoire and techniques this reporting period?,yes_no,"Yes,No",TRUE,50,artistic_enrichment,1.1,
-,School,Classical Training,School-wide,Guest Teachers and Choreographers,SCH_CT_Q12,"If yes, who were the guest teachers or choreographers and what did they teach?",text,,FALSE,,,,SCH_CT_Q11
-,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q1,Did Alberta Ballet perform internationally this reporting period?,,,,,,,
-,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q2,"If yes, which performance and in which country?",yes_no,"Yes,No",TRUE,10,recruitment_marketing,1.1,SCH_AS_Q1
-,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q3,"If yes, did we promote Alberta Ballet School at the performance?",text,,FALSE,,,,SCH_AS_Q1
-,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q4,Did we secure any auditioning students in that country as a result?,text,,FALSE,,,,SCH_AS_Q1
-,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q5,Did we participate in international recruitment events this reporting period?,yes_no,"Yes,No",TRUE,40,recruitment_events,1,
-,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q6,"If not, why not?",text,,FALSE,,,,SCH_AS_Q5=no
-,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q7,"If yes, did we take advantage of the Artistic Director’s presence in each region to amplify recruitment?",yes_no,"Yes,No",FALSE,20,talent_scouting,1.1,SCH_AS_Q5
-,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q8,Where and how did we take advantage of the Artistic Director's presence?,text,,,,,,SCH_AS_Q5
-,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q9,How many students did the Artistic Director recommend to the School?,number,,,,,,SCH_AS_Q5
-,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q10,How many students registered for auditions to the School from the Artistic Director's recommendation?,number,,,,,,SCH_AS_Q5
-,School,Attracting Students,School-wide,Scholarships for International Students,SCH_AS_Q11,Did we expand scholarship opportunities for international students?,yes_no,"Yes,No",TRUE,30,scholarships,1.2,SCH_AS_Q5
-,School,Attracting Students,School-wide,Scholarships for International Students,SCH_AS_Q12,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,FALSE,,,,SCH_AS_Q11
-,School,Attracting Students,School-wide,Showcasing Alumni Success,SCH_AS_Q13,Did we showcase alumni success stories to highlight our success in launching world-class dancers and inspire prospective students?,yes_no,"Yes,No",TRUE,50,alumni_engagement,1.1,
-,School,Attracting Students,School-wide,Showcasing Alumni Success,SCH_AS_Q14,"If yes, who did we showcase?",text,,FALSE,,,,SCH_AS_Q13
-,School,Attracting Students,School-wide,Affiliate Programme Awareness,SCH_AS_Q15,Did we increase awareness and reputation of the Alberta Ballet School Affiliates programme (Northern and Southern) throughout Alberta?,yes_no,"Yes,No",TRUE,60,provincial_presence,1,
-,School,Attracting Students,School-wide,Affiliate Programme Awareness,SCH_AS_Q16,"If yes, how did we increase awareness?",text,,FALSE,,,,SCH_AS_Q15
-,School,Attracting Students,School-wide,Affiliate Programme Awareness,SCH_AS_Q17,How many new students registered for Affiliates?,number,,,,,,SCH_AS_Q15
-,School,Attracting Students,School-wide,Leveraging Provincial Tours,SCH_AS_Q18,Did Alberta Ballet tour provincially this reporting period?,yes_no,"Yes,No",,,,,
-,School,Attracting Students,School-wide,Leveraging Provincial Tours,SCH_AS_Q19,Did we leverage Alberta Ballet’s provincial tour presence to connect with prospective ABS students through masterclasses and workshops in visited communities?,yes_no,"Yes,No",TRUE,70,provincial_presence,1.2,SCH_AS_Q18
-,School,Attracting Students,School-wide,Leveraging Provincial Tours,SCH_AS_Q20,"If yes, which communities did we go to and how many students attended the masterclasses in each city?",text,,FALSE,,,,SCH_AS_Q18
-,School,Student Accessibility,School-wide,Scholarships for Marginalised Students,SCH_SA_Q1,Did we offer scholarships to make professional training accessible for marginalised students?,yes_no,"Yes,No",TRUE,10,accessibility,1.3,
-,School,Student Accessibility,School-wide,Scholarships for Marginalised Students,SCH_SA_Q2,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,,,,,SCH_SA_Q1
-,School,Student Accessibility,School-wide,Scholarships for Marginalised Students,SCH_SA_Q3,Did we secure external funding to support these marginalised students?,yes_no,"Yes,No",FALSE,,,,SCH_SA_Q1
-,School,Student Accessibility,School-wide,Scholarships for Marginalised Students,SCH_SA_Q4,From what sources and how much money did we secure to support scholarships for marginalised students?,text,,,,,,SCH_SA_Q1
-,School,Student Accessibility,School-wide,Scholarships for Alberta Students,SCH_SA_Q5,Did we offer scholarships to make professional training accessible for Alberta students?,yes_no,"Yes,No",TRUE,20,accessibility,1.2,
-,School,Student Accessibility,School-wide,Scholarships for Alberta Students,SCH_SA_Q6,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,,,,,SCH_SA_Q5
-,School,Student Accessibility,School-wide,Scholarships for Alberta Students,SCH_SA_Q7,Did we secure external funding to make professional training accessible for Alberta students?,yes_no,"Yes,No",FALSE,,,,SCH_SA_Q5
-,School,Student Accessibility,School-wide,Scholarships for Alberta Students,SCH_SA_Q8,From what sources and how much money did we secure to support scholarships for Alberta students?,text,,,,,,SCH_SA_Q5
-,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q9,Did we increase boy enrolment through targeted campaigns and specialised programmes?,yes_no,"Yes,No",TRUE,30,diversity_enrolment,1.1,
-,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q10,"If yes, how did we increase awareness?",text,,FALSE,,,,SCH_SA_Q9
-,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q11,How many boys did we enrol through this campaign?,number,,,,,,SCH_SA_Q9
+,School,Classical Training,School-wide,Exemplary Classical Technique,SCH_CT_Q1,Did any students achieve exemplary (90%+) technical scores in the classical ballet training curriculum (internal evaluation)?,yes_no,"Yes,No",TRUE,1,student_achievement,1,
+,School,Classical Training,School-wide,Exemplary Classical Technique,SCH_CT_Q2,"If yes, tell more (name, grade, achievement mark)",text,,FALSE,2,student_achievement,1,SCH_CT_Q1
+,School,Classical Training,School-wide,Exemplary Classical Technique,SCH_CT_Q3,"If not, why not?",text,,FALSE,3,student_achievement,1,SCH_CT_Q1=No
+,School,Classical Training,School-wide,Exemplary Contemporary Technique,SCH_CT_Q4,Did any students achieve exemplary (90%+) technical scores in the contemporary dance training curriculum (internal evaluation)?,yes_no,"Yes,No",TRUE,4,student_achievement,1,
+,School,Classical Training,School-wide,Exemplary Contemporary Technique,SCH_CT_Q5,"If yes, tell more (name, grade, achievement mark)",text,,FALSE,5,student_achievement,1,SCH_CT_Q4
+,School,Classical Training,School-wide,Exemplary Contemporary Technique,SCH_CT_Q6,"If not, why not?",text,,FALSE,6,student_achievement,1,SCH_CT_Q4=No
+,School,Classical Training,School-wide,Artistic Director Masterclasses,SCH_CT_Q7,Did the Artistic Director deliver student master classes to ABS this reporting period?,yes_no,"Yes,No",TRUE,7,leadership_engagement,1,
+,School,Classical Training,School-wide,Artistic Director Masterclasses,SCH_CT_Q8,"If yes, how many master classes and how many students received the master class?",text,,FALSE,8,leadership_engagement,1,SCH_CT_Q7
+,School,Classical Training,School-wide,Graduate Employment,SCH_CT_Q9,Did any graduates receive employment in professional dance companies this reporting period?,yes_no,"Yes,No",TRUE,9,career_outcomes,1,
+,School,Classical Training,School-wide,Graduate Employment,SCH_CT_Q10,"If yes, what are their names and which company did they secure employment?",text,,FALSE,10,career_outcomes,1,SCH_CT_Q9
+,School,Classical Training,School-wide,Guest Teachers and Choreographers,SCH_CT_Q11,Did we host guest teachers and choreographers to enrich the School's dance repertoire and techniques this reporting period?,yes_no,"Yes,No",TRUE,11,artistic_enrichment,1,
+,School,Classical Training,School-wide,Guest Teachers and Choreographers,SCH_CT_Q12,"If yes, who were the guest teachers or choreographers and what did they teach?",text,,FALSE,12,artistic_enrichment,1,SCH_CT_Q11
+,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q1,Did Alberta Ballet perform internationally this reporting period?,yes_no,"Yes,No",TRUE,13,recruitment_marketing,1,
+,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q2,"If yes, which performance and in which country?",yes_no,"Yes,No",FALSE,14,recruitment_marketing,1,SCH_AS_Q1
+,School,Attracting Students,School-wide,Promotion at International Performances,SCH_AS_Q3,Did we promote Alberta Ballet School at the performance?,text,,FALSE,15,recruitment_marketing,1,SCH_AS_Q1
+,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q4,Did we secure any auditioning students in that country as a result?,text,,FALSE,16,recruitment_marketing,1,SCH_AS_Q1
+,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q5,Did we participate in international recruitment events this reporting period?,yes_no,"Yes,No",TRUE,17,recruitment_marketing,1,
+,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q6,"If not, why not?",text,,FALSE,18,recruitment_marketing,1,SCH_AS_Q5=no
+,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q7,"If yes, did we take advantage of the Artistic Director’s presence in each region to amplify recruitment?",yes_no,"Yes,No",FALSE,19,recruitment_marketing,1,SCH_AS_Q5
+,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q8,Where and how did we take advantage of the Artistic Director's presence?,text,,FALSE,20,recruitment_marketing,1,SCH_AS_Q5
+,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q9,How many students did the Artistic Director recommend to the School?,number,,FALSE,21,recruitment_marketing,1,SCH_AS_Q5
+,School,Attracting Students,School-wide,International Recruitment Events,SCH_AS_Q10,How many students registered for auditions to the School from the Artistic Director's recommendation?,number,,FALSE,22,recruitment_marketing,1,SCH_AS_Q5
+,School,Attracting Students,School-wide,Scholarships for International Students,SCH_AS_Q11,Did we expand scholarship opportunities for international students?,yes_no,"Yes,No",TRUE,23,scholarships,1,SCH_AS_Q5
+,School,Attracting Students,School-wide,Scholarships for International Students,SCH_AS_Q12,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,FALSE,24,scholarships,1,SCH_AS_Q11
+,School,Attracting Students,School-wide,Showcasing Alumni Success,SCH_AS_Q13,Did we showcase alumni success stories to highlight our success in launching world-class dancers and inspire prospective students?,yes_no,"Yes,No",TRUE,25,recruitment_marketing,1,
+,School,Attracting Students,School-wide,Showcasing Alumni Success,SCH_AS_Q14,"If yes, who did we showcase?",text,,FALSE,26,recruitment_marketing,1,SCH_AS_Q13
+,School,Attracting Students,School-wide,Affiliate Programme Awareness,SCH_AS_Q15,Did we increase awareness and reputation of the Alberta Ballet School Affiliates programme (Northern and Southern) throughout Alberta?,yes_no,"Yes,No",TRUE,27,provincial_presence,1,
+,School,Attracting Students,School-wide,Affiliate Programme Awareness,SCH_AS_Q16,"If yes, how did we increase awareness?",text,,FALSE,28,provincial_presence,1,SCH_AS_Q15
+,School,Attracting Students,School-wide,Affiliate Programme Awareness,SCH_AS_Q17,How many new students registered for Affiliates?,number,,FALSE,29,provincial_presence,1,SCH_AS_Q15
+,School,Attracting Students,School-wide,Leveraging Provincial Tours,SCH_AS_Q18,Did Alberta Ballet tour provincially this reporting period?,yes_no,"Yes,No",TRUE,30,provincial_presence,1,
+,School,Attracting Students,School-wide,Leveraging Provincial Tours,SCH_AS_Q19,Did we leverage Alberta Ballet’s provincial tour presence to connect with prospective ABS students through masterclasses and workshops in visited communities?,yes_no,"Yes,No",FALSE,31,provincial_presence,1,SCH_AS_Q18
+,School,Attracting Students,School-wide,Leveraging Provincial Tours,SCH_AS_Q20,"If yes, which communities did we go to and how many students attended the masterclasses in each city?",text,,FALSE,32,provincial_presence,1,SCH_AS_Q18
+,School,Student Accessibility,School-wide,Scholarships for Marginalised Students,SCH_SA_Q1,Did we offer scholarships to make professional training accessible for marginalised students?,yes_no,"Yes,No",TRUE,33,scholarships,1,
+,School,Student Accessibility,School-wide,Scholarships for Marginalised Students,SCH_SA_Q2,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,FALSE,34,scholarships,1,SCH_SA_Q1
+,School,Student Accessibility,School-wide,Scholarships for Marginalised Students,SCH_SA_Q3,Did we secure external funding to support these marginalised students?,yes_no,"Yes,No",FALSE,35,scholarships,1,SCH_SA_Q1
+,School,Student Accessibility,School-wide,Scholarships for Marginalised Students,SCH_SA_Q4,From what sources and how much money did we secure to support scholarships for marginalised students?,text,,FALSE,36,scholarships,1,SCH_SA_Q1
+,School,Student Accessibility,School-wide,Scholarships for Alberta Students,SCH_SA_Q5,Did we offer scholarships to make professional training accessible for Alberta students?,yes_no,"Yes,No",TRUE,37,scholarships,1,
+,School,Student Accessibility,School-wide,Scholarships for Alberta Students,SCH_SA_Q6,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,FALSE,38,scholarships,1,SCH_SA_Q5
+,School,Student Accessibility,School-wide,Scholarships for Alberta Students,SCH_SA_Q7,Did we secure external funding to make professional training accessible for Alberta students?,yes_no,"Yes,No",FALSE,39,scholarships,1,SCH_SA_Q5
+,School,Student Accessibility,School-wide,Scholarships for Alberta Students,SCH_SA_Q8,From what sources and how much money did we secure to support scholarships for Alberta students?,text,,FALSE,40,scholarships,1,SCH_SA_Q5
+,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q9,Did we increase boy enrolment through targeted campaigns and specialised programmes?,yes_no,"Yes,No",TRUE,41,accessibility,1,
+,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q10,"If yes, how did we increase awareness?",text,,FALSE,42,accessibility,1,SCH_SA_Q9
+,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q11,How many boys did we enrol through this campaign?,number,,FALSE,43,accessibility,1,SCH_SA_Q9
