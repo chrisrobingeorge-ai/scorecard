@@ -739,28 +739,42 @@ def build_draft_from_state(
     current_production: Optional[str] = None,
     question_ids=None,
 ) -> dict:
+    """
+    Export a draft that:
+      - puts the CURRENT department's CURRENT production answers under "answers"
+      - puts ALL departments + productions under "per_show_answers"
+    This lets one JSON restore School, Artistic, Corporate, etc., regardless of
+    which department you were viewing when you saved.
+    """
+    # Normalize inputs
     question_ids = [str(q) for q in (question_ids or [])]
     qid_set = set(question_ids)
 
     dept = meta.get("department") or ""
-    answers_df = get_answers_df()
 
-    # Only this department's answers
-    df = answers_df[answers_df["department"] == dept].copy()
-    if not df.empty:
-        df["question_id"] = df["question_id"].astype(str)
+    # Full in-memory store across *all* departments and productions
+    answers_df_all = get_answers_df().copy()
+
+    # ---------- CURRENT dept/prod -> "answers" ----------
+    # Only this dept for the "answers" (what the UI reloads into immediately)
+    df_curr = answers_df_all[answers_df_all["department"] == dept].copy()
+
+    # Keep only the QIDs that exist in the current department's questions
+    if not df_curr.empty:
+        df_curr["question_id"] = df_curr["question_id"].astype(str)
         if qid_set:
-            df = df[df["question_id"].isin(qid_set)]
+            df_curr = df_curr[df_curr["question_id"].isin(qid_set)]
 
-    prod_for_current = current_production or ""
+    # Determine which production the user is on: "" for General, else the name
+    prod_for_current = (current_production or "")
 
-    # Current production's answers → draft["answers"]
+    # Build "answers" for the current production
     current_answers: Dict[str, dict] = {}
-    if not df.empty:
+    if not df_curr.empty:
         if prod_for_current != "":
-            curr_df = df[df["production"] == prod_for_current]
+            curr_df = df_curr[df_curr["production"] == prod_for_current]
         else:
-            curr_df = df[df["production"] == ""]
+            curr_df = df_curr[df_curr["production"] == ""]
         for _, row in curr_df.iterrows():
             qid = str(row["question_id"])
             entry: Dict[str, Any] = {}
@@ -773,15 +787,18 @@ def build_draft_from_state(
                 current_answers[qid] = entry
 
     draft = {
-        "meta": meta,
+        "meta": meta,  # includes the CURRENT dept/prod/month etc.
         "answers": _normalise_answers_for_export(current_answers),
     }
 
-    # All shows → draft["per_show_answers"]
+    # ---------- ALL departments/prods -> "per_show_answers" ----------
     per_show_export: Dict[str, Dict[str, dict]] = {}
-    if not df.empty:
-        for (d, p), grp in df.groupby(["department", "production"]):
-            show_key = _build_show_key(d, p)
+    if not answers_df_all.empty:
+        # Do *not* filter by qid_set here — that would drop other departments' QIDs.
+        answers_df_all["question_id"] = answers_df_all["question_id"].astype(str)
+
+        for (d, p), grp in answers_df_all.groupby(["department", "production"]):
+            show_key = _build_show_key(d, p)  # e.g., "School::" or "Artistic::Nutcracker"
             show_answers: Dict[str, dict] = {}
             for _, row in grp.iterrows():
                 qid = str(row["question_id"])
