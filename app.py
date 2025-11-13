@@ -645,6 +645,9 @@ def _apply_pending_draft_if_any():
             ]
         else:
             st.session_state.pop("answers_df", None)
+        # IMPORTANT: hydrate widget keys so visibility/defaults work on first render
+        _seed_all_widget_state_from_answers()
+
 
         # Apply meta to bound UI keys
         if "staff_name" in meta:
@@ -803,6 +806,50 @@ def build_draft_from_state(
 
     return draft
 
+def _seed_all_widget_state_from_answers():
+    """
+    Ensure Streamlit widget keys (f"{dept}::{prod}::{qid}") are populated from answers_df
+    so visibility rules and widget defaults work on first render after a draft load.
+    """
+    try:
+        df = get_answers_df()
+        if df.empty:
+            return
+        # Coerce types just in case
+        df = df.copy()
+        df["department"] = df["department"].astype(str)
+        df["production"] = df["production"].astype(str)
+        df["question_id"] = df["question_id"].astype(str)
+        for _, r in df.iterrows():
+            key = f"{r['department']}::{r['production']}::{r['question_id']}"
+            st.session_state[key] = r.get("primary")
+    except Exception:
+        # Never break the UI on hydration
+        pass
+
+
+def _seed_scope_widget_state_from_answers(dept_label: str, production: str):
+    """
+    Seed only the currently selected scope (department + production) into session_state.
+    Useful on first paint before widgets exist.
+    """
+    try:
+        df = get_answers_df()
+        if df.empty:
+            return
+        scope = df[
+            (df["department"] == dept_label) &
+            (df["production"] == production)
+        ].copy()
+        if scope.empty:
+            return
+        scope["question_id"] = scope["question_id"].astype(str)
+        for _, r in scope.iterrows():
+            key = f"{dept_label}::{production}::{r['question_id']}"
+            st.session_state[key] = r.get("primary")
+    except Exception:
+        pass
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Styling
 # ─────────────────────────────────────────────────────────────────────────────
@@ -951,6 +998,9 @@ def main():
 
     # Normalised production key for storage: "" for General, or the production/programme name
     current_production = "" if sel_prod == GENERAL_PROD_LABEL else sel_prod
+
+    # Hydrate widget state for the current scope so parents/children render correctly
+    _seed_scope_widget_state_from_answers(dept_label, current_production)
 
     # ── 4) Filter questions for display
     filtered = filter_questions_for_scope(questions_all_df, current_production)
