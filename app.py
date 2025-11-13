@@ -14,22 +14,33 @@ import streamlit as st
 # ─────────────────────────────────────────────────────────────────────────────
 # Config imports + safe fallbacks
 # ─────────────────────────────────────────────────────────────────────────────
+# Try the original working module name first ("config"), then fall back to "app_config".
 try:
-    from app_config import DEPARTMENT_CONFIGS as _DEPT_CFGS
+    from config import DEPARTMENT_CONFIGS as _DEPT_CFGS
 except Exception:
-    _DEPT_CFGS = None
+    try:
+        from app_config import DEPARTMENT_CONFIGS as _DEPT_CFGS
+    except Exception:
+        _DEPT_CFGS = None
 
 try:
-    from app_config import YES_NO_OPTIONS as _YNO
-    YES_NO_OPTIONS = list(_YNO)
+    from config import YES_NO_OPTIONS as _YNO
 except Exception:
-    YES_NO_OPTIONS = ["Yes", "No"]
+    try:
+        from app_config import YES_NO_OPTIONS as _YNO
+    except Exception:
+        _YNO = None
+YES_NO_OPTIONS = list(_YNO) if _YNO else ["Yes", "No"]
 
 try:
-    from app_config import GENERAL_PROD_LABEL as _GPL
-    GENERAL_PROD_LABEL = _GPL
+    from config import GENERAL_PROD_LABEL as _GPL
 except Exception:
-    GENERAL_PROD_LABEL = "General"
+    try:
+        from app_config import GENERAL_PROD_LABEL as _GPL
+    except Exception:
+        _GPL = None
+GENERAL_PROD_LABEL = _GPL or "General"
+
 
 try:
     from ai_utils import interpret_scorecard
@@ -879,23 +890,138 @@ def main():
     # Styles
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-    # Sidebar: Draft controls
-    st.sidebar.subheader("Drafts")
-    draft_file = st.sidebar.file_uploader(
-        "Load saved draft (JSON)",
-        type="json",
-        help="Upload a JSON draft you previously downloaded.",
-    )
-    if draft_file is not None:
-        queued, msg = queue_draft_bytes(draft_file.getvalue())
-        if queued:
-            st.sidebar.success(msg)
-            safe_rerun()
-        else:
-            st.sidebar.info(msg)
+# Sidebar: Draft controls (immediate apply)
+st.sidebar.subheader("Drafts")
+draft_file = st.sidebar.file_uploader(
+    "Load saved draft (JSON)",
+    type="json",
+    help="Upload a JSON draft you previously downloaded.",
+    key="draft_file_uploader",
+)
+if draft_file is not None:
+    try:
+        # Parse JSON
+        data = json.loads(draft_file.getvalue().decode("utf-8")) or {}
+        answers = data.get("answers", {}) or {}
+        meta = data.get("meta", {}) or {}
+        per_show_answers = data.get("per_show_answers", {}) or {}
 
-    if "pending_draft_error" in st.session_state:
-        st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
+        # Determine which dept’s questions to use for normalization (if present)
+        dept_meta = meta.get("department")
+        if dept_meta and dept_meta in DEPARTMENT_CONFIGS:
+            questions_df = load_questions(DEPARTMENT_CONFIGS[dept_meta].questions_csv)
+            qinfo = {str(row["question_id"]): row for _, row in questions_df.iterrows()}
+        else:
+            qinfo = {}
+
+        def _normalise_loaded_entry(qid_str: str, raw_entry):
+            entry = _normalise_show_entry(raw_entry)
+            if entry is None:
+                return {}
+            row = qinfo.get(str(qid_str), {})
+            rtype = str(row.get("response_type", "")).strip().lower()
+            opts_raw = row.get("options", "")
+            options = [o.strip() for o in str(opts_raw).split(",") if o.strip()]
+
+            normalized = {}
+            val = entry.get("primary") if isinstance(entry, dict) else None
+
+            if rtype in ("yes_no", "select_yes_no", "radio_yes_no"):
+                if val in YES_NO_OPTIONS:
+                    normalized["primary"] = val
+            elif rtype in ("select", "dropdown", "dropdownlist"):
+                if val in options:
+                    normalized["primary"] = val
+            elif rtype == "scale_1_5":
+                try:
+                    ival = int(val)
+                    if 1 <= ival <= 5:
+                        normalized["primary"] = ival
+                except Exception:
+                    pass
+            elif rtype == "number":
+                try:
+                    normalized["primary"] = float(val)
+                except Exception:
+                    pass
+            else:
+                if val is not None:
+                    normalized["primary"] = str(val)
+
+            if isinstance(entry, dict) and entry.get("description") not in (None, ""):
+                normalized["description"] = str(entry["description"])
+            return normalized
+
+        rows = []
+
+        def _add_entries_for(dept_val: str, prod_val: str, answers_dict: dict):
+            if not isinstance(answers_dict, dict):
+                return
+            for qid_str, raw_entry in answers_dict.items():
+                normalized = _normalise_loaded_entry(str(qid_str), raw_entry)
+                if not normalized:
+                    continue
+                rows.append(
+                    {
+                        "department": dept_val or "",
+                        "production": prod_val or "",
+                        "question_id": str(qid_str),
+                        "primary": normalized.get("primary"),
+                        "description": normalized.get("description", ""),
+                    }
+                )
+
+        # 1) Per-show first (most granular)
+        for show_key, show_entries in per_show_answers.items():
+            if isinstance(show_key, str) and "::" in show_key:
+                dept_val, prod_val = show_key.split("::", 1)
+            else:
+                dept_val = meta.get("department", "")
+                prod_val = meta.get("production", "") or ""
+            _add_entries_for(dept_val, prod_val, show_entries)
+
+        # 2) Then current-scope answers (if any)
+        if answers:
+            dept_val = meta.get("department", "")
+            prod_val = meta.get("production", "") or ""
+            _add_entries_for(dept_val, prod_val, answers)
+
+        # Commit to session
+        if rows:
+            df = pd.DataFrame(rows)
+            df["question_id"] = df["question_id"].astype(str)
+            df = df.drop_duplicates(subset=["department", "production", "question_id"], keep="last")
+            st.session_state["answers_df"] = df[
+                ["department", "production", "question_id", "primary", "description"]
+            ]
+        else:
+            st.session_state.pop("answers_df", None)
+
+        # Apply meta to bound UI keys and dropdowns
+        if "staff_name" in meta:
+            st.session_state["staff_name"] = meta["staff_name"]
+        if "role" in meta:
+            st.session_state["role"] = meta["role"]
+        if "month" in meta and isinstance(meta["month"], str):
+            try:
+                y, m = meta["month"].split("-")
+                st.session_state["report_month_date"] = date(int(y), int(m), 1)
+            except Exception:
+                pass
+        if "department" in meta and meta["department"] in DEPARTMENT_CONFIGS:
+            st.session_state["dept_label"] = meta["department"]
+
+        prod_norm = meta.get("production") or ""
+        st.session_state["filter_production"] = prod_norm or GENERAL_PROD_LABEL
+
+        # Hydrate widget keys so visibility/defaults work on first render
+        _seed_all_widget_state_from_answers()
+
+        st.sidebar.success("Draft applied.")
+        safe_rerun()
+
+    except Exception as e:
+        st.sidebar.error(f"Could not load draft: {e}")
 
     # Main UI
     st.title("Monthly Scorecard with AI Summary")
