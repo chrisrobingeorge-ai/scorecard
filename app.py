@@ -70,9 +70,9 @@ class DepartmentConfig:
     has_productions: bool = True
     productions_csv: Optional[str] = None
     scope_label: str = "Production / area"
+    allow_general_option: bool = True  # 👈 Add this
 
 def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
-    # Default scaffold if nothing provided
     def _defaults() -> Dict[str, DepartmentConfig]:
         return {
             "Artistic": DepartmentConfig(
@@ -80,24 +80,28 @@ def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
                 has_productions=True,
                 productions_csv="data/productions.csv",
                 scope_label="Production",
+                allow_general_option=True,
             ),
             "School": DepartmentConfig(
                 questions_csv="data/school_scorecard_questions.csv",
                 has_productions=False,
                 productions_csv=None,
                 scope_label="Programme",
+                allow_general_option=True,
             ),
             "Community": DepartmentConfig(
                 questions_csv="data/community_scorecard_questions.csv",
                 has_productions=True,
                 productions_csv="data/productions.csv",
                 scope_label="Programme",
+                allow_general_option=False,  
             ),
             "Corporate": DepartmentConfig(
                 questions_csv="data/corporate_scorecard_questions.csv",
                 has_productions=False,
                 productions_csv=None,
                 scope_label="Area",
+                allow_general_option=True,
             ),
         }
 
@@ -105,7 +109,6 @@ def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
         return _defaults()
 
     if not isinstance(raw, Mapping):
-        # If someone exported it as a list/tuple/etc, bail to defaults
         return _defaults()
 
     out: Dict[str, DepartmentConfig] = {}
@@ -114,24 +117,19 @@ def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
             out[k] = v
             continue
 
-        # If dict-like
-        if isinstance(v, Mapping):
-            questions_csv   = v.get("questions_csv")
-            has_productions = v.get("has_productions", True)
-            productions_csv = v.get("productions_csv")
-            scope_label     = v.get("scope_label", "Production / area")
-        else:
-            # Generic object (SimpleNamespace, pydantic model, etc.)
-            questions_csv   = getattr(v, "questions_csv", None)
-            has_productions = getattr(v, "has_productions", True)
-            productions_csv = getattr(v, "productions_csv", None)
-            scope_label     = getattr(v, "scope_label", "Production / area")
+        # Extract fields from dict or object
+        questions_csv        = v.get("questions_csv") if isinstance(v, Mapping) else getattr(v, "questions_csv", None)
+        has_productions      = v.get("has_productions", True) if isinstance(v, Mapping) else getattr(v, "has_productions", True)
+        productions_csv      = v.get("productions_csv") if isinstance(v, Mapping) else getattr(v, "productions_csv", None)
+        scope_label          = v.get("scope_label", "Production / area") if isinstance(v, Mapping) else getattr(v, "scope_label", "Production / area")
+        allow_general_option = v.get("allow_general_option", True) if isinstance(v, Mapping) else getattr(v, "allow_general_option", True)
 
         out[k] = DepartmentConfig(
             questions_csv=questions_csv,
             has_productions=bool(has_productions),
             productions_csv=productions_csv,
             scope_label=scope_label or "Production / area",
+            allow_general_option=bool(allow_general_option),
         )
 
     return out
