@@ -1,11 +1,11 @@
 # app.py
 from __future__ import annotations
 
-import hashlib
+import os
+from pathlib import Path
 import json
 from dataclasses import dataclass
 from datetime import date
-from types import SimpleNamespace
 from typing import Dict, Tuple, List, Any
 
 import pandas as pd
@@ -48,6 +48,7 @@ try:
     from pdf_utils import build_scorecard_pdf
 except Exception:
     def build_scorecard_pdf(*args, **kwargs):
+        # ASCII-only stub to avoid SyntaxError on some hosts
         return b"%PDF-1.4\n% Stub PDF - pdf_utils not configured.\n"
 
 # Normalize DEPARTMENT_CONFIGS shape (accepts dict or objects)
@@ -63,25 +64,25 @@ def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
         # Minimal fallback to help first launch
         return {
             "Artistic": DepartmentConfig(
-                questions_csv="artistic_scorecard_questions.csv",
+                questions_csv="data/artistic_scorecard_questions.csv",
                 has_productions=True,
-                productions_csv="artistic_productions.csv",
+                productions_csv="data/productions.csv",
                 scope_label="Production",
             ),
             "School": DepartmentConfig(
-                questions_csv="school_scorecard_questions.csv",
+                questions_csv="data/school_scorecard_questions.csv",
                 has_productions=False,
                 productions_csv=None,
                 scope_label="Programme",
             ),
             "Community": DepartmentConfig(
-                questions_csv="community_scorecard_questions.csv",
+                questions_csv="data/community_scorecard_questions.csv",
                 has_productions=True,
-                productions_csv="community_programmes.csv",
+                productions_csv="data/productions.csv",
                 scope_label="Programme",
             ),
             "Corporate": DepartmentConfig(
-                questions_csv="corporate_scorecard_questions.csv",
+                questions_csv="data/corporate_scorecard_questions.csv",
                 has_productions=False,
                 productions_csv=None,
                 scope_label="Area",
@@ -93,7 +94,6 @@ def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
         if isinstance(v, DepartmentConfig):
             out[k] = v
             continue
-        # allow dict or SimpleNamespace
         questions_csv = getattr(v, "questions_csv", None) or v.get("questions_csv")
         has_productions = getattr(v, "has_productions", None)
         if has_productions is None:
@@ -134,6 +134,28 @@ def _ensure_col(df: pd.DataFrame, col: str, default=""):
     if col not in df.columns:
         df[col] = default
     df[col] = df[col].fillna(default)
+
+def _resolve_path(p: str) -> str | None:
+    """Try several locations for a relative CSV path; return the first that exists."""
+    if not p:
+        return None
+    if os.path.isabs(p) and os.path.exists(p):
+        return p
+    candidates = [
+        p,
+        str(Path(p)),
+        str(Path.cwd() / p),
+        str(Path.cwd() / "data" / Path(p).name),
+        "/mount/src/scorecard/" + p,
+        "/mount/src/scorecard/data/" + Path(p).name,
+    ]
+    for c in candidates:
+        try:
+            if os.path.exists(c):
+                return c
+        except Exception:
+            pass
+    return None
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Answers storage
@@ -201,8 +223,9 @@ def _normalise_show_entry(entry):
 # Data loading (cached)
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data
-def load_questions(file_path: str) -> pd.DataFrame:
-    df = pd.read_csv(file_path)
+def load_questions_from_bytes(csv_bytes: bytes) -> pd.DataFrame:
+    from io import BytesIO
+    df = pd.read_csv(BytesIO(csv_bytes))
 
     # Normalize ID
     if "question_id" in df.columns:
@@ -226,13 +249,23 @@ def load_questions(file_path: str) -> pd.DataFrame:
 
     for c in ("section", "strategic_pillar", "production", "metric",
               "question_text", "response_type", "options", "depends_on"):
-        _ensure_col(df, c, "")
+        if c not in df.columns:
+            df[c] = ""
+        df[c] = df[c].fillna("")
 
     # Defaults for grouping/rendering
     df["section"] = df["section"].replace("", "General")
     df["response_type"] = df["response_type"].replace("", "text")
 
     return df
+
+@st.cache_data
+def load_questions(file_path: str) -> pd.DataFrame:
+    resolved = _resolve_path(file_path)
+    if not resolved:
+        raise FileNotFoundError(f"Could not find CSV: {file_path}")
+    with open(resolved, "rb") as f:
+        return load_questions_from_bytes(f.read())
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Visibility rules (CSV-driven)
@@ -328,7 +361,6 @@ def build_form_for_questions(
     Parents render first; each parent's visible children render immediately after.
     """
     responses: Dict[str, dict] = {}
-
     yes_no_opts = YES_NO_OPTIONS if isinstance(YES_NO_OPTIONS, (list, tuple)) and len(YES_NO_OPTIONS) >= 2 else ["Yes", "No"]
 
     # Normalize & base sort
@@ -813,17 +845,46 @@ def main():
         st.session_state["filter_production"] = GENERAL_PROD_LABEL
         st.session_state["last_dept_label"] = dept_label
 
-    # ── 2) Load questions for this department
-    questions_all_df = load_questions(dept_cfg.questions_csv)
+    # Optional: upload override for missing questions CSV
+    st.sidebar.subheader(f"{dept_label} questions CSV")
+    uploaded_csv = st.sidebar.file_uploader(
+        f"Override {dept_label} questions CSV",
+        type=["csv"],
+        key=f"uploader::{dept_label}",
+        help="If your questions CSV isn’t on disk, upload it here and I’ll use it instead.",
+    )
+    questions_all_df: pd.DataFrame
+    if uploaded_csv is not None:
+        try:
+            questions_all_df = load_questions_from_bytes(uploaded_csv.getvalue())
+            st.sidebar.success(f"Using uploaded CSV for {dept_label}.")
+        except Exception as e:
+            st.sidebar.error(f"Uploaded CSV couldn’t be parsed: {e}")
+            # Fall back to disk below
+            questions_all_df = load_questions(dept_cfg.questions_csv)
+    else:
+        # ── 2) Load questions for this department
+        try:
+            questions_all_df = load_questions(dept_cfg.questions_csv)
+        except FileNotFoundError:
+            st.error(
+                f"Couldn’t find the {dept_label} questions CSV at "
+                f"`{dept_cfg.questions_csv}`.\n\n"
+                "Place the file there (e.g., `data/school_scorecard_questions.csv`) "
+                "or upload it via the sidebar."
+            )
+            st.stop()
+
     all_question_ids = questions_all_df["question_id"].astype(str).tolist()
 
     # ── 3) Scope selector (production / programme / general)
     st.subheader("Scope of this report")
 
     if dept_cfg.has_productions and dept_cfg.productions_csv:
-        try:
-            productions_df = pd.read_csv(dept_cfg.productions_csv)
-        except FileNotFoundError:
+        resolved_prod = _resolve_path(dept_cfg.productions_csv)
+        if resolved_prod and os.path.exists(resolved_prod):
+            productions_df = pd.read_csv(resolved_prod)
+        else:
             productions_df = pd.DataFrame(columns=["department", "production_name", "active"])
 
         _ensure_col(productions_df, "department", "")
