@@ -1196,7 +1196,7 @@ if draft_file is not None:
     )
 
     if not submitted:
-        return
+        st.stop()
 
     # visible-only validation
     missing_required: List[str] = []
