@@ -51,7 +51,11 @@ except Exception:
         # ASCII-only stub to avoid SyntaxError on some hosts
         return b"%PDF-1.4\n% Stub PDF - pdf_utils not configured.\n"
 
-# Normalize DEPARTMENT_CONFIGS shape (accepts dict or objects)
+# ─────────────────────────────────────────────────────────────────────────────
+# Config normalization (robust to dicts, SimpleNamespace, or custom objects)
+# ─────────────────────────────────────────────────────────────────────────────
+from collections.abc import Mapping
+
 @dataclass
 class DepartmentConfig:
     questions_csv: str
@@ -60,8 +64,8 @@ class DepartmentConfig:
     scope_label: str = "Production / area"
 
 def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
-    if not raw:
-        # Minimal fallback to help first launch
+    # Default scaffold if nothing provided
+    def _defaults() -> Dict[str, DepartmentConfig]:
         return {
             "Artistic": DepartmentConfig(
                 questions_csv="data/artistic_scorecard_questions.csv",
@@ -89,23 +93,39 @@ def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
             ),
         }
 
+    if not raw:
+        return _defaults()
+
+    if not isinstance(raw, Mapping):
+        # If someone exported it as a list/tuple/etc, bail to defaults
+        return _defaults()
+
     out: Dict[str, DepartmentConfig] = {}
     for k, v in raw.items():
         if isinstance(v, DepartmentConfig):
             out[k] = v
             continue
-        questions_csv = getattr(v, "questions_csv", None) or v.get("questions_csv")
-        has_productions = getattr(v, "has_productions", None)
-        if has_productions is None:
+
+        # If dict-like
+        if isinstance(v, Mapping):
+            questions_csv  = v.get("questions_csv")
             has_productions = v.get("has_productions", True)
-        productions_csv = getattr(v, "productions_csv", None) or v.get("productions_csv", None)
-        scope_label = getattr(v, "scope_label", None) or v.get("scope_label", "Production / area")
+            productions_csv = v.get("productions_csv")
+            scope_label     = v.get("scope_label", "Production / area")
+        else:
+            # Generic object (SimpleNamespace, pydantic model, etc.)
+            questions_csv  = getattr(v, "questions_csv", None)
+            has_productions = getattr(v, "has_productions", True)
+            productions_csv = getattr(v, "productions_csv", None)
+            scope_label     = getattr(v, "scope_label", "Production / area")
+
         out[k] = DepartmentConfig(
             questions_csv=questions_csv,
             has_productions=bool(has_productions),
             productions_csv=productions_csv,
-            scope_label=scope_label,
+            scope_label=scope_label or "Production / area",
         )
+
     return out
 
 DEPARTMENT_CONFIGS: Dict[str, DepartmentConfig] = _normalize_dept_cfgs(_DEPT_CFGS)
