@@ -878,9 +878,10 @@ def main():
     )
     dept_cfg = DEPARTMENT_CONFIGS[dept_label]
 
-    # Reset production when dept changes
+    # Reset production when dept changes, but DO NOT clobber a draft-applied selection
     if "last_dept_label" not in st.session_state or st.session_state["last_dept_label"] != dept_label:
-        st.session_state["filter_production"] = GENERAL_PROD_LABEL
+        if not st.session_state.get("draft_applied", False):
+            st.session_state["filter_production"] = GENERAL_PROD_LABEL
         st.session_state["last_dept_label"] = dept_label
 
     # ── 2) Load questions for this department (disk first, upload only if missing)
@@ -935,7 +936,14 @@ def main():
             prod_list = sorted(dept_prods["production_name"].dropna().unique().tolist())
             prod_options = [GENERAL_PROD_LABEL] + prod_list
 
+        # Preserve a preloaded selection from a draft even if it isn't in the CSV (e.g., inactive/missing)
+        preselected = st.session_state.get("filter_production", GENERAL_PROD_LABEL)
+        if preselected and preselected != GENERAL_PROD_LABEL and preselected not in prod_options:
+            # Keep General first; append the preselected one so Streamlit accepts the state
+            prod_options = [GENERAL_PROD_LABEL] + sorted(set(prod_options[1:] + [preselected]))
+
         sel_prod = st.selectbox(dept_cfg.scope_label, prod_options, key="filter_production")
+
     else:
         # No productions for this department → always general
         sel_prod = GENERAL_PROD_LABEL
