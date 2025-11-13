@@ -882,12 +882,11 @@ def main():
         st.error(
             f"Couldn’t find the {dept_label} questions CSV at `{dept_cfg.questions_csv}`.\n\n"
             "Place the file there (e.g., `school_scorecard_questions.csv`) or update "
-            "`app_config.DEPARTMENT_CONFIGS['{dept_label}'].questions_csv` to the correct path."
+            f"`app_config.DEPARTMENT_CONFIGS['{dept_label}'].questions_csv` to the correct path."
         )
         st.stop()
     
     all_question_ids = questions_all_df["question_id"].astype(str).tolist()
-
 
     # ── 3) Scope selector (production / programme / general)
     st.subheader("Scope of this report")
