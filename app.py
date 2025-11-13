@@ -1133,7 +1133,7 @@ if draft_file is not None:
 
     if filtered.empty:
         st.warning("No questions found for this combination. Try changing the scope.")
-        return
+        st.stop() 
 
     # Render form (tabs per pillar)
     st.markdown("### Scorecard Questions")
