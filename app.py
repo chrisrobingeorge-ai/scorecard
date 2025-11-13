@@ -819,30 +819,28 @@ def build_draft_from_state(
 
 def _seed_all_widget_state_from_answers():
     """
-    Ensure Streamlit widget keys (f"{dept}::{prod}::{qid}") are populated from answers_df
-    so visibility rules and widget defaults work on first render after a draft load.
+    Populate session_state keys from answers_df exactly once per key.
+    Never overwrite keys that already exist (so user interaction isn't lost).
     """
     try:
         df = get_answers_df()
         if df.empty:
             return
-        # Coerce types just in case
         df = df.copy()
         df["department"] = df["department"].astype(str)
-        df["production"] = df["production"].astype(str)
+        df["production"]  = df["production"].astype(str)
         df["question_id"] = df["question_id"].astype(str)
         for _, r in df.iterrows():
             key = f"{r['department']}::{r['production']}::{r['question_id']}"
-            st.session_state[key] = r.get("primary")
+            if key not in st.session_state:
+                st.session_state[key] = r.get("primary")
     except Exception:
-        # Never break the UI on hydration
         pass
 
 
 def _seed_scope_widget_state_from_answers(dept_label: str, production: str):
     """
-    Seed only the currently selected scope (department + production) into session_state.
-    Useful on first paint before widgets exist.
+    Seed only for the current dept+production, and only for keys that are missing.
     """
     try:
         df = get_answers_df()
@@ -850,16 +848,26 @@ def _seed_scope_widget_state_from_answers(dept_label: str, production: str):
             return
         scope = df[
             (df["department"] == dept_label) &
-            (df["production"] == production)
-        ].copy()
+            (df["production"]  == production)
+        ]
         if scope.empty:
             return
-        scope["question_id"] = scope["question_id"].astype(str)
-        for _, r in scope.iterrows():
+
+        # Prevent reseeding the same scope on every rerun
+        scope_id = f"{dept_label}::{production}"
+        if st.session_state.get("_seeded_scope_id") == scope_id:
+            return
+
+        for _, r in scope.astype({"question_id":"str"}).iterrows():
             key = f"{dept_label}::{production}::{r['question_id']}"
-            st.session_state[key] = r.get("primary")
+            if key not in st.session_state:
+                st.session_state[key] = r.get("primary")
+
+        st.session_state["_seeded_scope_id"] = scope_id
+
     except Exception:
         pass
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Styling
