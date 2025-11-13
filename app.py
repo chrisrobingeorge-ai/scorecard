@@ -47,10 +47,8 @@ except Exception:
 try:
     from pdf_utils import build_scorecard_pdf
 except Exception:
-    def build_scorecard_pdf(meta, filtered_df, responses, ai_result) -> bytes:
-        # Simple stub PDF replacement
-        return b"%PDF-1.4\n% Stub PDF — pdf_utils not configured.\n"
-
+    def build_scorecard_pdf(*args, **kwargs):
+        return b"%PDF-1.4\n% Stub PDF - pdf_utils not configured.\n"
 
 # Normalize DEPARTMENT_CONFIGS shape (accepts dict or objects)
 @dataclass
