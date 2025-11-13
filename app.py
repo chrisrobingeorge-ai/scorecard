@@ -210,18 +210,25 @@ def build_form_for_questions(
 
         entry = {"primary": None, "description": prev_desc}
 
-        if rtype == "yes_no":
+        elif rtype == "yes_no":
+            # Add a placeholder so it never defaults to "Yes"
+            options_display = ["— Select —"] + YES_NO_OPTIONS
+        
+            # Map previous value back to a real option if it exists
             if prev_primary in YES_NO_OPTIONS:
-                idx = YES_NO_OPTIONS.index(prev_primary)
+                default_index = options_display.index(prev_primary)
             else:
-                idx = 0
-            entry["primary"] = st.radio(
+                default_index = 0  # placeholder
+        
+            chosen = st.radio(
                 label_display,
-                YES_NO_OPTIONS,
+                options_display,
                 horizontal=True,
                 key=widget_key,
-                index=idx,
+                index=default_index,
             )
+            # Store None for placeholder (so 'required' actually works)
+            entry["primary"] = chosen if chosen in YES_NO_OPTIONS else None
 
         elif rtype == "scale_1_5":
             default_val = 3
@@ -733,14 +740,17 @@ def main():
     if not submitted:
         return
 
-    # Validation (visible questions only)
+    # visible-only validation
     missing_required = []
     for _, row in filtered.iterrows():
+        if not question_is_visible(row, dept_label, current_production):
+            continue
         if bool(row.get("required", False)):
-            qid = row["question_id"]
-            val = responses.get(qid, None)
-            primary_val = val.get("primary", None) if isinstance(val, dict) else val
-            if primary_val in (None, "", []):
+            qid = str(row["question_id"])
+            val = responses.get(qid)
+            primary_val = val.get("primary") if isinstance(val, dict) else val
+            is_empty = (primary_val is None) or (isinstance(primary_val, str) and primary_val.strip() == "")
+            if is_empty:
                 qt = str(row.get("question_text") or "").strip()
                 missing_required.append(qt or qid)
 
