@@ -1,55 +1,35 @@
-# app_config.py
 from dataclasses import dataclass
-from typing import Optional, Dict
 
-# Single source of truth for the "general" scope label
-GENERAL_PROD_LABEL: str = "General"
-
-YES_NO_OPTIONS = ["Yes", "No"]
-
+GENERAL_PROD_LABEL = "General"
+YES_NO_OPTIONS = ["Yes", "No"]  # global default
 
 @dataclass
-class DepartmentConfig:
-    key: str
-    label: str
+class DeptConfig:
     questions_csv: str
-    has_productions: bool = True
-    productions_csv: Optional[str] = None
-    scope_label: str = "Production / area"  # Label for second dropdown
+    has_productions: bool
+    productions_csv: str | None
+    scope_label: str | None = "Production"  # cosmetic only
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Configure your four departments here. Point to your CSV paths.
-# - questions_* CSVs must include: question_id, (optional) strategic_pillar,
-#   production, question_text, response_type, options, required, display_order, depends_on
-# - productions_* CSVs must include: department, production_name, (optional) active
-# ─────────────────────────────────────────────────────────────────────────────
-DEPARTMENT_CONFIGS: Dict[str, DepartmentConfig] = {
-    "Artistic": DepartmentConfig(
-        key="Artistic",
-        label="Artistic",
+DEPARTMENT_CONFIGS = {
+    "Artistic": DeptConfig(
         questions_csv="data/artistic_scorecard_questions.csv",
         has_productions=True,
-        productions_csv="data/productions.csv",  # or shared file
+        productions_csv="data/productions.csv",
         scope_label="Production",
     ),
-    "School": {
-        "questions_csv": "school_scorecard_questions.csv",
-        "has_productions": False,
-        "productions_csv": None,
-        "scope_label": "Programme",
-    ),
-    "Community": DepartmentConfig(
-        key="Community",
-        label="Community",
-        questions_csv="data/community_scorecard_questions.csv",
-        has_productions=False,
+    "School": DeptConfig(
+        questions_csv="data/school_scorecard_questions.csv",
+        has_productions=False,              # School has no productions/programmes
         productions_csv=None,
-        scope_label="Area",
+        scope_label="Programme",
     ),
-    "Corporate": DepartmentConfig(
-        key="Corporate",
-        label="Corporate",
+    "Community": DeptConfig(
+        questions_csv="data/community_scorecard_questions.csv",
+        has_productions=True,
+        productions_csv="data/productions.csv",
+        scope_label="Programme",
+    ),
+    "Corporate": DeptConfig(
         questions_csv="data/corporate_scorecard_questions.csv",
         has_productions=False,
         productions_csv=None,
