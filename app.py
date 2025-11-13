@@ -1217,7 +1217,7 @@ if draft_file is not None:
         with st.expander("Missing required questions"):
             for q in missing_required:
                 st.write("• ", q)
-        st.stop()
+        return
 
     # AI call
     try:
