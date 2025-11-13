@@ -874,7 +874,6 @@ def main():
             st.sidebar.error(f"Uploaded CSV couldn’t be parsed: {e}")
             # Fall back to disk below
             questions_all_df = load_questions(dept_cfg.questions_csv)
-    else:
     
     # ── 2) Load questions for this department (disk only; no sidebar uploader)
     try:
