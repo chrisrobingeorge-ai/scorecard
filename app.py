@@ -3,22 +3,119 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import dataclass
 from datetime import date
-from typing import Dict, Tuple
+from types import SimpleNamespace
+from typing import Dict, Tuple, List, Any
 
 import pandas as pd
 import streamlit as st
 
-from app_config import DEPARTMENT_CONFIGS, YES_NO_OPTIONS, GENERAL_PROD_LABEL
-from ai_utils import interpret_scorecard
-from pdf_utils import build_scorecard_pdf
+# ─────────────────────────────────────────────────────────────────────────────
+# Config imports + safe fallbacks
+# ─────────────────────────────────────────────────────────────────────────────
+try:
+    from app_config import DEPARTMENT_CONFIGS as _DEPT_CFGS
+except Exception:
+    _DEPT_CFGS = None
 
+try:
+    from app_config import YES_NO_OPTIONS as _YNO
+    YES_NO_OPTIONS = list(_YNO)
+except Exception:
+    YES_NO_OPTIONS = ["Yes", "No"]
+
+try:
+    from app_config import GENERAL_PROD_LABEL as _GPL
+    GENERAL_PROD_LABEL = _GPL
+except Exception:
+    GENERAL_PROD_LABEL = "General"
+
+try:
+    from ai_utils import interpret_scorecard
+except Exception:
+    def interpret_scorecard(meta, filtered_df, responses):
+        # Safe stub if ai_utils not available
+        return {
+            "overall_summary": "AI module not configured.",
+            "pillar_summaries": [],
+            "risks": [],
+            "priorities_next_month": [],
+            "notes_for_leadership": "",
+        }
+
+try:
+    from pdf_utils import build_scorecard_pdf
+except Exception:
+    def build_scorecard_pdf(meta, filtered_df, responses, ai_result) -> bytes:
+        # Simple stub PDF replacement
+        return b"%PDF-1.4\n% Stub PDF — pdf_utils not configured.\n"
+
+
+# Normalize DEPARTMENT_CONFIGS shape (accepts dict or objects)
+@dataclass
+class DepartmentConfig:
+    questions_csv: str
+    has_productions: bool = True
+    productions_csv: str | None = None
+    scope_label: str = "Production / area"
+
+def _normalize_dept_cfgs(raw: Any) -> Dict[str, DepartmentConfig]:
+    if not raw:
+        # Minimal fallback to help first launch
+        return {
+            "Artistic": DepartmentConfig(
+                questions_csv="artistic_scorecard_questions.csv",
+                has_productions=True,
+                productions_csv="artistic_productions.csv",
+                scope_label="Production",
+            ),
+            "School": DepartmentConfig(
+                questions_csv="school_scorecard_questions.csv",
+                has_productions=False,
+                productions_csv=None,
+                scope_label="Programme",
+            ),
+            "Community": DepartmentConfig(
+                questions_csv="community_scorecard_questions.csv",
+                has_productions=True,
+                productions_csv="community_programmes.csv",
+                scope_label="Programme",
+            ),
+            "Corporate": DepartmentConfig(
+                questions_csv="corporate_scorecard_questions.csv",
+                has_productions=False,
+                productions_csv=None,
+                scope_label="Area",
+            ),
+        }
+
+    out: Dict[str, DepartmentConfig] = {}
+    for k, v in raw.items():
+        if isinstance(v, DepartmentConfig):
+            out[k] = v
+            continue
+        # allow dict or SimpleNamespace
+        questions_csv = getattr(v, "questions_csv", None) or v.get("questions_csv")
+        has_productions = getattr(v, "has_productions", None)
+        if has_productions is None:
+            has_productions = v.get("has_productions", True)
+        productions_csv = getattr(v, "productions_csv", None) or v.get("productions_csv", None)
+        scope_label = getattr(v, "scope_label", None) or v.get("scope_label", "Production / area")
+        out[k] = DepartmentConfig(
+            questions_csv=questions_csv,
+            has_productions=bool(has_productions),
+            productions_csv=productions_csv,
+            scope_label=scope_label,
+        )
+    return out
+
+DEPARTMENT_CONFIGS: Dict[str, DepartmentConfig] = _normalize_dept_cfgs(_DEPT_CFGS)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MUST be the first Streamlit call
 # ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Monthly Scorecard", layout="wide")
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Utilities
@@ -30,10 +127,9 @@ def safe_rerun():
     else:
         st.experimental_rerun()
 
-
 def _hash_bytes(b: bytes) -> str:
-    return hashlib.sha256(b).hexdigest()
-
+    import hashlib as _hl
+    return _hl.sha256(b).hexdigest()
 
 def _ensure_col(df: pd.DataFrame, col: str, default=""):
     """Ensure a column exists and fill NA."""
@@ -41,18 +137,16 @@ def _ensure_col(df: pd.DataFrame, col: str, default=""):
         df[col] = default
     df[col] = df[col].fillna(default)
 
-
+# ─────────────────────────────────────────────────────────────────────────────
+# Answers storage
+# ─────────────────────────────────────────────────────────────────────────────
 def get_answers_df() -> pd.DataFrame:
-    """
-    Single source of truth for all answers.
-    One row = one answer to one question for one production in one department.
-    """
+    """Single source of truth for all answers."""
     if "answers_df" not in st.session_state:
         st.session_state["answers_df"] = pd.DataFrame(
             columns=["department", "production", "question_id", "primary", "description"]
         )
     return st.session_state["answers_df"]
-
 
 def get_answer_value(dept: str, production: str, qid: str) -> Tuple[object | None, str | None]:
     df = get_answers_df()
@@ -65,7 +159,6 @@ def get_answer_value(dept: str, production: str, qid: str) -> Tuple[object | Non
         return None, None
     row = df[mask].iloc[0]
     return row.get("primary", None), row.get("description", None)
-
 
 def upsert_answer(dept: str, production: str, qid: str, primary, description=None):
     df = get_answers_df()
@@ -93,7 +186,6 @@ def upsert_answer(dept: str, production: str, qid: str, primary, description=Non
             ignore_index=True,
         )
 
-
 def _normalise_show_entry(entry):
     """Convert stored show answers into the dict format used across the app."""
     if isinstance(entry, dict):
@@ -106,7 +198,6 @@ def _normalise_show_entry(entry):
     if entry is None:
         return None
     return {"primary": entry}
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
@@ -124,8 +215,13 @@ def load_questions(file_path: str) -> pd.DataFrame:
     # Normalize common columns
     if "required" in df.columns:
         df["required"] = df["required"].astype(str).str.upper().eq("TRUE")
+    else:
+        df["required"] = False
+
     if "display_order" in df.columns:
         df["display_order"] = pd.to_numeric(df["display_order"], errors="coerce").fillna(0)
+    else:
+        df["display_order"] = 0
 
     if "section" not in df.columns:
         df["section"] = df.get("strategic_pillar", "General")
@@ -140,26 +236,8 @@ def load_questions(file_path: str) -> pd.DataFrame:
 
     return df
 
-
 # ─────────────────────────────────────────────────────────────────────────────
-# Conditional visibility rules
-# ─────────────────────────────────────────────────────────────────────────────
-def question_is_visible(row: pd.Series, dept_label: str, production: str) -> bool:
-    """
-    Returns True if the question should be shown, based on an optional 'depends_on'
-    parent question. Currently: show only if parent == 'Yes' for yes/no parents.
-    """
-    depends_on = str(row.get("depends_on", "") or "").strip()
-    if not depends_on:
-        return True  # no dependency
-
-    parent_key = f"{dept_label}::{production}::{depends_on}"
-    parent_val = st.session_state.get(parent_key)
-    return parent_val == "Yes"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Form rendering
+# Visibility rules (CSV-driven)
 # ─────────────────────────────────────────────────────────────────────────────
 def question_is_visible(row: pd.Series, dept_label: str, production: str) -> bool:
     """
@@ -171,7 +249,7 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
       - "QID!=Value"              → show if parent not equals Value
       - "QID in [A,B,C]"          → show if parent is any of A,B,C
       - "QID not in [A,B]"        → show if parent not in A,B
-      - Combine multiple with ';' or '&&' for AND: "Q1=Yes; Q2 in [A,B]"
+      - Combine with ';' or '&&' for AND: "Q1=Yes; Q2 in [A,B]"
 
     Parent lookup key is f"{dept_label}::{production}::{QID}" (same scope).
     """
@@ -179,14 +257,12 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
     if not rule:
         return True  # no dependency
 
-    # Normalize: split multiple conditions on ';' or '&&'
     import re
     parts = [p.strip() for p in re.split(r';|&&', rule) if p.strip()]
     if not parts:
         return True
 
     def _parse_list(s: str):
-        # accepts: [A,B,C] or A,B,C
         s = s.strip()
         if s.startswith('[') and s.endswith(']'):
             s = s[1:-1]
@@ -208,12 +284,6 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
         return any(l == str(o).strip().casefold() for o in options)
 
     for cond in parts:
-        # Forms to recognize:
-        # 1) QID (defaults to == "Yes")
-        # 2) QID=Value
-        # 3) QID!=Value
-        # 4) QID in [A,B]
-        # 5) QID not in [A,B]
         m_in = re.match(r'^(\w+)\s+in\s+\[(.*?)\]$', cond, flags=re.I)
         m_not_in = re.match(r'^(\w+)\s+not\s+in\s+\[(.*?)\]$', cond, flags=re.I)
         m_ne = re.match(r'^(\w+)\s*!=\s*(.+)$', cond)
@@ -236,11 +306,9 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
             qid, val = m_eq.groups()
             ok = _cmp(_get(qid), val)
         elif m_simple:
-            # default to Yes for plain "QID"
             qid = m_simple.group(1)
             ok = _cmp(_get(qid), "Yes")
         else:
-            # Unrecognized condition → be permissive
             ok = True
 
         if not ok:
@@ -248,15 +316,155 @@ def question_is_visible(row: pd.Series, dept_label: str, production: str) -> boo
 
     return True
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Form rendering (parent → immediate children)
+# ─────────────────────────────────────────────────────────────────────────────
+def build_form_for_questions(
+    df: pd.DataFrame,
+    dept_label: str,
+    production: str,
+) -> Dict[str, dict]:
+    """
+    Render widgets for each question in the provided DataFrame.
+    Returns {qid: {primary, description}}.
+    Parents render first; each parent's visible children render immediately after.
+    """
+    responses: Dict[str, dict] = {}
+
+    yes_no_opts = YES_NO_OPTIONS if isinstance(YES_NO_OPTIONS, (list, tuple)) and len(YES_NO_OPTIONS) >= 2 else ["Yes", "No"]
+
+    # Normalize & base sort
+    df = df.copy()
+    df["strategic_pillar"] = df.get("strategic_pillar", "General").replace("", "General")
+    df["metric"] = df.get("metric", "").fillna("")
+    df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
+
+    # Split parents/children by depends_on presence
+    dep_series = df.get("depends_on", "")
+    dep_series = dep_series if isinstance(dep_series, pd.Series) else pd.Series([""] * len(df))
+    dep_series = dep_series.fillna("").astype(str).str.strip()
+    is_child = dep_series.ne("")
+
+    parents_df = df[~is_child].sort_values("display_order").reset_index(drop=True)
+    children_df = df[is_child].copy()
+    # Parent id is the token before any operator (e.g., QID in [..], QID=..., QID!=...)
+    children_df["__parent_qid__"] = children_df["depends_on"].str.split(r"[ !><=]", n=1, regex=True).str[0].str.strip()
+    children_df = children_df.sort_values("display_order")
+
+    from collections import defaultdict
+    kids: dict[str, list[pd.Series]] = defaultdict(list)
+    for _, crow in children_df.iterrows():
+        kids[str(crow["__parent_qid__"])].append(crow)
+
+    rendered: set[str] = set()
+
+    def _widget_key(qid: str) -> str:
+        return f"{dept_label}::{production}::{qid}"
+
+    def _render_one(row: pd.Series):
+        # Respect conditional visibility (including '=No', 'in [...]', etc.)
+        if not question_is_visible(row, dept_label, production):
+            return
+
+        qid = str(row.get("question_id", "")).strip()
+        if not qid or qid in rendered:
+            return
+
+        # Label
+        raw_label = str(row.get("question_text", "") or "").strip()
+        label = raw_label or str(row.get("metric", "") or "").strip() or qid
+        required = bool(row.get("required", False))
+        label_display = f"{label} *" if required else label
+
+        # Response type & options
+        rtype = str(row.get("response_type", "") or "").strip().lower()
+        # aliases
+        if rtype in ("select_yes_no", "radio_yes_no"):
+            rtype = "yes_no"
+        if rtype in ("select", "dropdownlist"):
+            rtype = "dropdown"
+
+        opts_raw = row.get("options", "")
+        options: List[str] = []
+        if isinstance(opts_raw, str) and opts_raw.strip():
+            options = [o.strip() for o in opts_raw.split(",") if o.strip()]
+
+        # Previous value
+        prev_primary, prev_desc = get_answer_value(dept_label, production, qid)
+
+        # Unique key
+        widget_key = _widget_key(qid)
+        entry = {"primary": None, "description": prev_desc}
+
+        # Widgets
+        if rtype == "yes_no":
+            opts_display = ["— Select —"] + list(yes_no_opts)
+            default_index = opts_display.index(prev_primary) if prev_primary in yes_no_opts else 0
+            chosen = st.radio(
+                label_display,
+                opts_display,
+                horizontal=True,
+                key=widget_key,
+                index=default_index,
+            )
+            entry["primary"] = chosen if chosen in yes_no_opts else None
+
+        elif rtype == "scale_1_5":
+            default_val = 3
+            try:
+                if isinstance(prev_primary, (int, float)) and 1 <= int(prev_primary) <= 5:
+                    default_val = int(prev_primary)
+            except Exception:
+                pass
+            entry["primary"] = int(
+                st.slider(label_display, min_value=1, max_value=5, key=widget_key, value=default_val)
+            )
+
+        elif rtype == "number":
+            default_val = float(prev_primary) if isinstance(prev_primary, (int, float)) else 0.0
+            entry["primary"] = st.number_input(label_display, step=1.0, key=widget_key, value=default_val)
+
+        elif rtype in ("dropdown", "select") and options:
+            opts = options if (len(options) > 0 and options[0] == "— Select —") else (["— Select —"] + options)
+            default_index = opts.index(prev_primary) if prev_primary in opts else 0
+            chosen = st.selectbox(label_display, opts, key=widget_key, index=default_index)
+            entry["primary"] = chosen if (chosen and chosen != "— Select —") else None
+
+        else:
+            default_text = str(prev_primary) if prev_primary is not None else ""
+            entry["primary"] = st.text_area(label_display, key=widget_key, value=default_text, height=60)
+
+        responses[qid] = entry
+        rendered.add(qid)
+
+    def _render_with_children(parent_row: pd.Series):
+        _render_one(parent_row)
+        pqid = str(parent_row.get("question_id", "")).strip()
+        if not pqid:
+            return
+        # Render immediate children (that are visible) right after parent
+        for child_row in kids.get(pqid, []):
+            _render_one(child_row)
+            _render_descendants(child_row)
+
+    def _render_descendants(row: pd.Series):
+        qid = str(row.get("question_id", "")).strip()
+        if not qid:
+            return
+        for c2 in kids.get(qid, []):
+            _render_one(c2)
+            _render_descendants(c2)
+
+    for _, prow in parents_df.iterrows():
+        _render_with_children(prow)
+
+    return responses
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
 # ─────────────────────────────────────────────────────────────────────────────
 def queue_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
-    """
-    Queue a draft for application on the next run (before widgets are created).
-    Returns (queued, message).
-    """
+    """Queue a draft for application on the next run (before widgets are created)."""
     try:
         h = _hash_bytes(draft_bytes)
         if st.session_state.get("draft_hash") == h:
@@ -267,12 +475,8 @@ def queue_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
     except Exception as e:
         return False, f"Could not queue draft: {e}"
 
-
 def _apply_pending_draft_if_any():
-    """
-    If a pending draft exists, apply it BEFORE widgets are created.
-    Populates answers_df from draft['answers'] + draft['per_show_answers'].
-    """
+    """Apply a pending draft BEFORE widgets are created."""
     b = st.session_state.get("pending_draft_bytes")
     h = st.session_state.get("pending_draft_hash")
     if not b:
@@ -284,7 +488,6 @@ def _apply_pending_draft_if_any():
         meta = data.get("meta", {}) or {}
         per_show_answers = data.get("per_show_answers", {}) or {}
 
-        # Load questions for department to normalise types
         dept_meta = meta.get("department")
         if dept_meta and dept_meta in DEPARTMENT_CONFIGS:
             questions_df = load_questions(DEPARTMENT_CONFIGS[dept_meta].questions_csv)
@@ -350,7 +553,6 @@ def _apply_pending_draft_if_any():
                     }
                 )
 
-        # First: multi-show data, if present
         for show_key, show_entries in per_show_answers.items():
             if isinstance(show_key, str) and "::" in show_key:
                 dept_val, prod_val = show_key.split("::", 1)
@@ -359,7 +561,6 @@ def _apply_pending_draft_if_any():
                 prod_val = meta.get("production", "") or ""
             _add_entries_for(dept_val, prod_val, show_entries)
 
-        # Then: top-level answers (current show)
         if answers:
             dept_val = meta.get("department", "")
             prod_val = meta.get("production", "") or ""
@@ -377,7 +578,7 @@ def _apply_pending_draft_if_any():
         else:
             st.session_state.pop("answers_df", None)
 
-        # Apply meta to UI keys
+        # Apply meta to bound UI keys
         if "staff_name" in meta:
             st.session_state["staff_name"] = meta["staff_name"]
         if "role" in meta:
@@ -391,7 +592,6 @@ def _apply_pending_draft_if_any():
         if "department" in meta and meta["department"] in DEPARTMENT_CONFIGS:
             st.session_state["dept_label"] = meta["department"]
 
-        # Restore production filter
         prod_norm = meta.get("production") or ""
         st.session_state["filter_production"] = prod_norm or GENERAL_PROD_LABEL
 
@@ -404,7 +604,6 @@ def _apply_pending_draft_if_any():
     finally:
         st.session_state.pop("pending_draft_bytes", None)
         st.session_state.pop("pending_draft_hash", None)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Scope filtering helper
@@ -444,9 +643,10 @@ def filter_questions_for_scope(questions_all_df: pd.DataFrame, current_productio
             ]
     return filtered
 
-
+# ─────────────────────────────────────────────────────────────────────────────
+# Export helpers
+# ─────────────────────────────────────────────────────────────────────────────
 def _normalise_answers_for_export(answers: Dict[str, dict]) -> Dict[str, dict]:
-    """Ensure exported answers contain only supported keys and non-null entries."""
     export: Dict[str, dict] = {}
     for qid, entry in (answers or {}).items():
         normalised = _normalise_show_entry(entry)
@@ -460,12 +660,10 @@ def _normalise_answers_for_export(answers: Dict[str, dict]) -> Dict[str, dict]:
         export[qid] = payload
     return export
 
-
 def _build_show_key(department: str, show: str) -> str:
     dept_clean = (department or "").strip()
     show_clean = (show or "").strip()
     return f"{dept_clean}::{show_clean}"
-
 
 def build_draft_from_state(
     all_questions_df: pd.DataFrame,
@@ -473,11 +671,6 @@ def build_draft_from_state(
     current_production: str | None = None,
     question_ids=None,
 ) -> dict:
-    """
-    Build a draft from answers_df, including:
-    - answers: current production's answers
-    - per_show_answers: all (department, production) answers
-    """
     question_ids = [str(q) for q in (question_ids or [])]
     qid_set = set(question_ids)
 
@@ -491,7 +684,6 @@ def build_draft_from_state(
         if qid_set:
             df = df[df["question_id"].isin(qid_set)]
 
-    # Decide which production is "current"
     prod_for_current = current_production or ""
 
     # Current production's answers → draft["answers"]
@@ -500,8 +692,7 @@ def build_draft_from_state(
         if prod_for_current != "":
             curr_df = df[df["production"] == prod_for_current]
         else:
-            curr_df = df[df["production"] == ""]  # general rows
-
+            curr_df = df[df["production"] == ""]
         for _, row in curr_df.iterrows():
             qid = str(row["question_id"])
             entry = {}
@@ -544,7 +735,9 @@ def build_draft_from_state(
 
     return draft
 
-
+# ─────────────────────────────────────────────────────────────────────────────
+# Styling
+# ─────────────────────────────────────────────────────────────────────────────
 CUSTOM_CSS = """
 <style>
 html, body, [class*="stMarkdown"] { font-size: 1.0rem; }
@@ -558,9 +751,8 @@ label, .stTextInput, .stNumberInput, .stSelectbox, .stRadio, .stDateInput, .stTe
 </style>
 """
 
-
 # ─────────────────────────────────────────────────────────────────────────────
-# Main App
+# Main
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
     if "draft_applied" not in st.session_state:
@@ -631,7 +823,11 @@ def main():
     st.subheader("Scope of this report")
 
     if dept_cfg.has_productions and dept_cfg.productions_csv:
-        productions_df = pd.read_csv(dept_cfg.productions_csv)
+        try:
+            productions_df = pd.read_csv(dept_cfg.productions_csv)
+        except FileNotFoundError:
+            productions_df = pd.DataFrame(columns=["department", "production_name", "active"])
+
         _ensure_col(productions_df, "department", "")
         _ensure_col(productions_df, "production_name", "")
         if "active" in productions_df.columns:
@@ -676,13 +872,12 @@ def main():
             left_col, _ = st.columns([0.65, 0.35])
             with left_col:
                 block = filtered[filtered["strategic_pillar"] == p]
-                responses.update(
-                    build_form_for_questions(
-                        block,
-                        dept_label=dept_label,
-                        production=current_production,
-                    )
+                block_responses = build_form_for_questions(
+                    block,
+                    dept_label=dept_label,
+                    production=current_production,
                 )
+                responses.update(block_responses)
 
     # Persist responses into answers_df
     for qid, entry in responses.items():
@@ -705,7 +900,7 @@ def main():
         "production": current_production,  # normalised: "" for General, else name
     }
 
-    # Save progress (download JSON) — includes all productions for this department
+    # Save progress (download JSON)
     draft_dict = build_draft_from_state(
         questions_all_df,
         meta,
