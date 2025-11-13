@@ -172,18 +172,21 @@ def build_form_for_questions(
     """
     responses: Dict[str, dict] = {}
 
+    # Normalize & sort
     df = df.copy()
-    df["strategic_pillar"] = df["strategic_pillar"].replace("", "General")
-    df["metric"] = df["metric"].fillna("")
+    df["strategic_pillar"] = df.get("strategic_pillar", "General").replace("", "General")
+    df["metric"] = df.get("metric", "").fillna("")
     df["display_order"] = pd.to_numeric(df.get("display_order", 0), errors="coerce").fillna(0)
     df = df.sort_values("display_order")
 
     for _, row in df.iterrows():
-        # Skip if dependency not satisfied
+        # Respect conditional visibility
         if not question_is_visible(row, dept_label, production):
             continue
 
-        qid = str(row["question_id"])  # ALWAYS STRING
+        qid = str(row.get("question_id", "")).strip()
+        if not qid:
+            continue  # skip malformed rows
 
         # Label resolution
         raw_label = str(row.get("question_text", "") or "").strip()
@@ -196,30 +199,32 @@ def build_form_for_questions(
         required = bool(row.get("required", False))
         label_display = f"{label} *" if required else label
 
-        rtype = str(row.get("response_type", "")).strip().lower()
+        # Response type & options
+        rtype = str(row.get("response_type", "") or "").strip().lower()
+        # Allow a couple aliases from CSV
+        if rtype in ("select_yes_no", "radio_yes_no"):
+            rtype = "yes_no"
+        if rtype in ("select", "dropdownlist"):
+            rtype = "dropdown"
+
         opts_raw = row.get("options", "")
-        options = []
+        options: list[str] = []
         if isinstance(opts_raw, str) and opts_raw.strip():
             options = [o.strip() for o in opts_raw.split(",") if o.strip()]
 
-        # Get previous value for this (dept, production, qid)
+        # Previous value for this (dept, production, qid)
         prev_primary, prev_desc = get_answer_value(dept_label, production, qid)
 
-        # Make widget key unique per production
+        # Widget key unique per dept+production+question
         widget_key = f"{dept_label}::{production}::{qid}"
 
         entry = {"primary": None, "description": prev_desc}
 
-        elif rtype == "yes_no":
-            # Add a placeholder so it never defaults to "Yes"
+        # ── Widget renderers ──────────────────────────────────────────────────
+        if rtype == "yes_no":
+            # Radio with placeholder so it never defaults to "Yes"
             options_display = ["— Select —"] + YES_NO_OPTIONS
-        
-            # Map previous value back to a real option if it exists
-            if prev_primary in YES_NO_OPTIONS:
-                default_index = options_display.index(prev_primary)
-            else:
-                default_index = 0  # placeholder
-        
+            default_index = options_display.index(prev_primary) if prev_primary in YES_NO_OPTIONS else 0
             chosen = st.radio(
                 label_display,
                 options_display,
@@ -227,13 +232,15 @@ def build_form_for_questions(
                 key=widget_key,
                 index=default_index,
             )
-            # Store None for placeholder (so 'required' actually works)
             entry["primary"] = chosen if chosen in YES_NO_OPTIONS else None
 
         elif rtype == "scale_1_5":
             default_val = 3
-            if isinstance(prev_primary, (int, float)) and 1 <= int(prev_primary) <= 5:
-                default_val = int(prev_primary)
+            try:
+                if isinstance(prev_primary, (int, float)) and 1 <= int(prev_primary) <= 5:
+                    default_val = int(prev_primary)
+            except Exception:
+                pass
             entry["primary"] = int(
                 st.slider(label_display, min_value=1, max_value=5, key=widget_key, value=default_val)
             )
@@ -242,23 +249,21 @@ def build_form_for_questions(
             default_val = float(prev_primary) if isinstance(prev_primary, (int, float)) else 0.0
             entry["primary"] = st.number_input(label_display, step=1.0, key=widget_key, value=default_val)
 
-        elif (rtype in ("select", "dropdown")) and options:
-            default = prev_primary if prev_primary in options else options[0]
-            entry["primary"] = st.selectbox(
-                label_display,
-                options,
-                key=widget_key,
-                index=options.index(default),
-            )
+        elif rtype in ("dropdown", "select") and options:
+            # Dropdown with placeholder (prepend if not supplied in CSV)
+            opts = options if (len(options) > 0 and options[0] == "— Select —") else (["— Select —"] + options)
+            default_index = opts.index(prev_primary) if prev_primary in opts else 0
+            chosen = st.selectbox(label_display, opts, key=widget_key, index=default_index)
+            entry["primary"] = chosen if (chosen and chosen != "— Select —") else None
 
         else:
+            # Default to text area
             default_text = str(prev_primary) if prev_primary is not None else ""
             entry["primary"] = st.text_area(label_display, key=widget_key, value=default_text, height=60)
 
         responses[qid] = entry
 
     return responses
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Draft helpers — queued apply to avoid "cannot be modified after widget" errors
