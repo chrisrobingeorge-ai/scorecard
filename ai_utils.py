@@ -288,7 +288,7 @@ def _build_prompt_objective_aware(
             ans_primary_str = "" if ans_primary is None else str(ans_primary)
             ans_desc_str = "" if ans_desc is None else str(ans_desc)
 
-            context_bits = [pillar or None, metric or None, prod or None]
+            context_bits = [pillar or None, metric or None, prod or None, scope_tag]
             context_bits = [b for b in context_bits if b]
             context_label = " / ".join(context_bits) if context_bits else ""
 
@@ -370,6 +370,12 @@ def _build_prompt_objective_aware(
            treat the "No" as neutral rather than negative. In these cases, you may note future
            opportunities, but do not mark the objective or production as off track solely
            because the activity did not occur this month.
+
+           Some questions are marked as "DEPARTMENT-WIDE (not tied to a single production)".
+           Treat these as context for the department as a whole (e.g., recruitment, auditions,
+           contracts) and do not attribute their status to any single production. Use them in
+           "overall_summary" and "pillar_summaries", but avoid language like "recruitment for
+           'Nijinsky' was insufficient" when the data is department-wide.
 
         4) "risks":
            An array of concise bullet-style strings.
