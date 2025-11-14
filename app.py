@@ -1180,12 +1180,33 @@ def main():
 
     # AI Interpretation
     st.subheader("AI Interpretation")
+
+    # Overall
     st.markdown("#### Overall Summary")
     st.write(ai_result.get("overall_summary", ""))
 
+    # By production / programme (if available)
+    prod_summaries = ai_result.get("production_summaries", []) or []
+    if prod_summaries:
+        st.markdown("#### By Production / Programme")
+        for prod in prod_summaries:
+            pname = prod.get("production") or "General"
+            st.markdown(f"**{pname}**")
+            for ps in (prod.get("pillars") or []):
+                pillar_name = ps.get("pillar", "Category")
+                score_hint = ps.get("score_hint", "")
+                heading = f"- **{pillar_name}**"
+                if score_hint:
+                    heading += f" — {score_hint}"
+                st.markdown(heading)
+                summary = ps.get("summary", "")
+                if summary:
+                    st.write(summary)
+
+    # Cross-cutting by pillar (optional, still useful)
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
     if pillar_summaries:
-        st.markdown("#### By Strategic Pillar")
+        st.markdown("#### Cross-cutting by Pillar")
         for ps in pillar_summaries:
             st.markdown(
                 f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
