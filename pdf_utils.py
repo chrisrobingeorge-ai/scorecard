@@ -56,7 +56,8 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]):
         # Ensure we look up using string key, since the app stores qids as strings
         qid_str = str(qid)
 
-        label = f"{row.get('strategic_pillar', '')} / {row.get('production', '')} / {row.get('metric', '')}"
+        prod_label = row.get("production_title", "") or row.get("production", "")
+        label = f"{row.get('strategic_pillar', '')} / {prod_label} / {row.get('metric', '')}"
         raw_val = responses.get(qid_str, responses.get(qid, ""))
 
         if isinstance(raw_val, dict):
@@ -123,16 +124,6 @@ def build_scorecard_pdf(
     meta_line = f"{meta.get('department', '')} — {meta.get('role', '')}"
     story.append(Paragraph(meta_line, styles["Normal"]))
     story.append(Spacer(1, 12))
-
-    # Overall summary
-    summary = _to_plain_text(ai_result.get("overall_summary", ""))
-    if summary.strip():
-        story.append(Paragraph("Overall Summary", styles["Heading2"]))
-        for para in summary.split("\n\n"):
-            if para.strip():
-                story.append(Paragraph(para.strip(), styles["BodyText"]))
-                story.append(Spacer(1, 6))
-        story.append(Spacer(1, 12))
 
     # Strategic Summary (overall line + pillar view)
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
