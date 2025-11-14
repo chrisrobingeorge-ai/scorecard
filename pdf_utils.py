@@ -3,6 +3,7 @@
 from io import BytesIO
 from typing import Dict, Any
 
+import json
 import pandas as pd
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -16,6 +17,34 @@ from reportlab.platypus import (
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 
+
+def _to_plain_text(val: Any) -> str:
+    """
+    Normalise various AI output types to a human-readable string.
+
+    - If already a string, return as-is.
+    - If list, join items with double newlines.
+    - If dict, try 'text' key, otherwise JSON-dump / str().
+    - If None, return empty string.
+    """
+    if val is None:
+        return ""
+    if isinstance(val, str):
+        return val
+    if isinstance(val, list):
+        # Join list items as separate paragraphs
+        return "\n\n".join(_to_plain_text(v) for v in val)
+    if isinstance(val, dict):
+        # Common pattern: {"text": "..."}
+        if "text" in val and isinstance(val["text"], str):
+            return val["text"]
+        try:
+            return json.dumps(val, ensure_ascii=False, indent=2)
+        except Exception:
+            return str(val)
+    return str(val)
+
+
 def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]):
     """
     Build a simple 2-column table of metric vs response (primary + description).
@@ -23,8 +52,12 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]):
     data = [["Pillar / Production / Metric", "Response"]]
     for _, row in questions.sort_values("display_order").iterrows():
         qid = row["question_id"]
+
+        # Ensure we look up using string key, since the app stores qids as strings
+        qid_str = str(qid)
+
         label = f"{row.get('strategic_pillar', '')} / {row.get('production', '')} / {row.get('metric', '')}"
-        raw_val = responses.get(qid, "")
+        raw_val = responses.get(qid_str, responses.get(qid, ""))
 
         if isinstance(raw_val, dict):
             primary = raw_val.get("primary", "")
@@ -55,6 +88,7 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]):
         )
     )
     return table
+
 
 def build_scorecard_pdf(
     meta: Dict[str, Any],
@@ -91,8 +125,8 @@ def build_scorecard_pdf(
     story.append(Spacer(1, 12))
 
     # Overall summary
-    summary = ai_result.get("overall_summary", "")
-    if summary:
+    summary = _to_plain_text(ai_result.get("overall_summary", ""))
+    if summary.strip():
         story.append(Paragraph("Overall Summary", styles["Heading2"]))
         for para in summary.split("\n\n"):
             if para.strip():
@@ -105,9 +139,15 @@ def build_scorecard_pdf(
     if pillar_summaries:
         story.append(Paragraph("By Strategic Pillar", styles["Heading2"]))
         for ps in pillar_summaries:
+            # Make sure we can always treat this as a dict
+            if not isinstance(ps, dict):
+                ps = {"strategic_pillar": "", "score_hint": "", "summary": _to_plain_text(ps)}
+
             heading = f"{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}"
             story.append(Paragraph(heading, styles["Heading4"]))
-            story.append(Paragraph(ps.get("summary", ""), styles["BodyText"]))
+
+            pillar_summary_text = _to_plain_text(ps.get("summary", ""))
+            story.append(Paragraph(pillar_summary_text, styles["BodyText"]))
             story.append(Spacer(1, 6))
         story.append(Spacer(1, 12))
 
@@ -116,7 +156,7 @@ def build_scorecard_pdf(
     if risks:
         story.append(Paragraph("Key Risks / Concerns", styles["Heading2"]))
         for r in risks:
-            story.append(Paragraph(f"• {r}", styles["BodyText"]))
+            story.append(Paragraph(f"• {_to_plain_text(r)}", styles["BodyText"]))
         story.append(Spacer(1, 12))
 
     # Priorities
@@ -124,12 +164,12 @@ def build_scorecard_pdf(
     if priorities:
         story.append(Paragraph("Priorities for Next Month", styles["Heading2"]))
         for p in priorities:
-            story.append(Paragraph(f"• {p}", styles["BodyText"]))
+            story.append(Paragraph(f"• {_to_plain_text(p)}", styles["BodyText"]))
         story.append(Spacer(1, 12))
 
     # Notes for leadership
-    nfl = ai_result.get("notes_for_leadership", "")
-    if nfl:
+    nfl = _to_plain_text(ai_result.get("notes_for_leadership", ""))
+    if nfl.strip():
         story.append(Paragraph("Notes for Leadership", styles["Heading2"]))
         story.append(Paragraph(nfl, styles["BodyText"]))
         story.append(Spacer(1, 12))
