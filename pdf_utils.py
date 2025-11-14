@@ -134,6 +134,26 @@ def build_scorecard_pdf(
                 story.append(Spacer(1, 6))
         story.append(Spacer(1, 12))
 
+    # Strategic Summary (pillar-based view) – at the top
+    pillar_summaries = ai_result.get("pillar_summaries", []) or []
+    if pillar_summaries:
+        story.append(Paragraph("Strategic Summary", styles["Heading2"]))
+        story.append(Spacer(1, 6))
+
+        for ps in pillar_summaries:
+            # Make sure we can always treat this as a dict
+            if not isinstance(ps, dict):
+                ps = {"strategic_pillar": "", "score_hint": "", "summary": _to_plain_text(ps)}
+
+            heading = f"{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}"
+            story.append(Paragraph(_to_plain_text(heading), styles["Heading4"]))
+
+            pillar_summary_text = _to_plain_text(ps.get("summary", ""))
+            story.append(Paragraph(pillar_summary_text, styles["BodyText"]))
+            story.append(Spacer(1, 6))
+
+        story.append(Spacer(1, 12))
+
     # Production / programme summaries (if available)
     production_summaries = ai_result.get("production_summaries", []) or []
     if production_summaries:
@@ -169,27 +189,6 @@ def build_scorecard_pdf(
             story.append(Spacer(1, 8))
 
         story.append(Spacer(1, 12))
-
-    # Cross-cutting pillar summaries (optional)
-    pillar_summaries = ai_result.get("pillar_summaries", []) or []
-    if pillar_summaries:
-        story.append(Paragraph("Cross-cutting by Pillar", styles["Heading2"]))
-        story.append(Spacer(1, 6))
-
-        for ps in pillar_summaries:
-            # Make sure we can always treat this as a dict
-            if not isinstance(ps, dict):
-                ps = {"strategic_pillar": "", "score_hint": "", "summary": _to_plain_text(ps)}
-
-            heading = f"{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}"
-            story.append(Paragraph(_to_plain_text(heading), styles["Heading4"]))
-
-            pillar_summary_text = _to_plain_text(ps.get("summary", ""))
-            story.append(Paragraph(pillar_summary_text, styles["BodyText"]))
-            story.append(Spacer(1, 6))
-
-        story.append(Spacer(1, 12))
-
 
     # Risks
     risks = ai_result.get("risks", []) or []
