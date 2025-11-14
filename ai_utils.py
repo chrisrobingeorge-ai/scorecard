@@ -392,7 +392,8 @@ def interpret_scorecard(
             # Try to salvage JSON object if model returned text around it
             import re
 
-            m = re.search(r"\{{.*\}}", text, re.S)
+            # ✅ back to the correct pattern: look for a single JSON object
+            m = re.search(r"\{.*\}", text, re.S)
             data = json.loads(m.group(0)) if m else {}
     except Exception as e:
         # Propagate as RuntimeError so app.py can show a friendly message
