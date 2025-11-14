@@ -68,13 +68,13 @@ def _build_prompt(meta: Dict[str, Any], questions_df: pd.DataFrame, responses: D
     You are an expert analyst preparing an executive summary of Alberta Ballet’s departmental scorecard results for board review.
     
     Context:
-    - The scorecard uses a 3-point ranking system to evaluate progress across five main categories (pillars): Company, School, Community, Corporate, and HR & Governance.
+    - The scorecard uses a 3-point ranking system to evaluate progress across five main categories (pillars): Artistic, School, Community, Corporate.
     - Each ranking is determined by measurable outputs, reflecting the effectiveness of initiatives in artistic excellence, student development, audience engagement, financial sustainability, and governance.
     
     Task:
     Analyze the provided scorecard data and produce a comprehensive, narrative-driven summary that includes:
     1) Overall Organisational Summary: High-level performance, major achievements, and strategic direction.
-    2) Departmental Summaries: For each pillar (Company, School, Community, Corporate, HR & Governance), provide:
+    2) Departmental Summaries: For each pillar (Artistic, School, Community, Corporate), provide:
        - The total score and what it indicates about progress (use a short “score_hint”).
        - Key achievements and standout successes.
        - Areas needing improvement or facing challenges.
@@ -98,7 +98,7 @@ def _build_prompt(meta: Dict[str, Any], questions_df: pd.DataFrame, responses: D
     {
       "overall_summary": "…",
       "pillar_summaries": [
-        {"strategic_pillar": "Company", "score_hint": "2/3 – steady progress", "summary": "…"},
+        {"strategic_pillar": "Artistic", "score_hint": "2/3 – steady progress", "summary": "…"},
         {"strategic_pillar": "School", "score_hint": "3/3 – exceeding targets", "summary": "…"}
       ],
       "risks": ["…", "…"],
