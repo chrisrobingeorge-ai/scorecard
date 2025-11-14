@@ -396,39 +396,19 @@ def build_scorecard_pdf(
     if pillar_summaries:
         story.append(Paragraph("Strategic Pillars", styles["SectionHeading"]))
 
-        cards: list[Flowable] = []
         for ps in pillar_summaries:
+            pillar_name = _to_plain_text(ps.get("strategic_pillar", "Pillar"))
+            score_hint = _to_plain_text(ps.get("score_hint", ""))
             summary_text = _to_plain_text(ps.get("summary", ""))
-            card = _build_pillar_card(
-                styles,
-                ps.get("strategic_pillar", "Pillar"),
-                ps.get("score_hint", ""),
-                summary_text,
-            )
-            cards.append(card)
 
-        rows = []
-        for row_cards in _chunked(cards, 3):
-            # Pad row to always have three columns for consistent layout
-            while len(row_cards) < 3:
-                row_cards.append(Spacer(2.3 * inch, 0))
-            rows.append(row_cards)
+            heading = pillar_name
+            if score_hint:
+                heading = f"{pillar_name} — {score_hint}"
 
-        pillar_grid = Table(
-            rows,
-            colWidths=[2.3 * inch, 2.3 * inch, 2.3 * inch],
-            hAlign="LEFT",
-            style=TableStyle(
-                [
-                    ("LEFTPADDING", (0, 0), (-1, -1), 4),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-                    ("TOPPADDING", (0, 0), (-1, -1), 4),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-                ]
-            ),
-        )
+            story.append(Paragraph(heading, styles["Heading3"]))
+            story.append(_safe_paragraph(summary_text, styles["BodyText"]))
+            story.append(Spacer(1, 6))
 
-        story.append(pillar_grid)
         story.append(Spacer(1, 12))
 
     production_summaries = ai_result.get("production_summaries", []) or []
