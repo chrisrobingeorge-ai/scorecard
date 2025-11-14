@@ -364,6 +364,13 @@ def _build_prompt_objective_aware(
            for strategic objectives (e.g., one show strongly supports ART2 but not ART3).
            When comparing productions or programmes, do not let a single metric (e.g., reuse of assets, a missing collaboration, or one weak answer) completely dominate your judgment. Look across all available answers before calling a production clearly strong or weak for a given objective.
 
+           Some questions are followed by "Why not?" explanations when the answer is "No".
+           When these explanations indicate that the timing or artistic focus was intentional
+           (e.g., "auditions are in spring", "this work is designed as a classic fairy-tale"),
+           treat the "No" as neutral rather than negative. In these cases, you may note future
+           opportunities, but do not mark the objective or production as off track solely
+           because the activity did not occur this month.
+
         4) "risks":
            An array of concise bullet-style strings.
            Focus on **strategic risks**, not trivial operational issues. Tie them to
