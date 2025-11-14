@@ -6,7 +6,7 @@ import os
 from typing import Any, Dict, List
 
 import pandas as pd
-
+from app_config import OBJECTIVES_DF
 
 def _get_openai_client():
     """
@@ -198,6 +198,165 @@ def _build_prompt(
     user_content = f"{instruction}\n\nINPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}"
     return user_content
 
+def _build_prompt_objective_aware(
+    meta: Dict[str, Any],
+    questions_df: pd.DataFrame,
+    responses: Dict[str, Dict[str, Any]],
+) -> str:
+    """
+    Build a strategy-aware prompt by joining:
+    - question metadata
+    - responses (primary / description)
+    - strategic objectives via primary_objective_id -> OBJECTIVES_DF
+    """
+
+    import textwrap
+
+    # ── 1) Normalise question IDs and attach answers ─────────────────────────
+    q_df = questions_df.copy()
+    q_df["question_id"] = q_df["question_id"].astype(str)
+
+    resp_rows = []
+    for qid, ans in (responses or {}).items():
+        resp_rows.append(
+            {
+                "question_id": str(qid),
+                "answer_primary": ans.get("primary"),
+                "answer_description": ans.get("description"),
+            }
+        )
+    if resp_rows:
+        resp_df = pd.DataFrame(resp_rows)
+    else:
+        resp_df = pd.DataFrame(columns=["question_id", "answer_primary", "answer_description"])
+
+    merged = q_df.merge(resp_df, on="question_id", how="left")
+
+    # ── 2) Join strategic objectives via primary_objective_id ────────────────
+    if "primary_objective_id" in merged.columns and not OBJECTIVES_DF.empty:
+        merged = merged.merge(
+            OBJECTIVES_DF,
+            left_on="primary_objective_id",
+            right_on="objective_id",
+            how="left",
+            suffixes=("", "_obj"),
+        )
+    else:
+        merged["objective_id"] = None
+        merged["owner"] = None
+        merged["objective_title"] = None
+        merged["short_description"] = None
+
+    # Fallback labels for any unmapped items
+    dept = meta.get("department") or "Unknown department"
+    merged["objective_id"] = merged["objective_id"].fillna("UNMAPPED")
+    merged["objective_title"] = merged["objective_title"].fillna("Unmapped / unspecified objective")
+    merged["owner"] = merged["owner"].fillna(dept)
+    merged["short_description"] = merged["short_description"].fillna(
+        "No strategic objective mapping was provided for these items."
+    )
+
+    # ── 3) Build text grouped by strategic objective ─────────────────────────
+    objective_blocks: list[str] = []
+
+    for obj_id, group in merged.groupby("objective_id"):
+        first = group.iloc[0]
+        owner = str(first.get("owner") or "").strip()
+        obj_title = str(first.get("objective_title") or "").strip()
+        obj_desc = str(first.get("short_description") or "").strip()
+
+        lines: list[str] = []
+        header = f"Objective {obj_id} ({owner}): {obj_title}" if obj_title else f"Objective {obj_id} ({owner})"
+        lines.append(header)
+        if obj_desc:
+            lines.append(f"Description: {obj_desc}")
+
+        lines.append("Scorecard items and answers:")
+
+        for _, row in group.iterrows():
+            q_text = str(row.get("question_text") or "").strip()
+            pillar = str(row.get("strategic_pillar") or "").strip()
+            metric = str(row.get("metric") or "").strip()
+
+            prod = str(row.get("production_title") or "").strip()
+            if not prod and meta.get("production"):
+                prod = str(meta["production"])
+
+            ans_primary = row.get("answer_primary")
+            ans_desc = row.get("answer_description")
+            ans_primary_str = "" if ans_primary is None else str(ans_primary)
+            ans_desc_str = "" if ans_desc is None else str(ans_desc)
+
+            context_bits = [pillar or None, metric or None, prod or None]
+            context_bits = [b for b in context_bits if b]
+            context_label = " / ".join(context_bits) if context_bits else ""
+
+            line = q_text or f"Question ID {row.get('question_id')}"
+            if context_label:
+                line = f"[{context_label}] {line}"
+
+            lines.append(f"- {line}")
+            lines.append(f"  Primary answer: {ans_primary_str}")
+            if ans_desc_str:
+                lines.append(f"  Detail: {ans_desc_str}")
+
+        objective_blocks.append("\n".join(lines))
+
+    objectives_text = "\n\n".join(objective_blocks)
+
+    # ── 4) Wrap in clear instructions for the model ─────────────────────────
+    period = meta.get("month") or ""
+    scope = meta.get("scope") or (meta.get("production") or "current scope")
+
+    prompt = textwrap.dedent(
+        f"""
+        You analyse Alberta Ballet's monthly scorecards.
+
+        You are given questions, their answers, and their mapping to strategic objectives
+        from the 2025–2030 strategic plan.
+
+        Reporting context:
+        - Department: {dept}
+        - Period: {period}
+        - Scope: {scope}
+
+        Using the data below, produce a JSON object with the following keys:
+
+        1) "overall_summary": A 3–6 sentence narrative linking this month's results
+           to the strategic objectives. Be explicit about which objectives appear
+           on track, mixed, or at risk.
+
+        2) "pillar_summaries": An array of objects, each with:
+           - "strategic_pillar": the pillar name (from the data)
+           - "score_hint": a short signal like "On track", "Mixed", or "At risk"
+           - "summary": 2–4 sentences about that pillar this month.
+
+        3) "production_summaries": An array of objects, each with:
+           - "production": the production/programme name (or "General")
+           - "pillars": an array of objects with:
+               - "pillar": pillar name
+               - "score_hint"
+               - "summary"
+
+        4) "risks": An array of bullet-style strings highlighting key risks,
+           especially where strategic objectives seem off-track or unsupported.
+
+        5) "priorities_next_month": An array of concrete, action-oriented
+           priorities for next month, referencing strategic objectives where useful.
+
+        6) "notes_for_leadership": A short paragraph (~3–6 sentences) with what
+           executives / Board should pay attention to, linking back to the strategy.
+
+        Be concise but specific. Avoid generic consulting language. Use the strategic
+        objective IDs and titles in your wording where it helps clarity.
+
+        Here is the scorecard data grouped by strategic objective:
+
+        {objectives_text}
+        """
+    ).strip()
+
+    return prompt
 
 def interpret_scorecard(
     meta: Dict[str, Any],
@@ -208,7 +367,9 @@ def interpret_scorecard(
     Call OpenAI to produce a structured interpretation of the scorecard.
     Returns a dict with keys that app.py expects.
     """
-    prompt = _build_prompt(meta, questions_df, responses)
+
+    # Build a strategy-aware prompt that joins questions + answers + objectives
+    prompt = _build_prompt_objective_aware(meta, questions_df, responses)
 
     # Make the call
     try:
@@ -231,7 +392,7 @@ def interpret_scorecard(
             # Try to salvage JSON object if model returned text around it
             import re
 
-            m = re.search(r"\{.*\}", text, re.S)
+            m = re.search(r"\{{.*\}}", text, re.S)
             data = json.loads(m.group(0)) if m else {}
     except Exception as e:
         # Propagate as RuntimeError so app.py can show a friendly message
