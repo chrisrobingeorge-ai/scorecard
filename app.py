@@ -991,7 +991,7 @@ def main():
     # ✅ Normalised production key for storage
     current_production = "" if sel_prod == GENERAL_PROD_LABEL else sel_prod
     
-    # ── 4) Filter questions for display
+    # ── 4) Filter questions for display (CURRENT PRODUCTION ONLY)
     filtered = filter_questions_for_scope(questions_all_df, current_production)
     
     if filtered.empty:
@@ -1028,7 +1028,7 @@ def main():
     
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
-    # Meta
+    # Meta (for the CURRENT view)
     meta = {
         "staff_name": st.session_state.get("staff_name") or "Unknown",
         "role": st.session_state.get("role") or "",
@@ -1061,7 +1061,7 @@ def main():
     if not submitted:
         return
 
-    # visible-only validation
+    # ── Visible-only validation for CURRENT PRODUCTION
     missing_required: List[str] = []
     for _, row in filtered.iterrows():
         if not question_is_visible(row, dept_label, current_production):
@@ -1082,10 +1082,49 @@ def main():
                 st.write("• ", q)
         return
 
-    # AI call
+    # ─────────────────────────────────────────────────────────────────────
+    # NEW: Build AI/PDF scope = ALL questions for this department (all productions)
+    # ─────────────────────────────────────────────────────────────────────
+    questions_ai_df = questions_all_df.copy()
+
+    # Pull all saved answers and filter to this department / month
+    answers_df = get_answers_df().copy()
+
+    if "department" in answers_df.columns:
+        answers_scope = answers_df[answers_df["department"] == dept_label].copy()
+    else:
+        answers_scope = answers_df.copy()
+
+    if "month" in answers_scope.columns:
+        answers_scope = answers_scope[answers_scope["month"] == month_str]
+
+    responses_ai: Dict[str, dict] = {}
+    for _, qrow in questions_ai_df.iterrows():
+        qid = str(qrow["question_id"])
+        matches = answers_scope[answers_scope["question_id"].astype(str) == qid]
+        if not matches.empty:
+            arow = matches.iloc[0]
+            responses_ai[qid] = {
+                "primary": arow.get("primary"),
+                "description": arow.get("description"),
+            }
+        else:
+            # Fallback to current in-memory responses (for this production)
+            cur = responses.get(qid, {})
+            responses_ai[qid] = {
+                "primary": cur.get("primary"),
+                "description": cur.get("description"),
+            }
+
+    # Meta for AI/PDF: department-wide view
+    meta_for_ai = dict(meta)
+    meta_for_ai["production"] = ""  # indicate department-wide summary
+    meta_for_ai["scope"] = "department_all_productions"
+
+    # AI call (DEPARTMENT-WIDE)
     try:
-        with st.spinner("Asking AI to interpret this scorecard..."):
-            ai_result = interpret_scorecard(meta, filtered, responses)
+        with st.spinner("Asking AI to interpret this department-wide scorecard..."):
+            ai_result = interpret_scorecard(meta_for_ai, questions_ai_df, responses_ai)
     except RuntimeError as e:
         st.error(f"AI configuration error: {e}")
         st.info("Check your OPENAI_API_KEY secret and that `openai>=1.51.0` (or newer) is in requirements.txt.")
@@ -1127,18 +1166,19 @@ def main():
         st.markdown("#### Notes for Leadership")
         st.write(nfl)
 
-    # PDF
+    # PDF (DEPARTMENT-WIDE)
     try:
-        pdf_bytes = build_scorecard_pdf(meta, filtered, responses, ai_result)
+        pdf_bytes = build_scorecard_pdf(meta_for_ai, questions_ai_df, responses_ai, ai_result)
         st.download_button(
             label="Download PDF report",
             data=pdf_bytes,
-            file_name=f"scorecard_{meta['department'].replace(' ', '_')}_{month_str}.pdf",
+            file_name=f"scorecard_{meta_for_ai['department'].replace(' ', '_')}_{month_str}.pdf",
             mime="application/pdf",
         )
     except Exception as e:
         st.warning(f"PDF export failed: {e}")
         st.info("If this persists, check pdf_utils.py dependencies (reportlab or fpdf2).")
+
 
 
 if __name__ == "__main__":
