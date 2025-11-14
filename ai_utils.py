@@ -247,8 +247,9 @@ def _build_prompt_objective_aware(
         merged["objective_title"] = None
         merged["short_description"] = None
 
-    # Fallback labels for any unmapped items
     dept = meta.get("department") or "Unknown department"
+
+    # Fallback labels for any unmapped items
     merged["objective_id"] = merged["objective_id"].fillna("UNMAPPED")
     merged["objective_title"] = merged["objective_title"].fillna("Unmapped / unspecified objective")
     merged["owner"] = merged["owner"].fillna(dept)
@@ -304,7 +305,7 @@ def _build_prompt_objective_aware(
 
     objectives_text = "\n\n".join(objective_blocks)
 
-    # ── 4) Wrap in clear instructions for the model ─────────────────────────
+    # ── 4) Wrap in richer instructions for the model ────────────────────────
     period = meta.get("month") or ""
     scope = meta.get("scope") or (meta.get("production") or "current scope")
 
@@ -320,35 +321,61 @@ def _build_prompt_objective_aware(
         - Period: {period}
         - Scope: {scope}
 
-        Using the data below, produce a JSON object with the following keys:
+        Your task is to produce a **deep, interpretive analysis**, not just a recap of answers.
 
-        1) "overall_summary": A 3–6 sentence narrative linking this month's results
-           to the strategic objectives. Be explicit about which objectives appear
-           on track, mixed, or at risk.
+        Please respond with a single valid JSON object with the following keys:
 
-        2) "pillar_summaries": An array of objects, each with:
-           - "strategic_pillar": the pillar name (from the data)
-           - "score_hint": a short signal like "On track", "Mixed", or "At risk"
-           - "summary": 2–4 sentences about that pillar this month.
+        1) "overall_summary":
+           A **coherent narrative of 2–4 paragraphs**, written in prose (no bullet points).
+           - Link explicitly to strategic objectives by ID and title (e.g., "ART1 – Elevate the Art of Dance").
+           - Diagnose what seems **on track**, **mixed**, or **at risk**, and why.
+           - Go beyond restating answers: infer patterns, tensions, and trade-offs
+             (e.g., strong innovation but weak recruitment; strong community impact but fragile capacity).
+           - Where evidence is thin or missing, say so explicitly.
 
-        3) "production_summaries": An array of objects, each with:
-           - "production": the production/programme name (or "General")
-           - "pillars": an array of objects with:
-               - "pillar": pillar name
-               - "score_hint"
-               - "summary"
+        2) "pillar_summaries":
+           An array of objects, each with:
+             - "strategic_pillar": the pillar name (from the data)
+             - "score_hint": a short signal like "On track", "Mixed", or "At risk"
+             - "summary": a **short paragraph (3–6 sentences)**.
+           For each pillar, explain:
+             - what the answers suggest about progress,
+             - how this relates to specific strategic objectives and productions/programmes,
+             - and any underlying causes or dependencies you can infer.
 
-        4) "risks": An array of bullet-style strings highlighting key risks,
-           especially where strategic objectives seem off-track or unsupported.
+        3) "production_summaries":
+           An array of objects, each with:
+             - "production": the production/programme name (or "General")
+             - "pillars": an array of objects with:
+                 - "pillar": pillar name
+                 - "score_hint"
+                 - "summary" (2–4 sentences).
+           Focus on **differences between productions/programmes** and what they imply
+           for strategic objectives (e.g., one show strongly supports ART2 but not ART3).
 
-        5) "priorities_next_month": An array of concrete, action-oriented
-           priorities for next month, referencing strategic objectives where useful.
+        4) "risks":
+           An array of concise bullet-style strings.
+           Focus on **strategic risks**, not trivial operational issues. Tie them to
+           objectives and, where relevant, to specific productions or pillars.
 
-        6) "notes_for_leadership": A short paragraph (~3–6 sentences) with what
-           executives / Board should pay attention to, linking back to the strategy.
+        5) "priorities_next_month":
+           An array of concise, action-oriented bullet strings.
+           Each item should be **specific and doable within a month**, and ideally
+           reference the objective(s) it supports (e.g., "Advance ART5 by...").
 
-        Be concise but specific. Avoid generic consulting language. Use the strategic
-        objective IDs and titles in your wording where it helps clarity.
+        6) "notes_for_leadership":
+           A **single narrative paragraph or two (4–8 sentences)** in prose (no bullets),
+           written as if for the CEO and Board. Highlight:
+             - the most important strategic signals from this month,
+             - any uncomfortable truths or trade-offs they should be aware of,
+             - where their attention or decisions are most needed.
+
+        Style guidelines:
+        - Use clear, direct language suitable for a Board / senior leadership report.
+        - Avoid generic consulting clichés ("leverage synergies", "unlock potential").
+        - Do not simply repeat question text; instead, synthesise what the answers
+          imply for strategy.
+        - It is acceptable to point out unknowns, contradictions, or data gaps.
 
         Here is the scorecard data grouped by strategic objective:
 
@@ -379,7 +406,11 @@ def interpret_scorecard(
             messages=[
                 {
                     "role": "system",
-                    "content": "You analyse monthly scorecards for a single department and produce structured summaries.",
+                    "content": (
+                        "You are a senior strategy analyst for Alberta Ballet. "
+                        "You interpret monthly scorecards in the context of the 2025–2030 strategic plan "
+                        "and produce deep, board-ready narrative summaries in JSON format."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ],
