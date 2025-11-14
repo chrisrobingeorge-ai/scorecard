@@ -378,10 +378,15 @@ def _build_prompt_objective_aware(
            because the activity did not occur this month.
 
            Some questions are marked as "DEPARTMENT-WIDE (not tied to a single production)".
-           Treat these as context for the department as a whole (e.g., recruitment, auditions,
-           contracts) and do not attribute their status to any single production. Use them in
-           "overall_summary" and "pillar_summaries", but avoid language like "recruitment for
-           'Nijinsky' was insufficient" when the data is department-wide.
+           These describe the company or department overall (e.g., recruitment, auditions,
+           contracts) and MUST NOT be treated as attributes of any specific production.
+           When writing "production_summaries", completely ignore these questions for both
+           scoring and narrative. Do not create pillars or comments in a production summary
+           that are based on DEPARTMENT-WIDE items (for example, do NOT mention recruitment
+           or "Build a World-Class Ballet Company" inside a specific production’s summary).
+           You may refer to these items only in "overall_summary" and "pillar_summaries",
+           using department-level language ("the company", "the department") rather than
+           naming individual productions.
 
         4) "risks":
            An array of concise bullet-style strings.
@@ -459,6 +464,34 @@ def interpret_scorecard(
     except Exception as e:
         # Propagate as RuntimeError so app.py can show a friendly message
         raise RuntimeError(str(e))
+ 
+    # ── Optional safety filter: remove recruitment from production_summaries ──
+    prod_summaries = data.get("production_summaries") or []
+    cleaned_prod_summaries = []
+
+    for prod in prod_summaries:
+        if not isinstance(prod, dict):
+            continue
+
+        pillars = prod.get("pillars") or []
+        cleaned_pillars = []
+        for ps in pillars:
+            if not isinstance(ps, dict):
+                continue
+            pillar_name = str(ps.get("pillar", "")).lower()
+
+            # Strip anything clearly about recruitment / world-class company
+            if "recruit" in pillar_name:
+                continue
+            if "build a world-class ballet company" in pillar_name:
+                continue
+
+            cleaned_pillars.append(ps)
+
+        prod["pillars"] = cleaned_pillars
+        cleaned_prod_summaries.append(prod)
+
+    data["production_summaries"] = cleaned_prod_summaries
 
     # Normalize the output shape so app.py rendering is resilient
     return {
