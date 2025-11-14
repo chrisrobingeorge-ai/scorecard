@@ -1086,29 +1086,30 @@ def main():
     # Build AI/PDF scope
     #
     # Default: use the CURRENT scope (this production only).
-    # For Artistic: widen to ALL Artistic questions + answers for this month.
+    # For Artistic: widen to ALL Artistic productions for this month,
+    # and attach a production_title column with the real show name.
     # ─────────────────────────────────────────────────────────────
     questions_for_ai = filtered
     responses_for_ai = responses
     meta_for_ai = meta
 
     if dept_label == "Artistic":
-        # Start from all questions for this department file
-        questions_for_ai = questions_all_df.copy()
+        # Base questions for this department
+        questions_dept = questions_all_df.copy()
 
-        # If the questions file has a department column, filter it to Artistic
+        # Optional: filter questions by department column if present
         dept_col_q = None
         for cand in ["department", "dept"]:
-            if cand in questions_for_ai.columns:
+            if cand in questions_dept.columns:
                 dept_col_q = cand
                 break
         if dept_col_q is not None:
-            questions_for_ai = questions_for_ai[questions_for_ai[dept_col_q] == dept_label].copy()
+            questions_dept = questions_dept[questions_dept[dept_col_q] == dept_label].copy()
 
-        # Pull all saved answers
+        # All saved answers
         answers_df = get_answers_df().copy()
 
-        # Filter answers by department, if such a column exists
+        # Filter answers to this department
         dept_col_a = None
         for cand in ["department", "dept"]:
             if cand in answers_df.columns:
@@ -1117,50 +1118,65 @@ def main():
         if dept_col_a is not None:
             answers_scope = answers_df[answers_df[dept_col_a] == dept_label].copy()
         else:
-            # Fallback: no department column → use all answers, but we’ll only
-            # map answers for question_ids that exist in questions_for_ai.
             answers_scope = answers_df.copy()
 
-        # Filter answers by month, if a month column exists
+        # Filter answers to this reporting month if available
         if "month" in answers_scope.columns:
-            # Normalise to YYYY-MM string to match month_str (e.g., "2025-11")
             month_series = answers_scope["month"].astype(str)
             answers_scope = answers_scope[month_series.str.slice(0, 7) == month_str]
 
-        # Index answers by question_id (string) for faster lookup
-        if not answers_scope.empty:
+        if answers_scope.empty:
+            # No saved answers beyond current production → fall back
+            questions_for_ai = filtered
+            responses_for_ai = responses
+        else:
             answers_scope = answers_scope.copy()
             answers_scope["question_id"] = answers_scope["question_id"].astype(str)
+            answers_scope["production"] = answers_scope["production"].astype(str)
 
-        responses_for_ai = {}
-        for _, qrow in questions_for_ai.iterrows():
-            qid = str(qrow["question_id"])
-            primary = None
-            description = None
+            # Lookup: question_id → question metadata dict
+            q_lookup = (
+                questions_dept
+                .set_index(questions_dept["question_id"].astype(str))
+                .to_dict(orient="index")
+            )
 
-            # 1) Look for a saved answer row
-            if not answers_scope.empty:
-                match = answers_scope[answers_scope["question_id"] == qid]
-                if not match.empty:
-                    arow = match.iloc[0]
-                    primary = arow.get("primary")
-                    description = arow.get("description")
+            rows_for_ai: List[dict] = []
+            responses_for_ai = {}
 
-            # 2) If still empty, fall back to the on-screen responses
-            cur = responses.get(qid, {})
-            if primary is None and isinstance(cur, dict):
-                primary = cur.get("primary", primary)
-                description = cur.get("description", description)
+            for _, arow in answers_scope.iterrows():
+                qid_base = str(arow["question_id"])
+                q_meta = q_lookup.get(qid_base)
+                if not q_meta:
+                    continue  # question not in this dept file; skip
 
-            responses_for_ai[qid] = {
-                "primary": primary,
-                "description": description,
-            }
+                prod_title = str(arow.get("production") or "").strip()  # e.g., "Nijinsky", "Once Upon a Time", "" for General
 
-        # Department-wide meta (no single production)
+                # Composite id so each (question, production) pair is distinct to the model
+                composite_qid = f"{qid_base}::{prod_title or 'General'}"
+
+                # Copy metadata and attach production_title + composite_id
+                q_row = dict(q_meta)
+                q_row["question_id"] = composite_qid
+                q_row["production_title"] = prod_title
+                rows_for_ai.append(q_row)
+
+                responses_for_ai[composite_qid] = {
+                    "primary": arow.get("primary"),
+                    "description": arow.get("description"),
+                }
+
+            if rows_for_ai:
+                questions_for_ai = pd.DataFrame(rows_for_ai)
+            else:
+                # Fallback: nothing matched, use current scope
+                questions_for_ai = filtered
+                responses_for_ai = responses
+
         meta_for_ai = dict(meta)
-        meta_for_ai["production"] = ""  # indicates dept-wide
+        meta_for_ai["production"] = ""  # dept-wide summary
         meta_for_ai["scope"] = "department_all_productions"
+
 
     # ─────────────────────────────────────────────────────────────
     # AI call
