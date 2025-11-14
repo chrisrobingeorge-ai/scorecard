@@ -74,10 +74,8 @@ def _build_prompt(
 
         # Normalise pillar and production labels
         pillar = str(row.get("strategic_pillar") or "").strip()
-        production = str(row.get("production") or "").strip()
-        if production == "":
-            # Let the model treat this as 'General' if it needs a label
-            production = ""
+        # Prefer the per-answer production_title we built in app.py; fall back to any production column if present.
+        production = str(row.get("production_title") or row.get("production") or "").strip()
 
         items.append(
             {
@@ -113,27 +111,18 @@ def _build_prompt(
     Data fields:
     - Each item has:
       • pillar       (e.g., Innovation, Impact, Collaboration, Recruitment, Engagement, Financial, etc.)
-      • production   (may be blank, or a technical flag like "production_only" / "general_only", or a programme name)
+      • production   (either blank, "General", or a human-facing production/programme name such as "Nijinsky",
+                      "Once Upon a Time", "Community Programs", "Recreational Classes", etc.)
       • question, response, notes, metric, type.
 
     IMPORTANT ABOUT PRODUCTION LABELS:
-    - Technical flags such as "production_only", "general_only", or other values ending in "_only" are NOT human-facing
-      names. They exist purely as internal scope flags.
+    - The value of "production" is already the correct human-facing name to use.
     - When you return production names in production_summaries:
-      • NEVER output raw flags like "production_only", "general_only", or any value ending in "_only".
-      • Map "general_only" (or blank production values that clearly apply across the department) to "General".
-      • For other cases, infer a human-friendly production/programme label from the content:
-        - For Artistic, look in responses/notes for explicit production titles such as "Nijinsky", "Once Upon a Time",
-          or other ballet titles mentioned. Use those names for production_summaries.
-        - If multiple productions are mentioned (e.g., "Nijinsky" and "Once Upon a Time") and you can tell which items
-          refer to which, create separate production_summaries entries.
-        - If you cannot confidently separate individual productions, it is acceptable to group them together under a
-          label like "Productions this period (e.g., Nijinsky, Once Upon a Time)".
-        - For Community, typical programme labels might be "Community Programs" and "Recreational Classes" if those
-          appear in the data.
-        - For Corporate or School, there may be no productions at all; in that case, production_summaries may be empty.
-      • If you truly cannot infer any meaningful production/programme names, use a generic label such as
-        "Productions this period" rather than any technical flag.
+      • If production is non-empty, you MUST use it verbatim as the "production" value.
+      • If production is empty, you may either:
+        - Omit it from production_summaries entirely if there are no other production values, OR
+        - Treat it as "General" when grouping general items alongside named productions.
+    - Do NOT invent generic labels like "Productions this period" when explicit production names are present in the data.
 
     Grouping rules:
     - Use the content of "production" together with the text of responses/notes to decide how to group items.
