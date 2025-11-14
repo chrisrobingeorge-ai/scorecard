@@ -1197,7 +1197,17 @@ def main():
     # AI Interpretation
     st.subheader("AI Interpretation")
 
-    # Overall
+    # Strategic Summary (pillar view) – at the top
+    pillar_summaries = ai_result.get("pillar_summaries", []) or []
+    if pillar_summaries:
+        st.markdown("#### Strategic Summary")
+        for ps in pillar_summaries:
+            st.markdown(
+                f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
+            )
+            st.write(ps.get("summary", ""))
+
+    # Overall summary (short narrative across everything)
     st.markdown("#### Overall Summary")
     st.write(ai_result.get("overall_summary", ""))
 
@@ -1218,16 +1228,6 @@ def main():
                 summary = ps.get("summary", "")
                 if summary:
                     st.write(summary)
-
-    # Cross-cutting by pillar (optional, still useful)
-    pillar_summaries = ai_result.get("pillar_summaries", []) or []
-    if pillar_summaries:
-        st.markdown("#### Cross-cutting by Pillar")
-        for ps in pillar_summaries:
-            st.markdown(
-                f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
-            )
-            st.write(ps.get("summary", ""))
 
     risks = ai_result.get("risks", []) or []
     if risks:
