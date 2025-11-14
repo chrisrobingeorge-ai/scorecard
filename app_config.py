@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from app_config import OBJECTIVES_DF, OBJECTIVES_BY_ID
+
 GENERAL_PROD_LABEL = "General"
 YES_NO_OPTIONS = ["Yes", "No"]  # global default
 
