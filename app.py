@@ -1085,82 +1085,85 @@ def main():
     # ─────────────────────────────────────────────────────────────
     # Build AI/PDF scope
     #
-    # Default: use the CURRENT scope (filtered + responses)
-    # Artistic: widen to ALL productions for this department + month
+    # Default: use the CURRENT scope (this production only).
+    # For Artistic: widen to ALL Artistic questions + answers for this month.
     # ─────────────────────────────────────────────────────────────
     questions_for_ai = filtered
     responses_for_ai = responses
     meta_for_ai = meta
 
     if dept_label == "Artistic":
+        # Start from all questions for this department file
+        questions_for_ai = questions_all_df.copy()
+
+        # If the questions file has a department column, filter it to Artistic
+        dept_col_q = None
+        for cand in ["department", "dept"]:
+            if cand in questions_for_ai.columns:
+                dept_col_q = cand
+                break
+        if dept_col_q is not None:
+            questions_for_ai = questions_for_ai[questions_for_ai[dept_col_q] == dept_label].copy()
+
+        # Pull all saved answers
         answers_df = get_answers_df().copy()
 
-        # Filter to this department
-        if "department" in answers_df.columns:
-            answers_scope = answers_df[answers_df["department"] == dept_label].copy()
+        # Filter answers by department, if such a column exists
+        dept_col_a = None
+        for cand in ["department", "dept"]:
+            if cand in answers_df.columns:
+                dept_col_a = cand
+                break
+        if dept_col_a is not None:
+            answers_scope = answers_df[answers_df[dept_col_a] == dept_label].copy()
         else:
+            # Fallback: no department column → use all answers, but we’ll only
+            # map answers for question_ids that exist in questions_for_ai.
             answers_scope = answers_df.copy()
 
-        # Filter to this reporting month, if we have a month column
+        # Filter answers by month, if a month column exists
         if "month" in answers_scope.columns:
-            # Normalise to YYYY-MM string for comparison
-            answers_scope["month_str"] = answers_scope["month"].astype(str).str.slice(0, 7)
-            answers_scope = answers_scope[answers_scope["month_str"] == month_str]
+            # Normalise to YYYY-MM string to match month_str (e.g., "2025-11")
+            month_series = answers_scope["month"].astype(str)
+            answers_scope = answers_scope[month_series.str.slice(0, 7) == month_str]
 
+        # Index answers by question_id (string) for faster lookup
         if not answers_scope.empty:
-            # Build a lookup of question_id → metadata from questions_all_df
-            q_lookup = (
-                questions_all_df
-                .set_index(questions_all_df["question_id"].astype(str))
-                .to_dict(orient="index")
-            )
+            answers_scope = answers_scope.copy()
+            answers_scope["question_id"] = answers_scope["question_id"].astype(str)
 
-            ai_rows: List[dict] = []
-            responses_ai: Dict[str, dict] = {}
+        responses_for_ai = {}
+        for _, qrow in questions_for_ai.iterrows():
+            qid = str(qrow["question_id"])
+            primary = None
+            description = None
 
-            for _, arow in answers_scope.iterrows():
-                base_qid = str(arow["question_id"])
-                prod_label = str(arow.get("production") or "").strip()
-                if not prod_label:
-                    prod_label = "General"
+            # 1) Look for a saved answer row
+            if not answers_scope.empty:
+                match = answers_scope[answers_scope["question_id"] == qid]
+                if not match.empty:
+                    arow = match.iloc[0]
+                    primary = arow.get("primary")
+                    description = arow.get("description")
 
-                # Make a UNIQUE key per (question, production) for AI
-                ai_qid = f"{base_qid}::{prod_label}"
+            # 2) If still empty, fall back to the on-screen responses
+            cur = responses.get(qid, {})
+            if primary is None and isinstance(cur, dict):
+                primary = cur.get("primary", primary)
+                description = cur.get("description", description)
 
-                q_meta = q_lookup.get(base_qid, {}) or {}
-                question_text = (
-                    q_meta.get("question_text")
-                    or q_meta.get("metric")
-                    or base_qid
-                )
+            responses_for_ai[qid] = {
+                "primary": primary,
+                "description": description,
+            }
 
-                ai_rows.append(
-                    {
-                        "question_id": ai_qid,
-                        "question_text": question_text,
-                        "strategic_pillar": q_meta.get("strategic_pillar", ""),
-                        "metric": q_meta.get("metric", ""),
-                        "response_type": q_meta.get("response_type", ""),
-                        # This is the *actual* production name from the answer row
-                        "production": prod_label,
-                    }
-                )
-
-                responses_ai[ai_qid] = {
-                    "primary": arow.get("primary"),
-                    "description": arow.get("description"),
-                }
-
-            # Only switch to department-wide scope if we actually found anything
-            if ai_rows:
-                questions_for_ai = pd.DataFrame(ai_rows)
-                responses_for_ai = responses_ai
-                meta_for_ai = dict(meta)
-                meta_for_ai["production"] = ""  # department-wide
-                meta_for_ai["scope"] = "department_all_productions"
+        # Department-wide meta (no single production)
+        meta_for_ai = dict(meta)
+        meta_for_ai["production"] = ""  # indicates dept-wide
+        meta_for_ai["scope"] = "department_all_productions"
 
     # ─────────────────────────────────────────────────────────────
-    # AI call (now using questions_for_ai / responses_for_ai)
+    # AI call
     # ─────────────────────────────────────────────────────────────
     try:
         with st.spinner("Asking AI to interpret this scorecard..."):
@@ -1206,7 +1209,10 @@ def main():
         st.markdown("#### Notes for Leadership")
         st.write(nfl)
 
-    # PDF — uses the same AI scope (questions_for_ai / responses_for_ai)
+    # ─────────────────────────────────────────────────────────────
+    # PDF — uses the SAME scope as AI (questions_for_ai / responses_for_ai)
+    # and keeps all original columns (including display_order)
+    # ─────────────────────────────────────────────────────────────
     try:
         pdf_bytes = build_scorecard_pdf(meta_for_ai, questions_for_ai, responses_for_ai, ai_result)
         st.download_button(
@@ -1218,8 +1224,6 @@ def main():
     except Exception as e:
         st.warning(f"PDF export failed: {e}")
         st.info("If this persists, check pdf_utils.py dependencies (reportlab or fpdf2).")
-
-
 
 if __name__ == "__main__":
     main()
