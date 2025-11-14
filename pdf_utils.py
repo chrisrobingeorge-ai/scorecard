@@ -353,18 +353,9 @@ def build_scorecard_pdf(
             ]
         ),
     )
-
-    header_left = KeepTogether(
-        [
-            Paragraph("Summary Scorecard", styles["ScorecardTitle"]),
-            Paragraph(title_text, styles["MetaLine"]),
-            Spacer(1, 6),
-            meta_table,
-        ]
-    )
-
+    
     header_table = Table(
-        [[header_left, total_table]],
+        [[Paragraph("Summary Scorecard", styles["ScorecardTitle"]), total_table]],
         colWidths=[4.8 * inch, 2.2 * inch],
         style=TableStyle(
             [
@@ -374,8 +365,11 @@ def build_scorecard_pdf(
             ]
         ),
     )
-
+    
     story.append(header_table)
+    story.append(Paragraph(title_text, styles["MetaLine"]))
+    story.append(Spacer(1, 6))
+    story.append(meta_table)
     story.append(Spacer(1, 12))
 
     overall = _to_plain_text(ai_result.get("overall_summary", "") or "")
