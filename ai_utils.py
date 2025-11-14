@@ -39,24 +39,54 @@ def _get_openai_client():
     return OpenAI(api_key=api_key)
 
 
-def _build_prompt(meta: Dict[str, Any], questions_df: pd.DataFrame, responses: Dict[str, Dict[str, Any]]) -> str:
+def _is_empty_value(v: Any) -> bool:
+    """Treat None or blank strings as empty; 0 or False are NOT empty."""
+    if v is None:
+        return True
+    if isinstance(v, str) and v.strip() == "":
+        return True
+    return False
+
+
+def _build_prompt(
+    meta: Dict[str, Any],
+    questions_df: pd.DataFrame,
+    responses: Dict[str, Dict[str, Any]],
+) -> str:
     """
     Build a minimal, structured input for the model.
+    Skips questions that have no response and no notes.
     """
     items: List[Dict[str, Any]] = []
+
     for _, row in questions_df.iterrows():
         qid = str(row.get("question_id"))
         # Use question_text, else metric, else qid
         qtext = (row.get("question_text") or row.get("metric") or qid) or qid
+
         r = responses.get(qid) or {}
+        primary = r.get("primary")
+        notes = r.get("description")
+
+        # Skip completely empty items so productions/programmes with no data are ignored
+        if _is_empty_value(primary) and _is_empty_value(notes):
+            continue
+
+        # Normalise pillar and production labels
+        pillar = str(row.get("strategic_pillar") or "").strip()
+        production = str(row.get("production") or "").strip()
+        if production == "":
+            # Let the model treat this as 'General' if it needs a label
+            production = ""
+
         items.append(
             {
                 "question_id": qid,
                 "question": str(qtext),
-                "response": r.get("primary"),
-                "notes": r.get("description"),
-                "pillar": str(row.get("strategic_pillar") or ""),
-                "production": str(row.get("production") or ""),
+                "response": primary,
+                "notes": notes,
+                "pillar": pillar,
+                "production": production,
                 "metric": str(row.get("metric") or ""),
                 "type": str(row.get("response_type") or ""),
             }
@@ -67,7 +97,7 @@ def _build_prompt(meta: Dict[str, Any], questions_df: pd.DataFrame, responses: D
     dept_name = str(meta.get("department") or "this department")
     scope = str(meta.get("scope") or "").strip()
     if scope == "department_all_productions":
-        scope_desc = f"for the entire {dept_name} department across all productions in the reporting period"
+        scope_desc = f"for the entire {dept_name} department across all productions/programmes in the reporting period"
     else:
         scope_desc = f"for the {dept_name} department based only on the items provided"
 
@@ -80,45 +110,86 @@ def _build_prompt(meta: Dict[str, Any], questions_df: pd.DataFrame, responses: D
     - Do NOT invent additional departments or pillars that do not appear in the data.
     - Base everything strictly on the INPUT_JSON.
 
-    Pillars:
-    - Each item includes a "pillar" field.
-    - For pillar_summaries, infer the set of pillars from the DISTINCT values of that "pillar" field.
-    - Produce ONE pillar_summaries entry per pillar value you actually see.
-    - If a pillar is not present in the data, do NOT mention it at all.
+    Data fields:
+    - Each item has:
+      • pillar  (e.g., Innovation, Impact, Collaboration, Recruitment, Engagement, Financial, etc.)
+      • production (may be blank, 'General', or a production/programme name like 'Once Upon a Time', 'Nijinsky', 'Community Programs', 'Recreational Classes', etc.)
+      • question, response, notes, metric, type.
+
+    Grouping rules:
+    - Use DISTINCT non-empty values of "production" as productions/programmes.
+    - If all production values are empty, there are effectively no productions/programmes; in that case:
+      • Set production_summaries to an empty array.
+      • Focus on pillar_summaries only.
+    - If some items have an empty production and others have named productions, treat the empty ones as "General" for grouping.
+    - Within each production/programme, group items by their "pillar" value.
+      • For Artistic: you will typically see Innovation, Impact, Collaboration, Recruitment, Engagement, Financial.
+      • For School: pillar values may be things like Classical Training, Attracting Students, Student Accessibility.
+      • For Community: production/programme names might be Community Programs and Recreational Classes; pillars will describe their focus.
+      • For Corporate: there may be no productions at all; pillars might be Global Presence, Digital Acceleration, Talent, Leadership & Culture, Governance & Board Oversight.
 
     Task:
-    Analyse the provided scorecard data and produce a narrative summary for this department that includes:
-    1) overall_summary:
+    Analyse the provided scorecard data and produce a narrative summary for THIS department that includes:
+
+    1) overall_summary (string):
        - High-level performance this period.
        - Major achievements and constructive challenges.
-    2) pillar_summaries:
-       - For EACH pillar actually present in the data (from the "pillar" field), provide:
-         • strategic_pillar: the pillar name as it appears in the data.
-         • score_hint: a short hint such as "2/3 – steady progress", "1/3 – needs improvement", or "N/A – limited data", inferred from responses.
-         • summary: 2–4 sentences about achievements, issues, and next steps for that pillar.
-    3) risks:
+
+    2) production_summaries (array):
+       - If there is at least one non-empty production value:
+         • For EACH production/programme (including a synthetic 'General' if needed), create one object:
+           {{
+             "production": "<production or programme name, or 'General'>",
+             "pillars": [
+               {{
+                 "pillar": "<pillar name>",
+                 "score_hint": "<short hint like '2/3 – steady progress', '1/3 – needs improvement', or 'N/A – limited data'>",
+                 "summary": "<2–4 sentences focused on THIS production/programme and THIS pillar>"
+               }},
+               ...
+             ]
+           }}
+         • Ignore productions/programmes for which there is effectively no data (no items).
+       - If there are no productions/programmes in the data (all production values are empty):
+         • Set production_summaries to an empty array [].
+
+    3) pillar_summaries (array):
+       - A department-wide, cross-cutting view by pillar, ignoring production:
+         • For EACH distinct pillar actually present in the data, create:
+           {{
+             "strategic_pillar": "<pillar name>",
+             "score_hint": "<short hint as above>",
+             "summary": "<2–4 sentences summarising this pillar across the whole department>"
+           }}
+       - Do NOT mention pillars that are not present in the data.
+
+    4) risks (array of strings):
        - Cross-cutting risks or concerns that affect THIS department.
        - Each entry is a short, clear sentence.
-    4) priorities_next_month:
+
+    5) priorities_next_month (array of strings):
        - 3–6 concrete priorities for THIS department for the coming month.
        - Each entry is a short, action-oriented sentence.
-    5) notes_for_leadership:
+
+    6) notes_for_leadership (string):
        - A short paragraph with advice for the executive team focused on THIS department only.
 
     Output Contract (strict):
     - Respond with JSON only, no prose before or after.
     - Use exactly these keys at the top level:
       - overall_summary (string)
-      - pillar_summaries (array of objects with keys: strategic_pillar (string), score_hint (string), summary (string))
+      - pillar_summaries (array of objects with keys: strategic_pillar, score_hint, summary)
+      - production_summaries (array of objects with keys: production (string), pillars (array as specified above))
       - risks (array of strings)
       - priorities_next_month (array of strings)
       - notes_for_leadership (string)
     - Do not include markdown, backticks, comments, or any extra keys.
     - Base your output ONLY on INPUT_JSON.
     """
-    
+
     user_content = f"{instruction}\n\nINPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}"
     return user_content
+
 
 def interpret_scorecard(
     meta: Dict[str, Any],
@@ -137,7 +208,10 @@ def interpret_scorecard(
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You analyze monthly scorecards and produce structured summaries."},
+                {
+                    "role": "system",
+                    "content": "You analyse monthly scorecards for a single department and produce structured summaries.",
+                },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.2,
@@ -158,8 +232,9 @@ def interpret_scorecard(
     # Normalize the output shape so app.py rendering is resilient
     return {
         "overall_summary": data.get("overall_summary", ""),
-        "pillar_summaries": data.get("pillar_summaries", []),
-        "risks": data.get("risks", []),
-        "priorities_next_month": data.get("priorities_next_month", []),
-        "notes_for_leadership": data.get("notes_for_leadership", ""),
+        "pillar_summaries": data.get("pillar_summaries", []) or [],
+        "production_summaries": data.get("production_summaries", []) or [],
+        "risks": data.get("risks", []) or [],
+        "priorities_next_month": data.get("priorities_next_month", []) or [],
+        "notes_for_leadership": data.get("notes_for_leadership", "") or "",
     }
