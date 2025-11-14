@@ -112,21 +112,40 @@ def _build_prompt(
 
     Data fields:
     - Each item has:
-      • pillar  (e.g., Innovation, Impact, Collaboration, Recruitment, Engagement, Financial, etc.)
-      • production (may be blank, 'General', or a production/programme name like 'Once Upon a Time', 'Nijinsky', 'Community Programs', 'Recreational Classes', etc.)
+      • pillar       (e.g., Innovation, Impact, Collaboration, Recruitment, Engagement, Financial, etc.)
+      • production   (may be blank, or a technical flag like "production_only" / "general_only", or a programme name)
       • question, response, notes, metric, type.
 
+    IMPORTANT ABOUT PRODUCTION LABELS:
+    - Technical flags such as "production_only", "general_only", or other values ending in "_only" are NOT human-facing
+      names. They exist purely as internal scope flags.
+    - When you return production names in production_summaries:
+      • NEVER output raw flags like "production_only", "general_only", or any value ending in "_only".
+      • Map "general_only" (or blank production values that clearly apply across the department) to "General".
+      • For other cases, infer a human-friendly production/programme label from the content:
+        - For Artistic, look in responses/notes for explicit production titles such as "Nijinsky", "Once Upon a Time",
+          or other ballet titles mentioned. Use those names for production_summaries.
+        - If multiple productions are mentioned (e.g., "Nijinsky" and "Once Upon a Time") and you can tell which items
+          refer to which, create separate production_summaries entries.
+        - If you cannot confidently separate individual productions, it is acceptable to group them together under a
+          label like "Productions this period (e.g., Nijinsky, Once Upon a Time)".
+        - For Community, typical programme labels might be "Community Programs" and "Recreational Classes" if those
+          appear in the data.
+        - For Corporate or School, there may be no productions at all; in that case, production_summaries may be empty.
+      • If you truly cannot infer any meaningful production/programme names, use a generic label such as
+        "Productions this period" rather than any technical flag.
+
     Grouping rules:
-    - Use DISTINCT non-empty values of "production" as productions/programmes.
-    - If all production values are empty, there are effectively no productions/programmes; in that case:
-      • Set production_summaries to an empty array.
+    - Use the content of "production" together with the text of responses/notes to decide how to group items.
+    - If ALL production values are empty and you cannot infer any specific productions/programmes, then:
+      • Set production_summaries to an empty array [].
       • Focus on pillar_summaries only.
-    - If some items have an empty production and others have named productions, treat the empty ones as "General" for grouping.
-    - Within each production/programme, group items by their "pillar" value.
-      • For Artistic: you will typically see Innovation, Impact, Collaboration, Recruitment, Engagement, Financial.
-      • For School: pillar values may be things like Classical Training, Attracting Students, Student Accessibility.
-      • For Community: production/programme names might be Community Programs and Recreational Classes; pillars will describe their focus.
-      • For Corporate: there may be no productions at all; pillars might be Global Presence, Digital Acceleration, Talent, Leadership & Culture, Governance & Board Oversight.
+    - For Artistic in particular:
+      • Your goal is to produce a structure like:
+          General → Recruitment, Engagement
+          Once Upon a Time → Innovation, Impact, Collaboration, Financial
+          Nijinsky → Innovation, Impact, Collaboration, Financial
+        based on the productions you can detect in the text and the pillars attached to their items.
 
     Task:
     Analyse the provided scorecard data and produce a narrative summary for THIS department that includes:
@@ -136,8 +155,8 @@ def _build_prompt(
        - Major achievements and constructive challenges.
 
     2) production_summaries (array):
-       - If there is at least one non-empty production value:
-         • For EACH production/programme (including a synthetic 'General' if needed), create one object:
+       - If there is at least some signal of productions/programmes:
+         • For EACH identified production/programme (including a synthetic "General" if needed), create one object:
            {{
              "production": "<production or programme name, or 'General'>",
              "pillars": [
@@ -149,8 +168,8 @@ def _build_prompt(
                ...
              ]
            }}
-         • Ignore productions/programmes for which there is effectively no data (no items).
-       - If there are no productions/programmes in the data (all production values are empty):
+         • Ignore hypothetical productions/programmes for which there is effectively no data (no items).
+       - If there are no productions/programmes in the data and you cannot infer any from the text:
          • Set production_summaries to an empty array [].
 
     3) pillar_summaries (array):
