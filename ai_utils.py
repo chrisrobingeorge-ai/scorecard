@@ -288,6 +288,12 @@ def _build_prompt_objective_aware(
             ans_primary_str = "" if ans_primary is None else str(ans_primary)
             ans_desc_str = "" if ans_desc is None else str(ans_desc)
 
+            # Tag department-wide vs production-specific for the model
+            if prod:
+                scope_tag = "Production-specific"
+            else:
+                scope_tag = "DEPARTMENT-WIDE (not tied to a single production)"
+
             context_bits = [pillar or None, metric or None, prod or None, scope_tag]
             context_bits = [b for b in context_bits if b]
             context_label = " / ".join(context_bits) if context_bits else ""
