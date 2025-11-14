@@ -134,14 +134,21 @@ def build_scorecard_pdf(
                 story.append(Spacer(1, 6))
         story.append(Spacer(1, 12))
 
-    # Strategic Summary (pillar-based view) – at the top
+    # Strategic Summary (overall line + pillar view)
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
-    if pillar_summaries:
+    overall = ai_result.get("overall_summary", "") or ""
+
+    if overall or pillar_summaries:
         story.append(Paragraph("Strategic Summary", styles["Heading2"]))
         story.append(Spacer(1, 6))
 
+        # Overall line first
+        if overall:
+            story.append(Paragraph(_to_plain_text(overall), styles["BodyText"]))
+            story.append(Spacer(1, 8))
+
+        # Then the per-pillar entries
         for ps in pillar_summaries:
-            # Make sure we can always treat this as a dict
             if not isinstance(ps, dict):
                 ps = {"strategic_pillar": "", "score_hint": "", "summary": _to_plain_text(ps)}
 
