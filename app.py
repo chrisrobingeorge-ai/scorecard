@@ -1197,19 +1197,24 @@ def main():
     # AI Interpretation
     st.subheader("AI Interpretation")
 
-    # Strategic Summary (pillar view) – at the top
+    overall = ai_result.get("overall_summary", "")
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
+
+    # Strategic Summary (overall line + pillars)
+    st.markdown("#### Strategic Summary")
+
+    # Overall line at the top of Strategic Summary
+    if overall:
+        st.write(overall)
+        st.write("")  # small spacing
+
+    # Then the per-pillar entries
     if pillar_summaries:
-        st.markdown("#### Strategic Summary")
         for ps in pillar_summaries:
             st.markdown(
                 f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
             )
             st.write(ps.get("summary", ""))
-
-    # Overall summary (short narrative across everything)
-    st.markdown("#### Overall Summary")
-    st.write(ai_result.get("overall_summary", ""))
 
     # By production / programme (if available)
     prod_summaries = ai_result.get("production_summaries", []) or []
