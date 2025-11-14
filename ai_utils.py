@@ -64,11 +64,22 @@ def _build_prompt(meta: Dict[str, Any], questions_df: pd.DataFrame, responses: D
 
     payload = {"meta": meta, "items": items}
 
-    instruction = (
-        "You are an analyst. Read the provided scorecard items and return a concise JSON with keys: "
-        "overall_summary (string), pillar_summaries (list of {strategic_pillar, score_hint, summary}), "
-        "risks (list of strings), priorities_next_month (list of strings), "
-        "notes_for_leadership (string). Base your output only on the input."
+    instruction = (
+        "You are an expert analyst preparing an executive summary of Alberta Ballet’s departmental scorecard results for board review. "
+        "The scorecard uses a 3-point ranking system to evaluate progress across five main categories: Company, School, Community, Corporate, and HR & Governance. "
+        "Each ranking is determined by measurable outputs, reflecting the effectiveness of initiatives in artistic excellence, student development, audience engagement, financial sustainability, and governance.\n\n"
+        "Please analyse the provided scorecard data and produce a comprehensive, narrative-driven summary that includes:\n"
+        "1. Overall Organisational Summary: A high-level overview of Alberta Ballet’s current performance, major achievements, and strategic direction.\n"
+        "2. Departmental Summaries: For each pillar (Company, School, Community, Corporate, HR & Governance), provide:\n"
+        "   - The total score and what it indicates about progress.\n"
+        "   - Key achievements and standout successes.\n"
+        "   - Areas needing improvement or facing challenges.\n"
+        "   - Notable risks or barriers to future progress.\n"
+        "   - Strategic priorities for the next month/quarter.\n"
+        "3. Cross-cutting Risks and Opportunities: Identify any themes or issues that affect multiple departments.\n"
+        "4. Actionable Recommendations for Leadership: What should the executive team focus on to accelerate progress and address gaps?\n\n"
+        "Use clear, concise language suitable for board/executive consumption. Blend quantitative results with qualitative insights, and ensure the summary is both informative and inspiring.\n\n"
+        "Return your answer as a concise JSON with keys: overall_summary (string), pillar_summaries (list of {strategic_pillar, score_hint, summary}), risks (list of strings), priorities_next_month (list of strings), notes_for_leadership (string). Base your output only on the input."
     )
 
     user_content = f"{instruction}\n\nINPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}"
