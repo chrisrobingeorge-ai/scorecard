@@ -1028,7 +1028,7 @@ def main():
     
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
-    # Meta (for the CURRENT view)
+    # Meta
     meta = {
         "staff_name": st.session_state.get("staff_name") or "Unknown",
         "role": st.session_state.get("role") or "",
@@ -1061,7 +1061,7 @@ def main():
     if not submitted:
         return
 
-    # ── Visible-only validation for CURRENT PRODUCTION
+    # visible-only validation (CURRENT PRODUCTION ONLY)
     missing_required: List[str] = []
     for _, row in filtered.iterrows():
         if not question_is_visible(row, dept_label, current_production):
@@ -1082,49 +1082,89 @@ def main():
                 st.write("• ", q)
         return
 
-    # ─────────────────────────────────────────────────────────────────────
-    # NEW: Build AI/PDF scope = ALL questions for this department (all productions)
-    # ─────────────────────────────────────────────────────────────────────
-    questions_ai_df = questions_all_df.copy()
+    # ─────────────────────────────────────────────────────────────
+    # Build AI/PDF scope
+    #
+    # Default: use the CURRENT scope (filtered + responses)
+    # Artistic: widen to ALL productions for this department + month
+    # ─────────────────────────────────────────────────────────────
+    questions_for_ai = filtered
+    responses_for_ai = responses
+    meta_for_ai = meta
 
-    # Pull all saved answers and filter to this department / month
-    answers_df = get_answers_df().copy()
+    if dept_label == "Artistic":
+        answers_df = get_answers_df().copy()
 
-    if "department" in answers_df.columns:
-        answers_scope = answers_df[answers_df["department"] == dept_label].copy()
-    else:
-        answers_scope = answers_df.copy()
-
-    if "month" in answers_scope.columns:
-        answers_scope = answers_scope[answers_scope["month"] == month_str]
-
-    responses_ai: Dict[str, dict] = {}
-    for _, qrow in questions_ai_df.iterrows():
-        qid = str(qrow["question_id"])
-        matches = answers_scope[answers_scope["question_id"].astype(str) == qid]
-        if not matches.empty:
-            arow = matches.iloc[0]
-            responses_ai[qid] = {
-                "primary": arow.get("primary"),
-                "description": arow.get("description"),
-            }
+        # Filter to this department
+        if "department" in answers_df.columns:
+            answers_scope = answers_df[answers_df["department"] == dept_label].copy()
         else:
-            # Fallback to current in-memory responses (for this production)
-            cur = responses.get(qid, {})
-            responses_ai[qid] = {
-                "primary": cur.get("primary"),
-                "description": cur.get("description"),
-            }
+            answers_scope = answers_df.copy()
 
-    # Meta for AI/PDF: department-wide view
-    meta_for_ai = dict(meta)
-    meta_for_ai["production"] = ""  # indicate department-wide summary
-    meta_for_ai["scope"] = "department_all_productions"
+        # Filter to this reporting month, if we have a month column
+        if "month" in answers_scope.columns:
+            # Normalise to YYYY-MM string for comparison
+            answers_scope["month_str"] = answers_scope["month"].astype(str).str.slice(0, 7)
+            answers_scope = answers_scope[answers_scope["month_str"] == month_str]
 
-    # AI call (DEPARTMENT-WIDE)
+        if not answers_scope.empty:
+            # Build a lookup of question_id → metadata from questions_all_df
+            q_lookup = (
+                questions_all_df
+                .set_index(questions_all_df["question_id"].astype(str))
+                .to_dict(orient="index")
+            )
+
+            ai_rows: List[dict] = []
+            responses_ai: Dict[str, dict] = {}
+
+            for _, arow in answers_scope.iterrows():
+                base_qid = str(arow["question_id"])
+                prod_label = str(arow.get("production") or "").strip()
+                if not prod_label:
+                    prod_label = "General"
+
+                # Make a UNIQUE key per (question, production) for AI
+                ai_qid = f"{base_qid}::{prod_label}"
+
+                q_meta = q_lookup.get(base_qid, {}) or {}
+                question_text = (
+                    q_meta.get("question_text")
+                    or q_meta.get("metric")
+                    or base_qid
+                )
+
+                ai_rows.append(
+                    {
+                        "question_id": ai_qid,
+                        "question_text": question_text,
+                        "strategic_pillar": q_meta.get("strategic_pillar", ""),
+                        "metric": q_meta.get("metric", ""),
+                        "response_type": q_meta.get("response_type", ""),
+                        # This is the *actual* production name from the answer row
+                        "production": prod_label,
+                    }
+                )
+
+                responses_ai[ai_qid] = {
+                    "primary": arow.get("primary"),
+                    "description": arow.get("description"),
+                }
+
+            # Only switch to department-wide scope if we actually found anything
+            if ai_rows:
+                questions_for_ai = pd.DataFrame(ai_rows)
+                responses_for_ai = responses_ai
+                meta_for_ai = dict(meta)
+                meta_for_ai["production"] = ""  # department-wide
+                meta_for_ai["scope"] = "department_all_productions"
+
+    # ─────────────────────────────────────────────────────────────
+    # AI call (now using questions_for_ai / responses_for_ai)
+    # ─────────────────────────────────────────────────────────────
     try:
-        with st.spinner("Asking AI to interpret this department-wide scorecard..."):
-            ai_result = interpret_scorecard(meta_for_ai, questions_ai_df, responses_ai)
+        with st.spinner("Asking AI to interpret this scorecard..."):
+            ai_result = interpret_scorecard(meta_for_ai, questions_for_ai, responses_for_ai)
     except RuntimeError as e:
         st.error(f"AI configuration error: {e}")
         st.info("Check your OPENAI_API_KEY secret and that `openai>=1.51.0` (or newer) is in requirements.txt.")
@@ -1166,9 +1206,9 @@ def main():
         st.markdown("#### Notes for Leadership")
         st.write(nfl)
 
-    # PDF (DEPARTMENT-WIDE)
+    # PDF — uses the same AI scope (questions_for_ai / responses_for_ai)
     try:
-        pdf_bytes = build_scorecard_pdf(meta_for_ai, questions_ai_df, responses_ai, ai_result)
+        pdf_bytes = build_scorecard_pdf(meta_for_ai, questions_for_ai, responses_for_ai, ai_result)
         st.download_button(
             label="Download PDF report",
             data=pdf_bytes,
