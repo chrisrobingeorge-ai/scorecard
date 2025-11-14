@@ -1,5 +1,7 @@
 # pdf_utils.py
 
+from xml.sax.saxutils import escape as xml_escape
+
 from io import BytesIO
 from typing import Dict, Any
 
@@ -19,6 +21,19 @@ from reportlab.platypus import (
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 
+def _safe_paragraph(text: Any, style: ParagraphStyle, allow_markup: bool = False) -> Paragraph:
+    """
+    Create a Paragraph that won't blow up if the text contains '<', '>' or '&'.
+
+    - If allow_markup is False, we escape XML chars so ReportLab treats it as plain text.
+    - If allow_markup is True, we pass it through unchanged (for our own <b>, <font>, etc).
+    """
+    if text is None:
+        text = ""
+    s = _to_plain_text(text)
+    if not allow_markup:
+        s = xml_escape(s)
+    return Paragraph(s, style)
 
 def _to_plain_text(val: Any) -> str:
     """
@@ -162,9 +177,9 @@ def _build_pillar_card(styles, pillar_name: str, score_hint: str, summary: str) 
     if score_hint_text and score_hint_text not in header_parts[-1]:
         header_parts.append(f"<font size=9>{score_hint_text}</font>")
 
-    header = Paragraph("<br/>".join(header_parts), styles["CardHeader"])
-
-    body = Paragraph(summary or "No summary provided.", styles["CardBody"])
+    header = Paragraph("<br/>".join(header_parts), styles["CardHeader"])  # keep markup
+    
+    body = _safe_paragraph(summary or "No summary provided.", styles["CardBody"])
 
     card = Table(
         [[header], [body]],
@@ -375,7 +390,7 @@ def build_scorecard_pdf(
     overall = _to_plain_text(ai_result.get("overall_summary", "") or "")
     if overall:
         story.append(Paragraph("Executive Summary", styles["SectionHeading"]))
-        story.append(Paragraph(overall, styles["BodyText"]))
+        story.append(_safe_paragraph(overall, styles["BodyText"]))
         story.append(Spacer(1, 12))
 
     if pillar_summaries:
@@ -437,7 +452,7 @@ def build_scorecard_pdf(
 
                 story.append(
                     Paragraph(
-                        f"<b>{pillar_name}</b> — {score_hint}",
+                        f"<b>{xml_escape(pillar_name)}</b> — {xml_escape(score_hint)}",
                         styles["Small"],
                     )
                 )
@@ -453,7 +468,7 @@ def build_scorecard_pdf(
     if risks:
         story.append(Paragraph("Key Risks / Concerns", styles["SectionHeading"]))
         for r in risks:
-            story.append(Paragraph(f"• {r}", styles["BodyText"]))
+            story.append(_safe_paragraph(f"• {r}", styles["BodyText"]))
 
     priorities = [
         _to_plain_text(p)
@@ -464,13 +479,13 @@ def build_scorecard_pdf(
         story.append(Spacer(1, 6))
         story.append(Paragraph("Priorities for Next Month", styles["SectionHeading"]))
         for p in priorities:
-            story.append(Paragraph(f"• {p}", styles["BodyText"]))
+            story.append(_safe_paragraph(f"• {p}", styles["BodyText"]))
 
     nfl = _to_plain_text(ai_result.get("notes_for_leadership", ""))
     if nfl.strip():
         story.append(Spacer(1, 6))
         story.append(Paragraph("Notes for Leadership", styles["SectionHeading"]))
-        story.append(Paragraph(nfl, styles["BodyText"]))
+        story.append(_safe_paragraph(nfl, styles["BodyText"]))
 
     story.append(Spacer(1, 12))
     story.append(Paragraph("Raw Scorecard Responses", styles["SectionHeading"]))
