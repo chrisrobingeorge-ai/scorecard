@@ -332,26 +332,37 @@ def _build_prompt_objective_aware(
            - Go beyond restating answers: infer patterns, tensions, and trade-offs
              (e.g., strong innovation but weak recruitment; strong community impact but fragile capacity).
            - Where evidence is thin or missing, say so explicitly.
+           - Be cautious about strong negative judgments when there are only one or two weak signals. In such cases, prefer language like "emerging concern" or "area to watch" instead of declaring failure.
+           - Do not assume that a production is weak in visual or artistic quality unless the answers explicitly indicate that. Absence of evidence is not evidence of weakness.
 
         2) "pillar_summaries":
            An array of objects, each with:
              - "strategic_pillar": the pillar name (from the data)
-             - "score_hint": a short signal like "On track", "Mixed", or "At risk"
-             - "summary": a **short paragraph (3–6 sentences)**.
+             - "score_hint": a string in the form "<n>/3 label", where n is 0, 1, 2, or 3.
+               Examples: "3/3 Strong progress", "2/3 Mixed", "1/3 Needs attention", "0/3 Off track".
+             - "summary": a short paragraph (3–6 sentences).
+        
            For each pillar, explain:
              - what the answers suggest about progress,
              - how this relates to specific strategic objectives and productions/programmes,
              - and any underlying causes or dependencies you can infer.
+        
+           Use the 0–3 scale cautiously:
+             - 3/3 only when evidence is strong and multi-dimensional.
+             - 2/3 as the default for mixed or partial progress.
+             - 1/3 when several answers show problems or gaps.
+             - 0/3 only when there is clear failure across multiple answers or explicit negative responses.
 
         3) "production_summaries":
            An array of objects, each with:
              - "production": the production/programme name (or "General")
              - "pillars": an array of objects with:
                  - "pillar": pillar name
-                 - "score_hint"
+                 - "score_hint": again in the form "<n>/3 label" using the same 0–3 scale.
                  - "summary" (2–4 sentences).
            Focus on **differences between productions/programmes** and what they imply
            for strategic objectives (e.g., one show strongly supports ART2 but not ART3).
+           When comparing productions or programmes, do not let a single metric (e.g., reuse of assets, a missing collaboration, or one weak answer) completely dominate your judgment. Look across all available answers before calling a production clearly strong or weak for a given objective.
 
         4) "risks":
            An array of concise bullet-style strings.
