@@ -134,22 +134,62 @@ def build_scorecard_pdf(
                 story.append(Spacer(1, 6))
         story.append(Spacer(1, 12))
 
-    # Pillar summaries
+    # Production / programme summaries (if available)
+    production_summaries = ai_result.get("production_summaries", []) or []
+    if production_summaries:
+        story.append(Paragraph("By Production / Programme", styles["Heading2"]))
+        story.append(Spacer(1, 6))
+
+        for prod in production_summaries:
+            # Ensure dict shape
+            if not isinstance(prod, dict):
+                continue
+
+            pname = prod.get("production") or "General"
+            story.append(Paragraph(_to_plain_text(pname), styles["Heading3"]))
+            story.append(Spacer(1, 4))
+
+            pillars = prod.get("pillars") or []
+            for ps in pillars:
+                if not isinstance(ps, dict):
+                    ps = {"pillar": "", "score_hint": "", "summary": _to_plain_text(ps)}
+
+                pillar_name = ps.get("pillar", "Category")
+                score_hint = ps.get("score_hint", "")
+                heading = pillar_name
+                if score_hint:
+                    heading = f"{pillar_name} — {score_hint}"
+
+                story.append(Paragraph(_to_plain_text(heading), styles["Heading4"]))
+
+                pillar_text = _to_plain_text(ps.get("summary", ""))
+                story.append(Paragraph(pillar_text, styles["BodyText"]))
+                story.append(Spacer(1, 4))
+
+            story.append(Spacer(1, 8))
+
+        story.append(Spacer(1, 12))
+
+    # Cross-cutting pillar summaries (optional)
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
     if pillar_summaries:
-        story.append(Paragraph("By Strategic Pillar", styles["Heading2"]))
+        story.append(Paragraph("Cross-cutting by Pillar", styles["Heading2"]))
+        story.append(Spacer(1, 6))
+
         for ps in pillar_summaries:
             # Make sure we can always treat this as a dict
             if not isinstance(ps, dict):
                 ps = {"strategic_pillar": "", "score_hint": "", "summary": _to_plain_text(ps)}
 
             heading = f"{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}"
-            story.append(Paragraph(heading, styles["Heading4"]))
+            story.append(Paragraph(_to_plain_text(heading), styles["Heading4"]))
 
             pillar_summary_text = _to_plain_text(ps.get("summary", ""))
             story.append(Paragraph(pillar_summary_text, styles["BodyText"]))
             story.append(Spacer(1, 6))
+
         story.append(Spacer(1, 12))
+
 
     # Risks
     risks = ai_result.get("risks", []) or []
