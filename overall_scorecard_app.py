@@ -311,11 +311,6 @@ else:
     # Persist the edited result back to session_state
     st.session_state["overall_ai_result"] = ai_result
 
-    # Optional: show the underlying AI prompt (from interpret_overall_scorecards)
-    prompt_used = ai_result.get("prompt", "")
-    if prompt_used:
-        with st.expander("Show AI prompt used", expanded=False):
-            st.code(prompt_used, language="markdown")
 
     # ─────────────────────────────────────────────────────────────────────
     # 5. Build and download the Board PDF
