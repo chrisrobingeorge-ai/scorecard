@@ -324,7 +324,7 @@ def build_scorecard_pdf(
     """
     Build and return the PDF as raw bytes.
 
-    - Preserves your "Summary Scorecard" layout (header, executive summary,
+    - Preserves your "Strategic Summary Scorecard" layout (header, executive summary,
       pillars, by production, risks/priorities, raw responses).
     - Embeds a JSON payload in the PDF metadata (Subject) including:
       * meta
