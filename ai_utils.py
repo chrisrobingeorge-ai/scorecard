@@ -338,6 +338,23 @@ def _build_prompt_objective_aware(
         You are given questions, their answers, and their mapping to strategic objectives
         from the 2025–2030 strategic plan.
 
+        **CRITICAL CONTEXT: This is a FIVE-YEAR strategic plan (2025–2030).**
+        Each monthly scorecard is one snapshot in a multi-year transformation journey.
+        Strategic initiatives are expected to unfold gradually over multiple years.
+        Not everything needs to be accomplished at once, and absence of immediate progress
+        on a particular objective in a given month is not necessarily a cause for concern.
+        
+        Different objectives will naturally progress at different paces:
+        - Some may be in planning or foundation-building stages for months
+        - Others may show bursts of activity followed by integration periods
+        - Many will demonstrate steady, incremental progress rather than dramatic leaps
+        
+        Your assessment should reflect this reality. Avoid creating false urgency or suggesting
+        that slow-and-steady progress is somehow inadequate. In strategic transformation work,
+        patience and sustained effort over years are more valuable than rushed activity.
+        
+        Assess progress with patience and a long-term perspective.
+
         Reporting context:
         - Department: {dept}
         - Period: {period}
@@ -350,31 +367,42 @@ def _build_prompt_objective_aware(
         1) "overall_summary":
            A **coherent narrative of 2–4 paragraphs**, written in prose (no bullet points).
            - Link explicitly to strategic objectives by ID and title (e.g., "ART1 – Elevate the Art of Dance").
-           - Diagnose what seems **on track**, **mixed**, or **at risk**, and why.
+           - Diagnose what seems **on track**, **mixed**, or **developing**, and why.
+           - Frame progress in the context of a FIVE-YEAR strategic plan. Recognize that:
+             • Some objectives are in early stages and may show limited activity this month—that's expected.
+             • Strategic initiatives take time to mature; assess momentum and direction, not immediate completion.
+             • Absence of progress in one month doesn't indicate failure—it may simply reflect timing or sequencing.
            - Go beyond restating answers: infer patterns, tensions, and trade-offs
-             (e.g., strong innovation but weak recruitment; strong community impact but fragile capacity).
-           - Where evidence is thin or missing, say so explicitly.
-           - Be cautious about strong negative judgments when there are only one or two weak signals. In such cases, prefer language like "emerging concern" or "area to watch" instead of declaring failure.
-           - Do not assume that a production is weak in visual or artistic quality unless the answers explicitly indicate that. Absence of evidence is not evidence of weakness.
-           - **CRITICAL**: Focus your assessment primarily on HIGH-importance items (ai_weight=3), with MEDIUM items (ai_weight=2) as supporting context. NEVER base strong negative conclusions or risk assessments primarily on LOW-importance items (ai_weight=1), which are optional or seasonal signals meant only to add nuance.
+             (e.g., strong innovation but recruitment building gradually; strong community impact with capacity developing).
+           - Where evidence is thin or missing, acknowledge it neutrally—don't interpret lack of data as negative performance.
+           - Avoid urgent or alarmist language. Prefer terms like "developing," "building momentum," "early stage," 
+             "area to watch over time," rather than "at risk" or "needs immediate attention."
+           - Do not assume that a production is weak in visual or artistic quality unless the answers explicitly indicate that. 
+             Absence of evidence is not evidence of weakness.
+           - **CRITICAL**: Focus your assessment primarily on HIGH-importance items (ai_weight=3), with MEDIUM items (ai_weight=2) 
+             as supporting context. NEVER base strong negative conclusions primarily on LOW-importance items (ai_weight=1), 
+             which are optional or seasonal signals meant only to add nuance.
 
         2) "pillar_summaries":
            An array of objects, each with:
              - "strategic_pillar": the pillar name (from the data)
              - "score_hint": a string in the form "<n>/3 label", where n is 0, 1, 2, or 3.
-               Examples: "3/3 Strong progress", "2/3 Mixed", "1/3 Needs attention", "0/3 Off track".
+               Examples: "3/3 Strong progress", "2/3 Steady development", "1/3 Early stage", "0/3 Inactive this period".
              - "summary": a short paragraph (3–6 sentences).
         
            For each pillar, explain:
-             - what the answers suggest about progress,
+             - what the answers suggest about progress over the long term,
              - how this relates to specific strategic objectives and productions/programmes,
              - and any underlying causes or dependencies you can infer.
         
-           Use the 0–3 scale cautiously:
-             - 3/3 only when evidence is strong and multi-dimensional.
-             - 2/3 as the default for mixed or partial progress.
-             - 1/3 when several answers show problems or gaps.
-             - 0/3 only when there is clear failure across multiple answers or explicit negative responses.
+           Use the 0–3 scale with a multi-year perspective:
+             - 3/3 only when evidence shows sustained, multi-dimensional progress toward long-term goals.
+             - 2/3 as the default for steady development or work-in-progress—this is positive for a 5-year plan.
+             - 1/3 when work is in early stages or building foundations—not necessarily a problem.
+             - 0/3 only when there is clear evidence of inactivity or abandonment (rare in strategic work).
+           
+           Remember: In a 5-year plan, most objectives will show gradual, incremental progress month-to-month.
+           A "2/3 Steady development" is a perfectly healthy status for strategic work in progress.
 
             Each scorecard item is also tagged with an "Importance" level derived from ai_weight:
              - Importance: HIGH  (ai_weight=3)   → core strategic levers.
@@ -424,22 +452,32 @@ def _build_prompt_objective_aware(
            naming individual productions.
 
         4) "risks":
-           An array of concise bullet-style strings.
-           Focus on **strategic risks**, not trivial operational issues. Tie them to
-           objectives and, where relevant, to specific productions or pillars.
-           **CRITICAL**: Base identified risks primarily on HIGH-importance items (ai_weight=3), supported by MEDIUM items (ai_weight=2). Do NOT identify risks based solely on LOW-importance items (ai_weight=1), which are optional or seasonal signals.
+           An array of concise bullet-style strings labeled as "Areas to Watch" or "Considerations."
+           These should identify **strategic considerations** worth monitoring over time, not immediate crises.
+           In a 5-year plan, many initiatives will show variable progress month-to-month—that's normal.
+           Only flag items that, if unaddressed over multiple periods, could impact long-term strategic success.
+           Use measured language: "Worth monitoring," "Consider tracking," "May need attention over time."
+           Avoid alarmist framing. Tie observations to specific objectives and, where relevant, to productions or pillars.
+           **CRITICAL**: Base observations primarily on HIGH-importance items (ai_weight=3), supported by MEDIUM items (ai_weight=2). 
+           Do NOT identify concerns based solely on LOW-importance items (ai_weight=1), which are optional or seasonal signals.
 
         5) "priorities_next_month":
-           An array of concise, action-oriented bullet strings.
-           Each item should be **specific and doable within a month**, and ideally
-           reference the objective(s) it supports (e.g., "Advance ART5 by...").
+           An array of concise, action-oriented bullet strings framed as "Next Steps in the Strategic Journey."
+           Each item should represent a **logical next step** in advancing long-term objectives, recognizing that
+           strategic work unfolds gradually. These are not urgent fixes but rather incremental progress points.
+           Frame each priority as continuing momentum, building foundations, or advancing a strategic initiative.
+           Reference the objective(s) each supports (e.g., "Continue building momentum on ART5 by...").
+           Avoid language that suggests immediate pressure or crisis response.
 
         6) "notes_for_leadership":
            A **single narrative paragraph or two (4–8 sentences)** in prose (no bullets),
-           written as if for the CEO and Board. Highlight:
-             - the most important strategic signals from this month,
-             - any uncomfortable truths or trade-offs they should be aware of,
-             - where their attention or decisions are most needed.
+           written as if for the CEO and Board with a long-term strategic lens. Highlight:
+             - the most important strategic signals from this month in the context of multi-year progress,
+             - how this month's activities fit into the broader 5-year transformation journey,
+             - any trade-offs or dependencies they should understand as strategic initiatives mature,
+             - where sustained attention (not immediate crisis response) may support long-term success.
+           Use measured, strategic language appropriate for guiding a multi-year transformation, 
+           not language that creates false urgency or suggests immediate problems.
 
         Style guidelines:
         - Use clear, direct language suitable for a Board / senior leadership report.
@@ -479,8 +517,14 @@ def interpret_scorecard(
                     "role": "system",
                     "content": (
                         "You are a senior strategy analyst for Alberta Ballet. "
-                        "You interpret monthly scorecards in the context of the 2025–2030 strategic plan "
-                        "and produce deep, board-ready narrative summaries in JSON format."
+                        "You interpret monthly scorecards in the context of the 2025–2030 strategic plan—"
+                        "a FIVE-YEAR journey of transformation. "
+                        "Each monthly scorecard represents one step in a multi-year process. "
+                        "Not everything needs to be accomplished immediately. "
+                        "Your role is to assess incremental progress toward long-term goals, "
+                        "recognizing that strategic initiatives unfold gradually over years. "
+                        "Avoid creating false urgency around issues that are simply at early stages. "
+                        "You produce deep, board-ready narrative summaries in JSON format."
                     ),
                 },
                 {"role": "user", "content": prompt},
