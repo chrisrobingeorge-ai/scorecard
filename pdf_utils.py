@@ -36,7 +36,6 @@ def _to_plain_text(val: Any) -> str:
     if isinstance(val, str):
         return val
     if isinstance(val, list):
-        # Join list items as separate paragraphs
         return "\n\n".join(_to_plain_text(v) for v in val)
     if isinstance(val, dict):
         if "text" in val and isinstance(val["text"], str):
@@ -80,12 +79,14 @@ def _strip_objective_codes(text: str) -> str:
 
 def _split_paragraphs(raw_value: Any) -> list[str]:
     """
-    Split the exec summary into logical paragraphs.
+    Split narrative into logical paragraphs.
 
-    - If it's a list, treat each item as a paragraph.
-    - If it's a string, split on blank lines; if none, split on single newlines.
+    Priority:
+    1) If value is a list: each item -> paragraph.
+    2) If string: split on blank lines.
+    3) If still one block: split into chunks of ~3 sentences.
     """
-    # If AI returned a list of chunks
+    # List case: treat each as paragraph
     if isinstance(raw_value, list):
         paras: list[str] = []
         for item in raw_value:
@@ -94,21 +95,38 @@ def _split_paragraphs(raw_value: Any) -> list[str]:
                 paras.append(txt)
         return paras
 
-    # Otherwise treat as string
+    # String case
     text = _strip_objective_codes(_to_plain_text(raw_value or "")).replace("\r\n", "\n")
     if not text.strip():
         return []
 
-    # First try splitting on blank lines
+    # Try blank-line split first
     parts = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
     if len(parts) > 1:
         return parts
 
-    # Fall back to splitting on single newlines if there were no blank lines
+    # If we have single newlines, allow those to break paragraphs
     if "\n" in text:
-        return [p.strip() for p in text.split("\n") if p.strip()]
+        parts = [p.strip() for p in text.split("\n") if p.strip()]
+        if len(parts) > 1:
+            return parts
 
-    return [text.strip()]
+    # Fallback: sentence-based chunking (group ~3 sentences per paragraph)
+    sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    if len(sentences) <= 3:
+        return [" ".join(sentences)] if sentences else []
+
+    paras: list[str] = []
+    chunk: list[str] = []
+    for s in sentences:
+        chunk.append(s)
+        if len(chunk) >= 3:
+            paras.append(" ".join(chunk))
+            chunk = []
+    if chunk:
+        paras.append(" ".join(chunk))
+    return paras
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -162,6 +180,7 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles)
     body_style = ParagraphStyle(
         name="TableBody",
         parent=styles["BodyText"],
+        fontName="Helvetica",
         fontSize=8,
         leading=10,
     )
@@ -214,6 +233,7 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles)
         data,
         colWidths=[3.5 * inch, 3.5 * inch],
         repeatRows=1,
+        hAlign="LEFT",
     )
     table.setStyle(TableStyle(style_cmds))
     return table
@@ -243,12 +263,12 @@ def build_scorecard_pdf(
     )
 
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="Small", fontSize=9, leading=11))
 
     styles.add(
         ParagraphStyle(
             name="ScorecardTitle",
             parent=styles["Title"],
+            fontName="Helvetica-Bold",
             fontSize=22,
             leading=26,
             spaceAfter=4,
@@ -258,6 +278,7 @@ def build_scorecard_pdf(
         ParagraphStyle(
             name="MetaLabel",
             parent=styles["Normal"],
+            fontName="Helvetica",
             textColor=colors.grey,
             fontSize=9,
             leading=11,
@@ -268,6 +289,7 @@ def build_scorecard_pdf(
         ParagraphStyle(
             name="MetaValue",
             parent=styles["BodyText"],
+            fontName="Helvetica",
             fontSize=10,
             leading=12,
         )
@@ -276,6 +298,7 @@ def build_scorecard_pdf(
         ParagraphStyle(
             name="SectionHeading",
             parent=styles["Heading2"],
+            fontName="Helvetica-Bold",
             fontSize=14,
             spaceBefore=12,
             spaceAfter=6,
@@ -285,6 +308,7 @@ def build_scorecard_pdf(
         ParagraphStyle(
             name="SubHeading",
             parent=styles["Heading3"],
+            fontName="Helvetica-Bold",
             fontSize=11,
             leading=14,
             spaceBefore=8,
@@ -295,6 +319,7 @@ def build_scorecard_pdf(
         ParagraphStyle(
             name="SubHeadingSmall",
             parent=styles["Heading4"],
+            fontName="Helvetica-Bold",
             fontSize=9.5,
             leading=12,
             spaceBefore=4,
@@ -305,8 +330,19 @@ def build_scorecard_pdf(
         ParagraphStyle(
             name="ScoreValue",
             parent=styles["Title"],
+            fontName="Helvetica-Bold",
             fontSize=14,
             leading=16,
+        )
+    )
+    # Body style with explicit Helvetica (no italics)
+    styles.add(
+        ParagraphStyle(
+            name="ReportBody",
+            parent=styles["BodyText"],
+            fontName="Helvetica",
+            fontSize=10,
+            leading=13,
         )
     )
 
@@ -315,7 +351,7 @@ def build_scorecard_pdf(
     # ─────────────────────────────────────────────────────────────────────
     # Header: logo, title, total score
     # ─────────────────────────────────────────────────────────────────────
-    reporting_period = meta.get("month", "")  # still coming in as 'month' from upstream
+    reporting_period = meta.get("month", "")  # still coming in as 'month'
     department = meta.get("department", "") or "—"
 
     pillar_summaries = [ps for ps in (ai_result.get("pillar_summaries") or []) if isinstance(ps, dict)]
@@ -329,7 +365,7 @@ def build_scorecard_pdf(
 
     total_table = Table(
         [
-            [Paragraph("<b>Total score</b>", styles["Small"])],
+            [Paragraph("<b>Total score</b>", styles["MetaLabel"])],
             [Paragraph(total_value, styles["ScoreValue"])],
         ],
         style=TableStyle(
@@ -349,7 +385,7 @@ def build_scorecard_pdf(
         rowHeights=[0.28 * inch, 0.45 * inch],
     )
 
-    # Meta info: only Department + Reporting period
+    # Meta info: only Department + Reporting period, left-aligned
     meta_rows = [
         [
             Paragraph("DEPARTMENT", styles["MetaLabel"]),
@@ -363,7 +399,8 @@ def build_scorecard_pdf(
 
     meta_table = Table(
         meta_rows,
-        colWidths=[1.7 * inch, 3.0 * inch],
+        colWidths=[1.9 * inch, 3.0 * inch],
+        hAlign="LEFT",
         style=TableStyle(
             [
                 ("ALIGN", (0, 0), (-1, -1), "LEFT"),
@@ -380,7 +417,7 @@ def build_scorecard_pdf(
     if logo_path:
         try:
             img = Image(logo_path)
-            img._restrictSize(1.5 * inch, 1.5 * inch)  # larger logo
+            img._restrictSize(2 * inch, 2 * inch)  # larger logo
             logo_flowable = img
         except Exception:
             logo_flowable = None
@@ -435,7 +472,7 @@ def build_scorecard_pdf(
     if paragraphs:
         story.append(Paragraph("Executive Summary", styles["SectionHeading"]))
         for idx, para in enumerate(paragraphs):
-            story.append(_safe_paragraph(para, styles["BodyText"]))
+            story.append(_safe_paragraph(para, styles["ReportBody"]))
             if idx < len(paragraphs) - 1:
                 story.append(Spacer(1, 4))
         story.append(Spacer(1, 10))
@@ -468,16 +505,17 @@ def build_scorecard_pdf(
 
             story.append(Paragraph(xml_escape(heading_text), styles["SubHeading"]))
             if summary_text:
-                story.append(_safe_paragraph(summary_text, styles["BodyText"]))
+                for p in _split_paragraphs(summary_text):
+                    story.append(_safe_paragraph(p, styles["ReportBody"]))
             else:
-                story.append(_safe_paragraph("No narrative summary provided for this pillar.", styles["BodyText"]))
+                story.append(_safe_paragraph("No narrative summary provided for this pillar.", styles["ReportBody"]))
 
             story.append(Spacer(1, 6))
 
         story.append(Spacer(1, 6))
 
     # ─────────────────────────────────────────────────────────────────────
-    # By Production / Programme – narrative
+    # By Production / Programme – smoother narrative
     # ─────────────────────────────────────────────────────────────────────
     production_summaries = ai_result.get("production_summaries", []) or []
     if production_summaries:
@@ -492,29 +530,22 @@ def build_scorecard_pdf(
             story.append(Paragraph(xml_escape(pname), styles["SubHeading"]))
 
             pillars = prod.get("pillars") or []
+            summaries: list[str] = []
             for ps in pillars:
                 if not isinstance(ps, dict):
                     continue
-
-                pillar_name_raw = _to_plain_text(ps.get("pillar", "Category")).strip() or "Category"
-                pillar_name = _strip_objective_codes(pillar_name_raw)
-
-                score_hint_raw = _to_plain_text(ps.get("score_hint", "")).strip()
-                score_hint_clean = _strip_objective_codes(score_hint_raw)
-
                 summary_text_raw = _to_plain_text(ps.get("summary", "")).strip()
                 summary_text = _strip_objective_codes(summary_text_raw)
-
-                label_parts = [pillar_name]
-                if score_hint_clean:
-                    label_parts.append(score_hint_clean)
-                label_text = " — ".join(label_parts)
-
-                story.append(Paragraph(xml_escape(label_text), styles["SubHeadingSmall"]))
                 if summary_text:
-                    story.append(_safe_paragraph(summary_text, styles["BodyText"]))
-                else:
-                    story.append(_safe_paragraph("No summary provided.", styles["BodyText"]))
+                    summaries.append(summary_text)
+
+            combined = " ".join(summaries).strip()
+            if combined:
+                combined_paras = _split_paragraphs(combined)
+                for p in combined_paras:
+                    story.append(_safe_paragraph(p, styles["ReportBody"]))
+            else:
+                story.append(_safe_paragraph("No summary provided.", styles["ReportBody"]))
 
             story.append(Spacer(1, 8))
 
@@ -529,7 +560,7 @@ def build_scorecard_pdf(
     if risks:
         story.append(Paragraph("Key Risks / Concerns", styles["SectionHeading"]))
         for r in risks:
-            story.append(_safe_paragraph(f"• {r}", styles["BodyText"]))
+            story.append(_safe_paragraph(f"• {r}", styles["ReportBody"]))
 
     priorities = [
         _strip_objective_codes(_to_plain_text(p)).strip()
@@ -540,14 +571,15 @@ def build_scorecard_pdf(
         story.append(Spacer(1, 6))
         story.append(Paragraph("Priorities for Next Period", styles["SectionHeading"]))
         for p in priorities:
-            story.append(_safe_paragraph(f"• {p}", styles["BodyText"]))
+            story.append(_safe_paragraph(f"• {p}", styles["ReportBody"]))
 
     nfl_raw = _to_plain_text(ai_result.get("notes_for_leadership", "")).strip()
     nfl = _strip_objective_codes(nfl_raw)
     if nfl:
         story.append(Spacer(1, 6))
         story.append(Paragraph("Notes for Leadership", styles["SectionHeading"]))
-        story.append(_safe_paragraph(nfl, styles["BodyText"]))
+        for p in _split_paragraphs(nfl):
+            story.append(_safe_paragraph(p, styles["ReportBody"]))
 
     # ─────────────────────────────────────────────────────────────────────
     # Raw responses on a fresh page
