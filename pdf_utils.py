@@ -857,25 +857,96 @@ def build_overall_board_pdf(
 
     story: list[Flowable] = []
 
-    # Optional logo
+    # ─────────────────────────────────────────────────────────────────────
+    # Header: logo + title + reporting meta (mirroring scorecard style)
+    # ─────────────────────────────────────────────────────────────────────
+    # Logo
+    logo_flowable: Flowable | None = None
     if logo_path:
         try:
             img = Image(logo_path)
             img._restrictSize(2 * inch, 2 * inch)
-            story.append(img)
-            story.append(Spacer(1, 12))
+            logo_flowable = img
         except Exception:
-            pass
+            logo_flowable = None
 
-    # Title + reporting period
-    story.append(Paragraph("Overall Monthly Scorecard – Board Report", styles["BoardTitle"]))
+    # Title block
+    title_table = Table(
+        [[Paragraph("Overall Monthly Scorecard – Board Report", styles["BoardTitle"])]],
+        colWidths=[4.0 * inch],
+        style=TableStyle(
+            [
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
+        ),
+    )
 
+    # Simple meta (Reporting period) on the right
+    meta_rows: list[list[Flowable]] = []
     if reporting_label:
-        story.append(Paragraph("Reporting period", styles["BoardMetaLabel"]))
-        story.append(Paragraph(str(reporting_label), styles["BoardMetaValue"]))
-        story.append(Spacer(1, 8))
+        meta_rows.append(
+            [
+                Paragraph("REPORTING PERIOD", styles["BoardMetaLabel"]),
+                Paragraph(str(reporting_label), styles["BoardMetaValue"]),
+            ]
+        )
 
+    meta_table: Flowable
+    if meta_rows:
+        meta_table = Table(
+            meta_rows,
+            colWidths=[1.8 * inch, 2.0 * inch],
+            hAlign="RIGHT",
+            style=TableStyle(
+                [
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ]
+            ),
+        )
+    else:
+        meta_table = Spacer(1, 0.1 * inch)
+
+    # Build header row
+    header_cells: list[Flowable] = []
+    if logo_flowable:
+        header_cells.append(logo_flowable)
+    else:
+        header_cells.append(Spacer(2.0 * inch, 0.5 * inch))
+
+    header_cells.append(title_table)
+    header_cells.append(meta_table)
+
+    header_table = Table(
+        [header_cells],
+        colWidths=[2.0 * inch, 4.0 * inch, 1.8 * inch],
+        hAlign="LEFT",
+        style=TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("LEFTPADDING", (0, 0), (0, 0), -4),
+                ("RIGHTPADDING", (0, 0), (0, 0), 6),
+                ("LEFTPADDING", (1, 0), (1, 0), 0),
+                ("RIGHTPADDING", (1, 0), (1, 0), 12),
+                ("LEFTPADDING", (2, 0), (2, 0), 6),
+                ("RIGHTPADDING", (2, 0), (2, 0), 0),
+            ]
+        ),
+    )
+
+    story.append(header_table)
+    story.append(Spacer(1, 12))
+
+    # ─────────────────────────────────────────────────────────────────────
     # Departments overview table
+    # ─────────────────────────────────────────────────────────────────────
     if not dept_overview.empty:
         story.append(Paragraph("Departments included", styles["BoardSectionHeading"]))
 
@@ -911,7 +982,9 @@ def build_overall_board_pdf(
         story.append(table)
         story.append(Spacer(1, 12))
 
+    # ─────────────────────────────────────────────────────────────────────
     # Main Board narrative
+    # ─────────────────────────────────────────────────────────────────────
     story.append(Paragraph("Board Narrative", styles["BoardSectionHeading"]))
 
     overall_text = (ai_result.get("overall_summary") or "").strip()
@@ -919,7 +992,6 @@ def build_overall_board_pdf(
     if not overall_text:
         story.append(Paragraph("No Board report text was generated.", styles["BoardBody"]))
     else:
-        # Split into paragraphs on blank lines for nicer layout
         text = overall_text.replace("\r\n", "\n")
         parts = [p.strip() for p in text.split("\n\n") if p.strip()]
         for idx, para in enumerate(parts):
@@ -927,14 +999,17 @@ def build_overall_board_pdf(
             if idx < len(parts) - 1:
                 story.append(Spacer(1, 6))
 
-    # Optional: additional sections if the model returned them
+    # ─────────────────────────────────────────────────────────────────────
+    # Strategic Pillar risks / concerns
+    # ─────────────────────────────────────────────────────────────────────
     risks = ai_result.get("risks") or []
     if risks:
         story.append(Spacer(1, 10))
-        story.append(Paragraph("Strategic Pillar Risks / Concerns", styles["BoardSectionHeading"]))
+        story.append(Paragraph("Strategic Pillar – Risks / Concerns", styles["BoardSectionHeading"]))
         for r in risks:
             story.append(Paragraph(f"• {str(r)}", styles["BoardBody"]))
 
+    # Organisation-wide priorities
     priorities = ai_result.get("priorities_next_month") or []
     if priorities:
         story.append(Spacer(1, 10))
@@ -942,11 +1017,11 @@ def build_overall_board_pdf(
         for p in priorities:
             story.append(Paragraph(f"• {str(p)}", styles["BoardBody"]))
 
+    # Notes for leadership
     notes = (ai_result.get("notes_for_leadership") or "").strip()
     if notes:
         story.append(Spacer(1, 10))
         story.append(Paragraph("Notes for Leadership", styles["BoardSectionHeading"]))
-        # Again, split on blank lines
         parts = [p.strip() for p in notes.replace("\r\n", "\n").split("\n\n") if p.strip()]
         for idx, para in enumerate(parts):
             story.append(Paragraph(para, styles["BoardBody"]))
@@ -966,4 +1041,3 @@ def build_overall_board_pdf(
     pdf_bytes = buffer.getvalue()
     buffer.close()
     return pdf_bytes
-
