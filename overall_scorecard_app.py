@@ -227,7 +227,7 @@ if st.button("Generate Board Narrative with AI"):
             reporting_label=reporting_label,
             dept_overview=df_overview,
             ai_result=ai_result,
-            logo_path=None,  # or your logo file
+            logo_path="assets/alberta_ballet_logo.png",  # <- adjust to your actual path
         )
 
         st.download_button(
