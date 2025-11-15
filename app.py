@@ -1262,6 +1262,7 @@ def main():
             data=pdf_bytes,
             file_name=f"scorecard_{meta_for_ai['department'].replace(' ', '_')}_{month_str}.pdf",
             mime="application/pdf",
+            logo_path="assets/alberta_ballet_logo.png",
         )
     except Exception as e:
         st.warning(f"PDF export failed: {e}")
