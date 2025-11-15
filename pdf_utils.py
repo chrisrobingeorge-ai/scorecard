@@ -52,45 +52,51 @@ def _build_embed_payload(
     meta: Dict[str, Any],
     questions_df: pd.DataFrame,
     ai_summary_text: str,
+    overall_score: float | None = None,
+    pillar_scores: Dict[str, float] | None = None,
+    question_scores: Dict[str, float] | None = None,
 ) -> str:
     """
     Build the JSON object we embed into the PDF metadata.
 
     - `meta` is the same dict you already pass around (month, department, etc.)
-    - `questions_df` is your question/answer table
+    - `questions_df` is your question/answer table (we expect response_value to be included)
     - `ai_summary_text` is the main AI narrative text
+    - overall_score / pillar_scores / question_scores can be passed explicitly
+      (e.g. from AI header scoring). If they are None/empty, we fall back to
+      deriving from a numeric 'score' column on questions_df, if present.
     """
 
-    # Try to derive simple scores if the columns exist; fail softly.
-    overall_score = None
-    pillar_scores = {}
-    question_scores = {}
+    # Start from explicit scores if provided
+    overall_score_val: float | None = overall_score
+    pillar_scores_val: Dict[str, float] = dict(pillar_scores or {})
+    question_scores_val: Dict[str, float] = dict(question_scores or {})
 
-    if "score" in questions_df.columns:
+    # If no explicit scores, fall back to numeric 'score' column (if present)
+    if overall_score_val is None and "score" in questions_df.columns:
         try:
-            overall_score = float(questions_df["score"].mean())
+            overall_score_val = float(questions_df["score"].mean())
         except Exception:
-            overall_score = None
+            overall_score_val = None
 
-        if "strategic_pillar" in questions_df.columns:
-            try:
-                pillar_scores = (
-                    questions_df
-                    .groupby("strategic_pillar")["score"]
-                    .mean()
-                    .to_dict()
-                )
-            except Exception:
-                pillar_scores = {}
-
+    if not pillar_scores_val and "strategic_pillar" in questions_df.columns and "score" in questions_df.columns:
         try:
-            question_scores = (
-                questions_df.set_index("question_id")["score"].to_dict()
-                if "question_id" in questions_df.columns
-                else {}
+            pillar_scores_val = (
+                questions_df
+                .groupby("strategic_pillar")["score"]
+                .mean()
+                .to_dict()
             )
         except Exception:
-            question_scores = {}
+            pillar_scores_val = {}
+
+    if not question_scores_val and "question_id" in questions_df.columns and "score" in questions_df.columns:
+        try:
+            question_scores_val = (
+                questions_df.set_index("question_id")["score"].to_dict()
+            )
+        except Exception:
+            question_scores_val = {}
 
     payload = {
         "schema_version": 1,
@@ -99,9 +105,9 @@ def _build_embed_payload(
         "exported_at": datetime.utcnow().isoformat() + "Z",
         "meta": meta,
         "scores": {
-            "overall_score": overall_score,
-            "pillar_scores": pillar_scores,
-            "question_scores": question_scores,
+            "overall_score": overall_score_val,
+            "pillar_scores": pillar_scores_val,
+            "question_scores": question_scores_val,
         },
         "questions": questions_df.to_dict(orient="records"),
         "ai_interpretation": {
@@ -111,6 +117,7 @@ def _build_embed_payload(
 
     # Minified JSON to keep the Subject field shorter
     return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
+
 
 def _safe_paragraph(text: Any, style: ParagraphStyle, allow_markup: bool = False) -> Paragraph:
     """
@@ -317,11 +324,13 @@ def build_scorecard_pdf(
     """
     Build and return the PDF as raw bytes.
 
-    This version:
-    - Preserves your original "Summary Scorecard" layout (header, executive summary,
+    - Preserves your "Summary Scorecard" layout (header, executive summary,
       pillars, by production, risks/priorities, raw responses).
-    - Embeds a JSON payload into the PDF Subject using JSON_PREFIX so the
-      overall_scorecard_app can read it later.
+    - Embeds a JSON payload in the PDF metadata (Subject) including:
+      * meta
+      * questions (+ response_value)
+      * AI overall summary
+      * overall_score and pillar_scores derived from pillar_summaries.
     """
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -423,12 +432,35 @@ def build_scorecard_pdf(
     story: list[Flowable] = []
 
     # ─────────────────────────────────────────────────────────────────────
-    # AI summary (for both layout + embedded JSON)
+    # AI summary text (for layout + JSON)
     # ─────────────────────────────────────────────────────────────────────
     overall_value = ai_result.get("overall_summary", "") or ""
     ai_summary_text = _to_plain_text(overall_value)
 
-    # Enrich questions with response_value for the embedded JSON payload
+    # ─────────────────────────────────────────────────────────────────────
+    # Derive scores from pillar_summaries (same source as your header box)
+    # ─────────────────────────────────────────────────────────────────────
+    pillar_summaries = [ps for ps in (ai_result.get("pillar_summaries") or []) if isinstance(ps, dict)]
+
+    score_values: list[float] = []
+    pillar_score_map: Dict[str, float] = {}
+
+    for ps in pillar_summaries:
+        pillar_key = _to_plain_text(ps.get("strategic_pillar", "")).strip()
+        score_val = _parse_score_hint(ps.get("score_hint", ""))
+
+        if score_val is not None:
+            score_values.append(score_val)
+
+        if pillar_key and score_val is not None:
+            # Use the raw strategic_pillar name as key so it matches questions
+            pillar_score_map[pillar_key] = score_val
+
+    total_score = sum(score_values) / len(score_values) if score_values else None
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Enrich questions with response_value for the JSON payload
+    # ─────────────────────────────────────────────────────────────────────
     questions_for_payload = questions.copy()
 
     resp_values: list[str] = []
@@ -438,7 +470,7 @@ def build_scorecard_pdf(
 
         raw_val = responses.get(qid_str, responses.get(qid, ""))
 
-        # Mimic the logic from _responses_table to normalise responses
+        # Same normalisation logic as _responses_table
         if isinstance(raw_val, dict):
             primary = raw_val.get("primary", "")
             desc = raw_val.get("description", "")
@@ -456,24 +488,24 @@ def build_scorecard_pdf(
 
     questions_for_payload["response_value"] = resp_values
 
-    # Build embedded JSON payload using your helper (now includes response_value)
+    # ─────────────────────────────────────────────────────────────────────
+    # Build embedded JSON payload (meta + questions + scores + summary)
+    # ─────────────────────────────────────────────────────────────────────
     embed_json_str = _build_embed_payload(
         meta=meta,
         questions_df=questions_for_payload,
         ai_summary_text=ai_summary_text,
+        overall_score=total_score,
+        pillar_scores=pillar_score_map,
+        # No per-question numeric scores yet
+        question_scores=None,
     )
-
 
     # ─────────────────────────────────────────────────────────────────────
     # Header: logo, title, total score (your original layout)
     # ─────────────────────────────────────────────────────────────────────
-    reporting_period = meta.get("month", "")  # still coming in as 'month'
+    reporting_period = meta.get("month", "")
     department = meta.get("department", "") or "—"
-
-    pillar_summaries = [ps for ps in (ai_result.get("pillar_summaries") or []) if isinstance(ps, dict)]
-    scores = [_parse_score_hint(ps.get("score_hint")) for ps in pillar_summaries]
-    scores = [s for s in scores if s is not None]
-    total_score = sum(scores) / len(scores) if scores else None
 
     total_colour = _score_to_colour(total_score)
     total_score_display = _score_display(total_score)
@@ -501,7 +533,7 @@ def build_scorecard_pdf(
         rowHeights=[0.28 * inch, 0.45 * inch],
     )
 
-    # Meta info: only Department + Reporting period, left-aligned
+    # Meta info: Department + Reporting period, left-aligned
     meta_rows = [
         [
             Paragraph("DEPARTMENT", styles["MetaLabel"]),
@@ -533,12 +565,12 @@ def build_scorecard_pdf(
     if logo_path:
         try:
             img = Image(logo_path)
-            img._restrictSize(2 * inch, 2 * inch)  # larger logo
+            img._restrictSize(2 * inch, 2 * inch)
             logo_flowable = img
         except Exception:
             logo_flowable = None
 
-    # Title block: just "Summary Scorecard"
+    # Title block
     title_table = Table(
         [[Paragraph("Summary Scorecard", styles["ScorecardTitle"])]],
         colWidths=[4.0 * inch],
@@ -561,26 +593,18 @@ def build_scorecard_pdf(
     header_cells.append(title_table)
     header_cells.append(total_table)
 
-    # Content width is ~7.5" (Letter 8.5" minus 0.5" margins on each side),
-    # so colWidths sum to 7.5 to align the score box with the right margin.
     header_table = Table(
         [header_cells],
-        colWidths=[2.0 * inch, 4.0 * inch, 1.5 * inch],  # logo / title / score box
+        colWidths=[2.0 * inch, 4.0 * inch, 1.5 * inch],
         hAlign="LEFT",
         style=TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-
-                # Logo column: nudge slightly left to counter whitespace in the PNG
                 ("LEFTPADDING", (0, 0), (0, 0), -4),
                 ("RIGHTPADDING", (0, 0), (0, 0), 6),
-
-                # Title column: no extra padding on left, a bit of space before score box
                 ("LEFTPADDING", (1, 0), (1, 0), 0),
                 ("RIGHTPADDING", (1, 0), (1, 0), 12),
-
-                # Score box column: small left padding, flush to the right margin
                 ("LEFTPADDING", (2, 0), (2, 0), 6),
                 ("RIGHTPADDING", (2, 0), (2, 0), 0),
             ]
@@ -593,7 +617,7 @@ def build_scorecard_pdf(
     story.append(Spacer(1, 12))
 
     # ─────────────────────────────────────────────────────────────────────
-    # Executive summary – preserve paragraphs
+    # Executive summary
     # ─────────────────────────────────────────────────────────────────────
     paragraphs = _split_paragraphs(overall_value)
 
@@ -643,7 +667,7 @@ def build_scorecard_pdf(
         story.append(Spacer(1, 6))
 
     # ─────────────────────────────────────────────────────────────────────
-    # By Production / Programme – smoother narrative
+    # By Production / Programme
     # ─────────────────────────────────────────────────────────────────────
     production_summaries = ai_result.get("production_summaries", []) or []
     if production_summaries:
@@ -721,14 +745,12 @@ def build_scorecard_pdf(
     # Footer + metadata (JSON in Subject)
     # ─────────────────────────────────────────────────────────────────────
     def _footer(canvas, doc_):
-        # Basic footer
         canvas.saveState()
         canvas.setFont("Helvetica", 8)
         width, height = doc_.pagesize
         canvas.drawString(36, 20, "Alberta Ballet — Scorecard Report")
         canvas.drawRightString(width - 36, 20, f"Page {doc_.page}")
 
-        # Set PDF metadata (this is where JSON gets embedded)
         pdf_title = f"Summary Scorecard — {department}"
         canvas.setTitle(pdf_title)
         canvas.setAuthor(str(meta.get("staff_name") or ""))
