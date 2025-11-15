@@ -195,9 +195,9 @@ if st.button("Generate Board Narrative with AI"):
         st.markdown("### Draft Board Report")
         st.markdown(board_report)
 
-        # Cross-cutting pillars
+        # Strategic pillars
         if pillar_summaries:
-            st.markdown("### Cross-cutting Pillars")
+            st.markdown("### Strategic Pillars")
             for ps in pillar_summaries:
                 name = ps.get("strategic_pillar") or "Pillar"
                 summary = ps.get("summary") or ""
