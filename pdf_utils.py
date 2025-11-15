@@ -319,6 +319,7 @@ def build_scorecard_pdf(
     """
     import json
     from datetime import datetime
+    from reportlab.platypus import Image  # for logo
 
     JSON_PREFIX = "AB_SCORECARD_JSON:"
 
@@ -334,7 +335,9 @@ def build_scorecard_pdf(
 
     styles = getSampleStyleSheet()
 
-    # Ensure styles exist (idempotent if re-run)
+    # ─────────────────────────────────────────────────────────────────────
+    # Your original styles (unchanged)
+    # ─────────────────────────────────────────────────────────────────────
     styles.add(
         ParagraphStyle(
             name="ScorecardTitle",
@@ -406,6 +409,7 @@ def build_scorecard_pdf(
             leading=16,
         )
     )
+    # Body style with explicit Helvetica (no italics)
     styles.add(
         ParagraphStyle(
             name="ReportBody",
@@ -416,12 +420,11 @@ def build_scorecard_pdf(
         )
     )
 
-    story: list = []
+    story: list[Flowable] = []
 
     # ─────────────────────────────────────────────────────────────────────
-    # Derive AI summary text and simple scores for embedding
+    # Derive AI summary + simple scores for JSON embedding
     # ─────────────────────────────────────────────────────────────────────
-    # Try to find a main summary text in ai_result
     ai_summary_text = (
         ai_result.get("overall_summary")
         or ai_result.get("overall")
@@ -429,10 +432,9 @@ def build_scorecard_pdf(
         or ""
     )
 
-    # Derive simple numeric scores if the column exists; fail softly
     overall_score = None
-    pillar_scores = {}
-    question_scores = {}
+    pillar_scores: Dict[str, Any] = {}
+    question_scores: Dict[str, Any] = {}
 
     if isinstance(questions, pd.DataFrame) and "score" in questions.columns:
         try:
@@ -443,23 +445,19 @@ def build_scorecard_pdf(
         if "strategic_pillar" in questions.columns:
             try:
                 pillar_scores = (
-                    questions
-                    .groupby("strategic_pillar")["score"]
-                    .mean()
-                    .to_dict()
+                    questions.groupby("strategic_pillar")["score"].mean().to_dict()
                 )
             except Exception:
                 pillar_scores = {}
 
-        try:
-            if "question_id" in questions.columns:
+        if "question_id" in questions.columns:
+            try:
                 question_scores = (
                     questions.set_index("question_id")["score"].to_dict()
                 )
-        except Exception:
-            question_scores = {}
+            except Exception:
+                question_scores = {}
 
-    # Build the embedded JSON payload
     embed_payload = {
         "schema_version": 1,
         "app_name": "ab_monthly_scorecard",
@@ -471,9 +469,11 @@ def build_scorecard_pdf(
             "pillar_scores": pillar_scores,
             "question_scores": question_scores,
         },
-        # questions DataFrame → list of dicts
-        "questions": questions.to_dict(orient="records") if isinstance(questions, pd.DataFrame) else [],
-        # Save the raw responses and AI result in case they’re useful later
+        "questions": (
+            questions.to_dict(orient="records")
+            if isinstance(questions, pd.DataFrame)
+            else []
+        ),
         "responses": responses,
         "ai_interpretation": {
             "overall_summary": ai_summary_text,
@@ -484,19 +484,17 @@ def build_scorecard_pdf(
     embed_json_str = json.dumps(embed_payload, separators=(",", ":"), ensure_ascii=False)
 
     # ─────────────────────────────────────────────────────────────────────
-    # Build visible PDF content
+    # VISIBLE CONTENT (kept simple + consistent with your style)
     # ─────────────────────────────────────────────────────────────────────
 
-    # Optional logo
+    # Optional logo at top-left
     if logo_path:
         try:
-            from reportlab.platypus import Image
-
             logo = Image(logo_path, width=120, height=40, hAlign="LEFT")
             story.append(logo)
             story.append(Spacer(1, 12))
         except Exception:
-            # Fail softly if logo can’t be loaded
+            # Fail softly if logo cannot be loaded
             pass
 
     # Title
@@ -530,7 +528,6 @@ def build_scorecard_pdf(
     story.append(Paragraph("AI Summary", styles["SectionHeading"]))
 
     if ai_summary_text:
-        # Split on blank lines to avoid massive unbroken paragraphs
         for para in str(ai_summary_text).split("\n\n"):
             para = para.strip()
             if not para:
@@ -550,7 +547,7 @@ def build_scorecard_pdf(
     story.append(Paragraph("Question Responses", styles["SectionHeading"]))
 
     if isinstance(questions, pd.DataFrame) and not questions.empty:
-        # Try to infer column names, with safe fallbacks
+        # Infer column names
         pillar_col = "strategic_pillar" if "strategic_pillar" in questions.columns else None
         metric_col = "metric" if "metric" in questions.columns else None
 
@@ -561,7 +558,6 @@ def build_scorecard_pdf(
         else:
             question_col = None
 
-        # Common possibilities for responses
         if "response_value" in questions.columns:
             response_col = "response_value"
         elif "response" in questions.columns:
@@ -573,8 +569,8 @@ def build_scorecard_pdf(
 
         notes_col = "notes" if "notes" in questions.columns else None
 
-        # Build table header based on available columns
-        headers = []
+        # Table headers
+        headers: list[str] = []
         if pillar_col:
             headers.append("Pillar")
         if metric_col:
@@ -586,10 +582,10 @@ def build_scorecard_pdf(
         if notes_col:
             headers.append("Notes")
 
-        data = [headers]
+        data: list[list[str]] = [headers]
 
         for _, row in questions.iterrows():
-            row_cells = []
+            row_cells: list[str] = []
             if pillar_col:
                 row_cells.append(str(row.get(pillar_col, "")) or "")
             if metric_col:
@@ -624,41 +620,24 @@ def build_scorecard_pdf(
         story.append(table)
     else:
         story.append(
-            Paragraph("No question responses were available to display.", styles["ReportBody"])
+            Paragraph(
+                "No question responses were available to display.",
+                styles["ReportBody"],
+            )
         )
 
     # ─────────────────────────────────────────────────────────────────────
-    # Page callbacks: embed JSON in the Subject field + simple footer
+    # Page callbacks: metadata + JSON in Subject (no visual changes)
     # ─────────────────────────────────────────────────────────────────────
     def _on_first_page(canvas, doc_obj):
-        # Metadata
         canvas.setTitle(title_text)
         canvas.setAuthor(meta.get("staff_name", "") or "")
         canvas.setSubject(JSON_PREFIX + embed_json_str)
-
-        # Simple footer with page number
-        canvas.saveState()
-        canvas.setFont("Helvetica", 8)
-        page_num = canvas.getPageNumber()
-        canvas.drawRightString(
-            doc_obj.pagesize[0] - 36,
-            18,
-            f"Page {page_num}",
-        )
-        canvas.restoreState()
+        # No extra drawing here, to preserve your visual layout
 
     def _on_later_pages(canvas, doc_obj):
-        # It’s fine if we don’t re-set Subject, but harmless if we do
+        # Re-setting subject is harmless; no visual changes
         canvas.setSubject(JSON_PREFIX + embed_json_str)
-        canvas.saveState()
-        canvas.setFont("Helvetica", 8)
-        page_num = canvas.getPageNumber()
-        canvas.drawRightString(
-            doc_obj.pagesize[0] - 36,
-            18,
-            f"Page {page_num}",
-        )
-        canvas.restoreState()
 
     # Build PDF
     doc.build(story, onFirstPage=_on_first_page, onLaterPages=_on_later_pages)
