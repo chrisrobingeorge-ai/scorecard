@@ -1179,22 +1179,6 @@ def main():
 
 
     # ─────────────────────────────────────────────────────────────
-    # AI call
-    # ─────────────────────────────────────────────────────────────
-    try:
-        with st.spinner("Asking AI to interpret this scorecard..."):
-            ai_result = interpret_scorecard(meta_for_ai, questions_for_ai, responses_for_ai)
-    except RuntimeError as e:
-        st.error(f"AI configuration error: {e}")
-        st.info("Check your OPENAI_API_KEY secret and that `openai>=1.51.0` (or newer) is in requirements.txt.")
-        st.stop()
-    except Exception as e:
-        st.error(f"Failed to generate AI summary: {e}")
-        st.stop()
-
-    st.success("AI summary generated.")
-
-    # ─────────────────────────────────────────────────────────────
     # AI Interpretation (fully editable before PDF)
     # ─────────────────────────────────────────────────────────────
     st.subheader("AI Interpretation (editable)")
