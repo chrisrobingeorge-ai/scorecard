@@ -257,6 +257,12 @@ def _build_prompt_objective_aware(
         "No strategic objective mapping was provided for these items."
     )
 
+        # Ensure ai_weight exists and is numeric: 1=LOW, 2=MEDIUM, 3=HIGH
+    if "ai_weight" in merged.columns:
+        merged["ai_weight"] = pd.to_numeric(merged["ai_weight"], errors="coerce").fillna(2).astype(int)
+    else:
+        merged["ai_weight"] = 2  # default MEDIUM
+
     # ── 3) Build text grouped by strategic objective ─────────────────────────
     objective_blocks: list[str] = []
 
@@ -298,11 +304,21 @@ def _build_prompt_objective_aware(
             context_bits = [b for b in context_bits if b]
             context_label = " / ".join(context_bits) if context_bits else ""
 
+            # Map ai_weight to an importance label
+            w = int(row.get("ai_weight", 2) or 2)
+            if w <= 1:
+                importance = "LOW"
+            elif w >= 3:
+                importance = "HIGH"
+            else:
+                importance = "MEDIUM"
+
             line = q_text or f"Question ID {row.get('question_id')}"
             if context_label:
                 line = f"[{context_label}] {line}"
 
             lines.append(f"- {line}")
+            lines.append(f"  Importance: {importance} (ai_weight={w})")
             lines.append(f"  Primary answer: {ans_primary_str}")
             if ans_desc_str:
                 lines.append(f"  Detail: {ans_desc_str}")
@@ -358,6 +374,19 @@ def _build_prompt_objective_aware(
              - 2/3 as the default for mixed or partial progress.
              - 1/3 when several answers show problems or gaps.
              - 0/3 only when there is clear failure across multiple answers or explicit negative responses.
+
+            Each scorecard item is also tagged with an "Importance" level derived from ai_weight:
+             - Importance: HIGH  (ai_weight=3)   → core strategic levers.
+             - Importance: MEDIUM (ai_weight=2) → important context.
+             - Importance: LOW   (ai_weight=1)   → optional or seasonal signals.
+
+           When drawing strong conclusions (especially 0/3 or 3/3):
+             - Rely primarily on HIGH-importance items, supported by MEDIUM where helpful.
+             - NEVER base a 0/3 or a harsh negative judgement solely on LOW-importance items
+               such as festivals, residencies, or optional contemporary-issues content.
+             - LOW-importance items should only colour the narrative (nuance, examples), not
+               drive the overall assessment.
+
 
         3) "production_summaries":
            An array of objects, each with:
