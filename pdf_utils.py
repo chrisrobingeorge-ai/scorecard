@@ -7,6 +7,7 @@ from typing import Dict, Any
 
 import json
 import re
+from datetime import datetime
 import pandas as pd
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -314,15 +315,14 @@ def build_scorecard_pdf(
     logo_path: str | None = None,
 ) -> bytes:
     """
-    Build and return the PDF as raw bytes, embedding a JSON payload in the
-    PDF metadata so the overall_scorecard_app can read it later.
+    Build and return the PDF as raw bytes.
+
+    This version:
+    - Preserves your original "Summary Scorecard" layout (header, executive summary,
+      pillars, by production, risks/priorities, raw responses).
+    - Embeds a JSON payload into the PDF Subject using JSON_PREFIX so the
+      overall_scorecard_app can read it later.
     """
-    import json
-    from datetime import datetime
-    from reportlab.platypus import Image  # for logo
-
-    JSON_PREFIX = "AB_SCORECARD_JSON:"
-
     buffer = BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -336,7 +336,7 @@ def build_scorecard_pdf(
     styles = getSampleStyleSheet()
 
     # ─────────────────────────────────────────────────────────────────────
-    # Your original styles (unchanged)
+    # Styles (your originals)
     # ─────────────────────────────────────────────────────────────────────
     styles.add(
         ParagraphStyle(
@@ -423,231 +423,20 @@ def build_scorecard_pdf(
     story: list[Flowable] = []
 
     # ─────────────────────────────────────────────────────────────────────
-    # Derive AI summary + simple scores for JSON embedding
+    # AI summary (for both layout + embedded JSON)
     # ─────────────────────────────────────────────────────────────────────
-    ai_summary_text = (
-        ai_result.get("overall_summary")
-        or ai_result.get("overall")
-        or ai_result.get("summary")
-        or ""
+    overall_value = ai_result.get("overall_summary", "") or ""
+    ai_summary_text = _to_plain_text(overall_value)
+
+    # Build embedded JSON payload using your helper
+    embed_json_str = _build_embed_payload(
+        meta=meta,
+        questions_df=questions,
+        ai_summary_text=ai_summary_text,
     )
 
-    overall_score = None
-    pillar_scores: Dict[str, Any] = {}
-    question_scores: Dict[str, Any] = {}
-
-    if isinstance(questions, pd.DataFrame) and "score" in questions.columns:
-        try:
-            overall_score = float(questions["score"].mean())
-        except Exception:
-            overall_score = None
-
-        if "strategic_pillar" in questions.columns:
-            try:
-                pillar_scores = (
-                    questions.groupby("strategic_pillar")["score"].mean().to_dict()
-                )
-            except Exception:
-                pillar_scores = {}
-
-        if "question_id" in questions.columns:
-            try:
-                question_scores = (
-                    questions.set_index("question_id")["score"].to_dict()
-                )
-            except Exception:
-                question_scores = {}
-
-    embed_payload = {
-        "schema_version": 1,
-        "app_name": "ab_monthly_scorecard",
-        "payload_type": "monthly_scorecard_pdf",
-        "exported_at": datetime.utcnow().isoformat() + "Z",
-        "meta": meta,
-        "scores": {
-            "overall_score": overall_score,
-            "pillar_scores": pillar_scores,
-            "question_scores": question_scores,
-        },
-        "questions": (
-            questions.to_dict(orient="records")
-            if isinstance(questions, pd.DataFrame)
-            else []
-        ),
-        "responses": responses,
-        "ai_interpretation": {
-            "overall_summary": ai_summary_text,
-            "raw": ai_result,
-        },
-    }
-
-    embed_json_str = json.dumps(embed_payload, separators=(",", ":"), ensure_ascii=False)
-
     # ─────────────────────────────────────────────────────────────────────
-    # VISIBLE CONTENT (kept simple + consistent with your style)
-    # ─────────────────────────────────────────────────────────────────────
-
-    # Optional logo at top-left
-    if logo_path:
-        try:
-            logo = Image(logo_path, width=120, height=40, hAlign="LEFT")
-            story.append(logo)
-            story.append(Spacer(1, 12))
-        except Exception:
-            # Fail softly if logo cannot be loaded
-            pass
-
-    # Title
-    dept = meta.get("department") or meta.get("dept_label") or "Department"
-    month_label = meta.get("month_label") or meta.get("month") or ""
-    title_text = f"Monthly Scorecard — {dept}"
-    if month_label:
-        title_text += f" ({month_label})"
-
-    story.append(Paragraph(title_text, styles["ScorecardTitle"]))
-    story.append(Spacer(1, 6))
-
-    # Meta block
-    meta_items = [
-        ("Department", dept),
-        ("Month", month_label),
-        ("Production / Programme", meta.get("production") or meta.get("programme") or ""),
-        ("Staff member", meta.get("staff_name") or ""),
-        ("Role", meta.get("role") or ""),
-    ]
-
-    for label, value in meta_items:
-        if not value:
-            continue
-        story.append(Paragraph(label, styles["MetaLabel"]))
-        story.append(Paragraph(str(value), styles["MetaValue"]))
-
-    story.append(Spacer(1, 12))
-
-    # AI Summary section
-    story.append(Paragraph("AI Summary", styles["SectionHeading"]))
-
-    if ai_summary_text:
-        for para in str(ai_summary_text).split("\n\n"):
-            para = para.strip()
-            if not para:
-                continue
-            story.append(Paragraph(para, styles["ReportBody"]))
-            story.append(Spacer(1, 6))
-    else:
-        story.append(
-            Paragraph(
-                "No AI-generated summary was available for this report.",
-                styles["ReportBody"],
-            )
-        )
-        story.append(Spacer(1, 6))
-
-    # Question responses section
-    story.append(Paragraph("Question Responses", styles["SectionHeading"]))
-
-    if isinstance(questions, pd.DataFrame) and not questions.empty:
-        # Infer column names
-        pillar_col = "strategic_pillar" if "strategic_pillar" in questions.columns else None
-        metric_col = "metric" if "metric" in questions.columns else None
-
-        if "question_text" in questions.columns:
-            question_col = "question_text"
-        elif "question" in questions.columns:
-            question_col = "question"
-        else:
-            question_col = None
-
-        if "response_value" in questions.columns:
-            response_col = "response_value"
-        elif "response" in questions.columns:
-            response_col = "response"
-        elif "primary" in questions.columns:
-            response_col = "primary"
-        else:
-            response_col = None
-
-        notes_col = "notes" if "notes" in questions.columns else None
-
-        # Table headers
-        headers: list[str] = []
-        if pillar_col:
-            headers.append("Pillar")
-        if metric_col:
-            headers.append("Metric")
-        if question_col:
-            headers.append("Question")
-        if response_col:
-            headers.append("Response")
-        if notes_col:
-            headers.append("Notes")
-
-        data: list[list[str]] = [headers]
-
-        for _, row in questions.iterrows():
-            row_cells: list[str] = []
-            if pillar_col:
-                row_cells.append(str(row.get(pillar_col, "")) or "")
-            if metric_col:
-                row_cells.append(str(row.get(metric_col, "")) or "")
-            if question_col:
-                row_cells.append(str(row.get(question_col, "")) or "")
-            if response_col:
-                row_cells.append(str(row.get(response_col, "")) or "")
-            if notes_col:
-                row_cells.append(str(row.get(notes_col, "")) or "")
-            data.append(row_cells)
-
-        table = Table(data, repeatRows=1)
-        table.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, 0), 9),
-                    ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
-                    ("ALIGN", (0, 0), (-1, 0), "LEFT"),
-
-                    ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-                    ("FONTSIZE", (0, 1), (-1, -1), 8),
-                    ("VALIGN", (0, 1), (-1, -1), "TOP"),
-
-                    ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-                ]
-            )
-        )
-        story.append(table)
-    else:
-        story.append(
-            Paragraph(
-                "No question responses were available to display.",
-                styles["ReportBody"],
-            )
-        )
-
-    # ─────────────────────────────────────────────────────────────────────
-    # Page callbacks: metadata + JSON in Subject (no visual changes)
-    # ─────────────────────────────────────────────────────────────────────
-    def _on_first_page(canvas, doc_obj):
-        canvas.setTitle(title_text)
-        canvas.setAuthor(meta.get("staff_name", "") or "")
-        canvas.setSubject(JSON_PREFIX + embed_json_str)
-        # No extra drawing here, to preserve your visual layout
-
-    def _on_later_pages(canvas, doc_obj):
-        # Re-setting subject is harmless; no visual changes
-        canvas.setSubject(JSON_PREFIX + embed_json_str)
-
-    # Build PDF
-    doc.build(story, onFirstPage=_on_first_page, onLaterPages=_on_later_pages)
-    pdf_bytes = buffer.getvalue()
-    buffer.close()
-    return pdf_bytes
-
-
-    # ─────────────────────────────────────────────────────────────────────
-    # Header: logo, title, total score
+    # Header: logo, title, total score (your original layout)
     # ─────────────────────────────────────────────────────────────────────
     reporting_period = meta.get("month", "")  # still coming in as 'month'
     department = meta.get("department", "") or "—"
@@ -739,10 +528,10 @@ def build_scorecard_pdf(
         header_cells.append(logo_flowable)
     else:
         header_cells.append(Spacer(0.5 * inch, 0.5 * inch))
-    
+
     header_cells.append(title_table)
     header_cells.append(total_table)
-    
+
     # Content width is ~7.5" (Letter 8.5" minus 0.5" margins on each side),
     # so colWidths sum to 7.5 to align the score box with the right margin.
     header_table = Table(
@@ -753,15 +542,15 @@ def build_scorecard_pdf(
             [
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-    
+
                 # Logo column: nudge slightly left to counter whitespace in the PNG
                 ("LEFTPADDING", (0, 0), (0, 0), -4),
                 ("RIGHTPADDING", (0, 0), (0, 0), 6),
-    
+
                 # Title column: no extra padding on left, a bit of space before score box
                 ("LEFTPADDING", (1, 0), (1, 0), 0),
                 ("RIGHTPADDING", (1, 0), (1, 0), 12),
-    
+
                 # Score box column: small left padding, flush to the right margin
                 ("LEFTPADDING", (2, 0), (2, 0), 6),
                 ("RIGHTPADDING", (2, 0), (2, 0), 0),
@@ -777,7 +566,6 @@ def build_scorecard_pdf(
     # ─────────────────────────────────────────────────────────────────────
     # Executive summary – preserve paragraphs
     # ─────────────────────────────────────────────────────────────────────
-    overall_value = ai_result.get("overall_summary", "")
     paragraphs = _split_paragraphs(overall_value)
 
     if paragraphs:
@@ -901,14 +689,22 @@ def build_scorecard_pdf(
     story.append(_responses_table(questions, responses, styles))
 
     # ─────────────────────────────────────────────────────────────────────
-    # Footer
+    # Footer + metadata (JSON in Subject)
     # ─────────────────────────────────────────────────────────────────────
     def _footer(canvas, doc_):
+        # Basic footer
         canvas.saveState()
         canvas.setFont("Helvetica", 8)
         width, height = doc_.pagesize
         canvas.drawString(36, 20, "Alberta Ballet — Scorecard Report")
         canvas.drawRightString(width - 36, 20, f"Page {doc_.page}")
+
+        # Set PDF metadata (this is where JSON gets embedded)
+        pdf_title = f"Summary Scorecard — {department}"
+        canvas.setTitle(pdf_title)
+        canvas.setAuthor(str(meta.get("staff_name") or ""))
+        canvas.setSubject(JSON_PREFIX + embed_json_str)
+
         canvas.restoreState()
 
     doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
