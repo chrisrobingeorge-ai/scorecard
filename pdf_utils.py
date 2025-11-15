@@ -776,3 +776,194 @@ def build_scorecard_pdf(
     pdf_bytes = buffer.getvalue()
     buffer.close()
     return pdf_bytes
+
+def build_overall_board_pdf(
+    reporting_label: str,
+    dept_overview: pd.DataFrame,
+    ai_result: Dict[str, Any],
+    logo_path: str | None = None,
+) -> bytes:
+    """
+    Build a Board-facing PDF for the overall monthly scorecard.
+
+    - reporting_label: e.g. "November 2025" or "2025-11"
+    - dept_overview: DataFrame with at least columns:
+        ["department", "month_label", "overall_score"]
+    - ai_result: the dict returned by interpret_overall_scorecards(...)
+    """
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=LETTER,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36,
+    )
+
+    styles = getSampleStyleSheet()
+
+    # Reuse / parallel your existing style language
+    styles.add(
+        ParagraphStyle(
+            name="BoardTitle",
+            parent=styles["Title"],
+            fontName="Helvetica-Bold",
+            fontSize=20,
+            leading=24,
+            spaceAfter=6,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="BoardMetaLabel",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            textColor=colors.grey,
+            fontSize=9,
+            leading=11,
+            spaceAfter=1,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="BoardMetaValue",
+            parent=styles["BodyText"],
+            fontName="Helvetica",
+            fontSize=10,
+            leading=12,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="BoardSectionHeading",
+            parent=styles["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=14,
+            spaceBefore=12,
+            spaceAfter=6,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="BoardBody",
+            parent=styles["BodyText"],
+            fontName="Helvetica",
+            fontSize=10.5,
+            leading=14,
+        )
+    )
+
+    story: list[Flowable] = []
+
+    # Optional logo
+    if logo_path:
+        try:
+            img = Image(logo_path)
+            img._restrictSize(2 * inch, 2 * inch)
+            story.append(img)
+            story.append(Spacer(1, 12))
+        except Exception:
+            pass
+
+    # Title + reporting period
+    story.append(Paragraph("Overall Monthly Scorecard – Board Report", styles["BoardTitle"]))
+
+    if reporting_label:
+        story.append(Paragraph("Reporting period", styles["BoardMetaLabel"]))
+        story.append(Paragraph(str(reporting_label), styles["BoardMetaValue"]))
+        story.append(Spacer(1, 8))
+
+    # Departments overview table
+    if not dept_overview.empty:
+        story.append(Paragraph("Departments included", styles["BoardSectionHeading"]))
+
+        display_cols = ["department", "month_label", "overall_score"]
+        display_cols = [c for c in display_cols if c in dept_overview.columns]
+
+        table_data = [
+            [col.replace("_", " ").title() for col in display_cols]
+        ]
+
+        for _, row in dept_overview[display_cols].iterrows():
+            table_data.append([str(row.get(c, "")) for c in display_cols])
+
+        table = Table(
+            table_data,
+            style=TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, 0), 9),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 4),
+                    ("ALIGN", (0, 0), (-1, 0), "LEFT"),
+
+                    ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                    ("FONTSIZE", (0, 1), (-1, -1), 9),
+                    ("VALIGN", (0, 1), (-1, -1), "TOP"),
+
+                    ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+                ]
+            ),
+            hAlign="LEFT",
+        )
+        story.append(table)
+        story.append(Spacer(1, 12))
+
+    # Main Board narrative
+    story.append(Paragraph("Board Narrative", styles["BoardSectionHeading"]))
+
+    overall_text = (ai_result.get("overall_summary") or "").strip()
+
+    if not overall_text:
+        story.append(Paragraph("No Board report text was generated.", styles["BoardBody"]))
+    else:
+        # Split into paragraphs on blank lines for nicer layout
+        text = overall_text.replace("\r\n", "\n")
+        parts = [p.strip() for p in text.split("\n\n") if p.strip()]
+        for idx, para in enumerate(parts):
+            story.append(Paragraph(para, styles["BoardBody"]))
+            if idx < len(parts) - 1:
+                story.append(Spacer(1, 6))
+
+    # Optional: additional sections if the model returned them
+    risks = ai_result.get("risks") or []
+    if risks:
+        story.append(Spacer(1, 10))
+        story.append(Paragraph("Cross-cutting Risks / Concerns", styles["BoardSectionHeading"]))
+        for r in risks:
+            story.append(Paragraph(f"• {str(r)}", styles["BoardBody"]))
+
+    priorities = ai_result.get("priorities_next_month") or []
+    if priorities:
+        story.append(Spacer(1, 10))
+        story.append(Paragraph("Organisation-wide Priorities for Next Period", styles["BoardSectionHeading"]))
+        for p in priorities:
+            story.append(Paragraph(f"• {str(p)}", styles["BoardBody"]))
+
+    notes = (ai_result.get("notes_for_leadership") or "").strip()
+    if notes:
+        story.append(Spacer(1, 10))
+        story.append(Paragraph("Notes for Leadership", styles["BoardSectionHeading"]))
+        # Again, split on blank lines
+        parts = [p.strip() for p in notes.replace("\r\n", "\n").split("\n\n") if p.strip()]
+        for idx, para in enumerate(parts):
+            story.append(Paragraph(para, styles["BoardBody"]))
+            if idx < len(parts) - 1:
+                story.append(Spacer(1, 4))
+
+    # Footer with page numbers
+    def _footer(canvas, doc_):
+        canvas.saveState()
+        canvas.setFont("Helvetica", 8)
+        width, height = doc_.pagesize
+        canvas.drawString(36, 20, "Alberta Ballet — Overall Monthly Scorecard")
+        canvas.drawRightString(width - 36, 20, f"Page {doc_.page}")
+        canvas.restoreState()
+
+    doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
+
