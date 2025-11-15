@@ -582,3 +582,161 @@ def interpret_scorecard(
         "priorities_next_month": data.get("priorities_next_month", []) or [],
         "notes_for_leadership": data.get("notes_for_leadership", "") or "",
     }
+
+from typing import List, Dict, Any
+from textwrap import dedent
+
+
+def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str:
+    """
+    Build a single text prompt for an organisation-wide Board report
+    from department-level summaries extracted in overall_scorecard_app.py.
+
+    dept_summaries items are expected to look like:
+    {
+        "department": str,
+        "month": str | None,
+        "month_label": str | None,
+        "overall_score": float | None,
+        "pillar_scores": dict[str, float] | {},
+        "summary_text": str,
+        ...
+    }
+    """
+
+    header = dedent(
+        """
+        You are a senior strategy analyst for Alberta Ballet. You interpret *cross-department*
+        monthly scorecards in the context of the 2025–2030 strategic plan—a FIVE-YEAR
+        journey of transformation.
+
+        You will receive department-level scorecard summaries, each with:
+        - Department name
+        - Reporting month
+        - Overall 0–3 score (higher is better)
+        - Any available pillar scores (0–3)
+        - A narrative summary produced from that department's detailed scorecard responses
+
+        Using these inputs, write a single, integrated Board report that:
+
+        1. Summarises overall organisational performance this month, referencing departments by name.
+        2. Comments on progress against major strategic aims (e.g., artistic excellence, community impact,
+           financial resilience, talent development), based on what you can infer from the departmental summaries.
+        3. Identifies cross-cutting risks, tensions, or capacity constraints that the Board should be aware of.
+        4. Highlights notable strengths, achievements, or momentum.
+        5. Recommends 3–6 organisation-wide priorities for the next reporting period, phrased as clear actions
+           (e.g., "Consolidate…", "Invest further in…", "Stabilise…").
+
+        Write in a formal, Board-facing tone (not academic, not marketing copy). Assume the Board already knows
+        the organisation well; you don't need to reintroduce Alberta Ballet, only to interpret this month's results.
+
+        Here are the department summaries:
+        ────────────────────────────────────────────────────────
+        """
+    ).strip()
+
+    blocks: List[str] = []
+
+    for ds in dept_summaries:
+        dept = ds.get("department") or "Unknown department"
+        month_label = ds.get("month_label") or ds.get("month") or "Reporting period not specified"
+        overall_score = ds.get("overall_score")
+        pillar_scores = ds.get("pillar_scores") or {}
+        summary_text = (ds.get("summary_text") or "").strip()
+
+        if pillar_scores:
+            pillar_lines = [
+                f"- {name}: {float(val):.2f} / 3"
+                for name, val in pillar_scores.items()
+                if isinstance(val, (int, float))
+            ]
+            pillar_block = "\n".join(pillar_lines)
+        else:
+            pillar_block = "(No explicit pillar scores provided.)"
+
+        block = dedent(
+            f"""
+            === Department: {dept} ===
+            Reporting period: {month_label}
+            Overall score: {overall_score if overall_score is not None else 'N/A'} / 3
+            Pillar scores:
+            {pillar_block}
+
+            Department summary:
+            {summary_text or '[No summary text provided]'}
+            ────────────────────────────────────────────────────────
+            """
+        ).strip()
+
+        blocks.append(block)
+
+    return header + "\n\n" + "\n\n".join(blocks)
+
+
+def interpret_overall_scorecards(
+    dept_summaries: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Call OpenAI to produce a structured, Board-facing interpretation
+    of the *overall* monthly scorecard (across departments).
+
+    Returns a dict shaped similarly to interpret_scorecard, so you can
+    reuse patterns in your app and pdf_utils if you wish.
+    """
+
+    # Build the cross-department prompt
+    prompt = _build_overall_prompt_for_board(dept_summaries)
+
+    # Make the call – mirrors your interpret_scorecard pattern
+    try:
+        client = _get_openai_client()
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a senior strategy analyst for Alberta Ballet. "
+                        "You interpret *cross-department* monthly scorecards in the context of the "
+                        "2025–2030 strategic plan—a FIVE-YEAR journey of transformation. "
+                        "Each monthly report represents one step in a multi-year process. "
+                        "Not everything needs to be accomplished immediately. "
+                        "Your role is to assess incremental progress toward long-term goals, "
+                        "recognising that strategic initiatives unfold gradually over years. "
+                        "Avoid creating false urgency around issues that are simply at early stages. "
+                        "You produce deep, Board-ready narrative summaries in JSON format."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.2,
+        )
+        text = completion.choices[0].message.content if completion.choices else ""
+        try:
+            data = json.loads(text)
+        except Exception:
+            import re
+
+            # Same salvage pattern you use above: try to extract a JSON object
+            m = re.search(r"\{.*\}", text, re.S)
+            data = json.loads(m.group(0)) if m else {}
+    except Exception as e:
+        raise RuntimeError(str(e))
+
+    # Normalise the output so the overall app can treat it like a scorecard-style result.
+    # You can keep the keys the same as interpret_scorecard to make life easy.
+    return {
+        # This is your Board-level narrative:
+        "overall_summary": data.get("overall_summary", ""),
+        # Optionally allow the model to return sections like:
+        #   { "organisation_pillars": [...], "cross_cutting_risks": [...], ... }
+        "pillar_summaries": data.get("pillar_summaries", []) or [],
+        "production_summaries": data.get("production_summaries", []) or [],
+        "risks": data.get("risks", []) or [],
+        "priorities_next_month": data.get("priorities_next_month", []) or [],
+        "notes_for_leadership": data.get("notes_for_leadership", "") or "",
+        # And, if you ever want to debug:
+        "raw": data,
+        "prompt": prompt,
+    }
+
