@@ -1195,11 +1195,11 @@ def main():
     st.success("AI summary generated.")
 
     # ─────────────────────────────────────────────────────────────
-    # AI Interpretation (with editable Executive Summary)
+    # AI Interpretation (fully editable before PDF)
     # ─────────────────────────────────────────────────────────────
-    st.subheader("AI Interpretation")
+    st.subheader("AI Interpretation (editable)")
 
-    # ----- helper just for this block -----
+    # ----- helpers just for this block --------------------------------
     def _normalise_overall(val):
         """Turn overall_summary (string / list / dict) into a single editable string."""
         if isinstance(val, list):
@@ -1214,71 +1214,155 @@ def main():
             return str(val["text"])
         return str(val or "")
 
-    # ── Editable Executive Summary ───────────────────────────────
+    def _normalise_list(val):
+        """Turn list-like fields (risks, priorities) into newline-separated text."""
+        if not val:
+            return ""
+        if isinstance(val, list):
+            return "\n".join(str(x) for x in val if str(x).strip())
+        return str(val or "")
+
+    # ── Executive Summary (editable) ──────────────────────────────
     raw_overall = ai_result.get("overall_summary", "")
     default_overall = _normalise_overall(raw_overall)
 
-    st.markdown("### Executive Summary (editable)")
+    st.markdown("### Executive Summary")
     editable_overall = st.text_area(
         "You can edit this summary before exporting to PDF:",
         value=default_overall,
         height=260,
     )
-
-    # Whatever is in this box becomes the official summary used downstream
     ai_result["overall_summary"] = editable_overall
 
-    # Optionally show it immediately below as the “final” version
+    # Optional immediate display of the final version
     if editable_overall.strip():
-        st.markdown("#### Final Executive Summary")
+        st.markdown("#### Final Executive Summary (will appear in PDF)")
         st.write(editable_overall)
         st.write("")
 
-    # ── Pillar / production details (read-only AI output) ────────
+    # ── Pillar summaries (editable) ──────────────────────────────
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
+    st.markdown("### Strategic Summary by Pillar")
 
-    st.markdown("#### Strategic Summary by Pillar")
     if pillar_summaries:
-        for ps in pillar_summaries:
-            st.markdown(
-                f"**{ps.get('strategic_pillar', 'Pillar')} — {ps.get('score_hint', '')}**"
-            )
-            st.write(ps.get("summary", ""))
+        for i, ps in enumerate(pillar_summaries):
+            pillar_label = ps.get("strategic_pillar", "Pillar") or "Pillar"
+            score_hint_val = str(ps.get("score_hint", "") or "")
+            summary_val = str(ps.get("summary", "") or "")
 
-    # By production / programme (if available)
+            st.markdown(f"#### Pillar {i+1}: {pillar_label}")
+
+            new_pillar_label = st.text_input(
+                f"Pillar name (Pillar {i+1})",
+                value=pillar_label,
+                key=f"pillar_name_{i}",
+            )
+            new_score_hint = st.text_input(
+                f"Score hint (Pillar {i+1})",
+                value=score_hint_val,
+                key=f"pillar_score_{i}",
+            )
+            new_summary = st.text_area(
+                f"Pillar narrative (Pillar {i+1})",
+                value=summary_val,
+                height=140,
+                key=f"pillar_summary_{i}",
+            )
+
+            # write back into ai_result
+            ps["strategic_pillar"] = new_pillar_label
+            ps["score_hint"] = new_score_hint
+            ps["summary"] = new_summary
+
+    # ── By Production / Programme (editable text) ─────────────────
     prod_summaries = ai_result.get("production_summaries", []) or []
     if prod_summaries:
-        st.markdown("#### By Production / Programme")
-        for prod in prod_summaries:
+        st.markdown("### By Production / Programme")
+
+        for pi, prod in enumerate(prod_summaries):
+            if not isinstance(prod, dict):
+                continue
+
             pname = prod.get("production") or "General"
-            st.markdown(f"**{pname}**")
-            for ps in (prod.get("pillars") or []):
-                pillar_name = ps.get("pillar", "Category")
-                score_hint = ps.get("score_hint", "")
-                heading = f"- **{pillar_name}**"
-                if score_hint:
-                    heading += f" — {score_hint}"
-                st.markdown(heading)
-                summary = ps.get("summary", "")
-                if summary:
-                    st.write(summary)
+            st.markdown(f"#### Production {pi+1}: {pname}")
 
-    risks = ai_result.get("risks", []) or []
-    if risks:
-        st.markdown("#### Key Risks / Concerns")
-        for r in risks:
-            st.write(f"- {r}")
+            # allow renaming the production label if desired
+            new_pname = st.text_input(
+                f"Production name (Production {pi+1})",
+                value=pname,
+                key=f"prod_name_{pi}",
+            )
+            prod["production"] = new_pname
 
-    priorities = ai_result.get("priorities_next_month", []) or []
-    if priorities:
-        st.markdown("#### Priorities for Next Period")
-        for p in priorities:
-            st.write(f"- {p}")
+            pillars = prod.get("pillars") or []
+            for pj, ps in enumerate(pillars):
+                pillar_name = ps.get("pillar", "Category") or "Category"
+                score_hint = str(ps.get("score_hint", "") or "")
+                summary = str(ps.get("summary", "") or "")
 
-    nfl = ai_result.get("notes_for_leadership", "")
-    if nfl:
-        st.markdown("#### Notes for Leadership")
-        st.write(nfl)
+                st.markdown(f"- **Pillar {pj+1}: {pillar_name}**")
+
+                new_pillar_name = st.text_input(
+                    f"  Pillar name (Prod {pi+1}, Pillar {pj+1})",
+                    value=pillar_name,
+                    key=f"prod_{pi}_pillar_name_{pj}",
+                )
+                new_pillar_score = st.text_input(
+                    f"  Score hint (Prod {pi+1}, Pillar {pj+1})",
+                    value=score_hint,
+                    key=f"prod_{pi}_pillar_score_{pj}",
+                )
+                new_pillar_summary = st.text_area(
+                    f"  Narrative (Prod {pi+1}, Pillar {pj+1})",
+                    value=summary,
+                    height=120,
+                    key=f"prod_{pi}_pillar_summary_{pj}",
+                )
+
+                ps["pillar"] = new_pillar_name
+                ps["score_hint"] = new_pillar_score
+                ps["summary"] = new_pillar_summary
+
+    # ── Risks (editable) ─────────────────────────────────────────
+    risks_raw = ai_result.get("risks", []) or []
+    risks_default = _normalise_list(risks_raw)
+
+    st.markdown("### Key Risks / Concerns")
+    risks_edited = st.text_area(
+        "One risk per line:",
+        value=risks_default,
+        height=140,
+    )
+    ai_result["risks"] = [
+        line.strip() for line in risks_edited.splitlines() if line.strip()
+    ]
+
+    # ── Priorities (editable) ────────────────────────────────────
+    priorities_raw = ai_result.get("priorities_next_month", []) or []
+    priorities_default = _normalise_list(priorities_raw)
+
+    st.markdown("### Priorities for Next Period")
+    priorities_edited = st.text_area(
+        "One priority per line:",
+        value=priorities_default,
+        height=140,
+    )
+    ai_result["priorities_next_month"] = [
+        line.strip() for line in priorities_edited.splitlines() if line.strip()
+    ]
+
+    # ── Notes for Leadership (editable) ─────────────────────────
+    nfl_raw = ai_result.get("notes_for_leadership", "") or ""
+    nfl_default = str(nfl_raw)
+
+    st.markdown("### Notes for Leadership")
+    nfl_edited = st.text_area(
+        "Notes for Leadership:",
+        value=nfl_default,
+        height=160,
+    )
+    ai_result["notes_for_leadership"] = nfl_edited
+
 
     # ─────────────────────────────────────────────────────────────
     # PDF — uses the SAME scope as AI (questions_for_ai / responses_for_ai)
@@ -1290,7 +1374,7 @@ def main():
             questions_for_ai,
             responses_for_ai,
             ai_result,
-            logo_path="assets/alberta_ballet_logo.png",  # 👈 add this
+            logo_path="assets/alberta_ballet_logo.png",
         )
         st.download_button(
             label="Download PDF report",
