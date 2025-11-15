@@ -428,12 +428,41 @@ def build_scorecard_pdf(
     overall_value = ai_result.get("overall_summary", "") or ""
     ai_summary_text = _to_plain_text(overall_value)
 
-    # Build embedded JSON payload using your helper
+    # Enrich questions with response_value for the embedded JSON payload
+    questions_for_payload = questions.copy()
+
+    resp_values: list[str] = []
+    for _, row in questions_for_payload.iterrows():
+        qid = row.get("question_id")
+        qid_str = str(qid)
+
+        raw_val = responses.get(qid_str, responses.get(qid, ""))
+
+        # Mimic the logic from _responses_table to normalise responses
+        if isinstance(raw_val, dict):
+            primary = raw_val.get("primary", "")
+            desc = raw_val.get("description", "")
+            if desc:
+                if primary:
+                    value_str = f"{primary} — {desc}"
+                else:
+                    value_str = desc
+            else:
+                value_str = str(primary)
+        else:
+            value_str = "" if raw_val is None else str(raw_val)
+
+        resp_values.append(value_str)
+
+    questions_for_payload["response_value"] = resp_values
+
+    # Build embedded JSON payload using your helper (now includes response_value)
     embed_json_str = _build_embed_payload(
         meta=meta,
-        questions_df=questions,
+        questions_df=questions_for_payload,
         ai_summary_text=ai_summary_text,
     )
+
 
     # ─────────────────────────────────────────────────────────────────────
     # Header: logo, title, total score (your original layout)
