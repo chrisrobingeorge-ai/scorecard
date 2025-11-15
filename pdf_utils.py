@@ -939,45 +939,6 @@ def build_overall_board_pdf(
         story.append(table)
         story.append(Spacer(1, 12))
 
-
-    # ─────────────────────────────────────────────────────────────────────
-    # Departments overview table
-    # ─────────────────────────────────────────────────────────────────────
-    if not dept_overview.empty:
-        story.append(Paragraph("Departments included", styles["BoardSectionHeading"]))
-
-        display_cols = ["department", "month_label", "overall_score"]
-        display_cols = [c for c in display_cols if c in dept_overview.columns]
-
-        table_data = [
-            [col.replace("_", " ").title() for col in display_cols]
-        ]
-
-        for _, row in dept_overview[display_cols].iterrows():
-            table_data.append([str(row.get(c, "")) for c in display_cols])
-
-        table = Table(
-            table_data,
-            style=TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, 0), 9),
-                    ("BOTTOMPADDING", (0, 0), (-1, 0), 4),
-                    ("ALIGN", (0, 0), (-1, 0), "LEFT"),
-
-                    ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-                    ("FONTSIZE", (0, 1), (-1, -1), 9),
-                    ("VALIGN", (0, 1), (-1, -1), "TOP"),
-
-                    ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-                ]
-            ),
-            hAlign="LEFT",
-        )
-        story.append(table)
-        story.append(Spacer(1, 12))
-
     # ─────────────────────────────────────────────────────────────────────
     # Main Board narrative
     # ─────────────────────────────────────────────────────────────────────
