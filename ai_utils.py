@@ -615,7 +615,7 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
         - Reporting month
         - Overall 0–3 score (higher is better)
         - Any available pillar scores (0–3)
-        - A narrative summary produced from that department's detailed scorecard responses
+        - A narrative summary produced from that department's detailed scorecard responses.
 
         Using these inputs, write a single, integrated Board report that:
 
@@ -630,7 +630,61 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
         Write in a formal, Board-facing tone (not academic, not marketing copy). Assume the Board already knows
         the organisation well; you don't need to reintroduce Alberta Ballet, only to interpret this month's results.
 
-        Here are the department summaries:
+        ────────────────────────────────────────────────────────
+        OUTPUT FORMAT (STRICT CONTRACT):
+
+        Respond with **JSON only**, no prose before or after, and no markdown or backticks.
+
+        Return a single JSON object with exactly these top-level keys:
+
+        {
+          "overall_summary": string,
+          "pillar_summaries": [
+            {
+              "strategic_pillar": string,
+              "summary": string
+            },
+            ...
+          ],
+          "risks": [
+            string,
+            ...
+          ],
+          "priorities_next_month": [
+            string,
+            ...
+          ],
+          "notes_for_leadership": string
+        }
+
+        - overall_summary:
+            A coherent narrative of 2–4 paragraphs (as one long string) for the Board,
+            interpreting performance across all departments.
+        - pillar_summaries:
+            Optional but recommended. For each major cross-cutting pillar you can infer
+            (e.g., Artistic Excellence, Community Impact, Financial Resilience, Talent Development),
+            include:
+              • strategic_pillar: the pillar name as a human-readable label.
+              • summary: 1 short paragraph (3–6 sentences) about that pillar across departments.
+            If you cannot confidently infer any pillars, return an empty array [].
+        - risks:
+            3–8 short bullet-style sentences (strings) describing cross-cutting risks or
+            areas to watch over time. Use measured language ("worth monitoring",
+            "could benefit from sustained attention") rather than crisis framing.
+        - priorities_next_month:
+            3–6 short, action-oriented bullet-style strings describing organisation-wide
+            priorities for the next reporting period, phrased as next steps in a multi-year journey.
+        - notes_for_leadership:
+            1–2 paragraphs (4–8 sentences) directly addressing the CEO and Board, highlighting
+            the most important strategic signals from this month in the context of the
+            multi-year transformation.
+
+        Do NOT include any additional top-level keys.
+        Do NOT wrap the JSON in backticks.
+        Do NOT include explanations, comments, or markdown—only the JSON object.
+
+        Below are the department summaries you should base your analysis on.
+        Treat them as the complete input for this month; do not invent additional departments.
         ────────────────────────────────────────────────────────
         """
     ).strip()
@@ -670,8 +724,7 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
 
         blocks.append(block)
 
-    return header + "\n\n" + "\n\n".join(blocks)
-
+    return header + "\n\nDEPARTMENT_SUMMARIES:\n\n" + "\n\n".join(blocks)
 
 def interpret_overall_scorecards(
     dept_summaries: List[Dict[str, Any]],
