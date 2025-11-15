@@ -586,7 +586,7 @@ def build_scorecard_pdf(
 
     # Title block
     title_table = Table(
-        [[Paragraph("Summary Scorecard", styles["ScorecardTitle"])]],
+        [[Paragraph("Strategic Summary Scorecard", styles["ScorecardTitle"])]],
         colWidths=[4.0 * inch],
         style=TableStyle(
             [
