@@ -8,16 +8,31 @@ from typing import Any, Dict, List
 import pandas as pd
 from app_config import OBJECTIVES_DF
 
-def _get_openai_client():
+def _get_openai_api_key():
     """
-    Lazy-initialize the OpenAI client for SDK v1+.
-    Reads API key from Streamlit secrets (preferred) or env.
-    Raises RuntimeError with a helpful message if misconfigured.
+    Get OpenAI API key from Streamlit secrets (preferred) or environment variable.
+    
+    Returns:
+        str: The API key
+        
+    Raises:
+        RuntimeError: If API key is not found
+        
+    Example:
+        In Streamlit secrets (.streamlit/secrets.toml):
+        ```toml
+        OPENAI_API_KEY = "sk-..."
+        ```
+        
+        Or as environment variable:
+        ```bash
+        export OPENAI_API_KEY="sk-..."
+        ```
     """
     # Try to read from Streamlit secrets if available
     api_key = None
     try:
-        import streamlit as st  # lightweight import is fine
+        import streamlit as st
         api_key = st.secrets.get("OPENAI_API_KEY", None)
     except Exception:
         pass
@@ -25,8 +40,20 @@ def _get_openai_client():
     api_key = api_key or os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError(
-            "Missing OPENAI_API_KEY. Add it in Streamlit Secrets or as an environment variable."
+            "Missing OPENAI_API_KEY. Add it in Streamlit Secrets (.streamlit/secrets.toml) "
+            "or as an environment variable."
         )
+    
+    return api_key
+
+
+def _get_openai_client():
+    """
+    Lazy-initialize the OpenAI client for SDK v1+.
+    Reads API key from Streamlit secrets (preferred) or env.
+    Raises RuntimeError with a helpful message if misconfigured.
+    """
+    api_key = _get_openai_api_key()
 
     # Import SDK v1+
     try:
@@ -46,6 +73,148 @@ def _is_empty_value(v: Any) -> bool:
     if isinstance(v, str) and v.strip() == "":
         return True
     return False
+
+
+def send_to_llm_openai(
+    prompt: str,
+    model: str = "gpt-4o-mini",
+    temperature: float = 0.2,
+    max_tokens: int = None,
+    system_prompt: str = None,
+    **extra_kwargs
+) -> str:
+    """
+    Send a prompt to OpenAI's chat completion API and return the response text.
+    
+    This is the default LLM provider implementation using the OpenAI Python SDK.
+    
+    Args:
+        prompt: The user prompt to send to the model
+        model: The OpenAI model to use (default: "gpt-4o-mini")
+        temperature: Sampling temperature 0-2 (default: 0.2 for consistent outputs)
+        max_tokens: Maximum tokens in the response (default: None, model decides)
+        system_prompt: Optional system prompt to guide the model's behavior
+        **extra_kwargs: Additional parameters to pass to the OpenAI API
+        
+    Returns:
+        str: The model's response text
+        
+    Raises:
+        RuntimeError: If OpenAI SDK is not installed or API key is missing
+        
+    Example:
+        >>> response = send_to_llm_openai(
+        ...     "Summarize this data...",
+        ...     model="gpt-4o-mini",
+        ...     temperature=0.2
+        ... )
+    """
+    try:
+        from openai import OpenAI
+    except ImportError as e:
+        raise RuntimeError(
+            "OpenAI SDK not installed. Install it with: pip install openai>=1.51.0"
+        ) from e
+    
+    api_key = _get_openai_api_key()
+    client = OpenAI(api_key=api_key)
+    
+    # Build messages
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+    
+    # Prepare API call parameters
+    api_params = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+    }
+    
+    if max_tokens is not None:
+        api_params["max_tokens"] = max_tokens
+    
+    # Merge extra kwargs
+    api_params.update(extra_kwargs)
+    
+    # Make the API call
+    completion = client.chat.completions.create(**api_params)
+    
+    # Extract response
+    if completion.choices:
+        return completion.choices[0].message.content or ""
+    return ""
+
+
+def send_to_llm(
+    prompt: str,
+    model: str = "gpt-4o-mini",
+    temperature: float = 0.2,
+    max_tokens: int = None,
+    system_prompt: str = None,
+    llm_call_fn = None,
+    **extra_kwargs
+) -> str:
+    """
+    Pluggable function to send a prompt to an LLM and return the response.
+    
+    By default, uses OpenAI via send_to_llm_openai(). You can provide a custom
+    llm_call_fn to use a different provider (e.g., Anthropic, local models, etc.).
+    
+    Args:
+        prompt: The user prompt to send to the model
+        model: The model identifier (default: "gpt-4o-mini")
+        temperature: Sampling temperature (default: 0.2)
+        max_tokens: Maximum tokens in response (default: None)
+        system_prompt: Optional system prompt
+        llm_call_fn: Optional custom function with signature:
+            fn(prompt, model, temperature, max_tokens, system_prompt, **kwargs) -> str
+        **extra_kwargs: Additional provider-specific parameters
+        
+    Returns:
+        str: The model's response text
+        
+    Raises:
+        NotImplementedError: If openai package is not installed and no custom llm_call_fn provided
+        RuntimeError: If API key is missing or other configuration errors
+        
+    Example with default OpenAI:
+        >>> result = send_to_llm("Analyze this scorecard...")
+        
+    Example with custom provider:
+        >>> def my_llm(prompt, **kwargs):
+        ...     # Custom LLM logic here
+        ...     return "Custom response"
+        >>> result = send_to_llm("prompt", llm_call_fn=my_llm)
+    """
+    if llm_call_fn is not None:
+        # Use custom LLM provider
+        return llm_call_fn(
+            prompt=prompt,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            system_prompt=system_prompt,
+            **extra_kwargs
+        )
+    
+    # Default to OpenAI
+    try:
+        return send_to_llm_openai(
+            prompt=prompt,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            system_prompt=system_prompt,
+            **extra_kwargs
+        )
+    except ImportError:
+        raise NotImplementedError(
+            "OpenAI SDK not installed. Either:\n"
+            "1. Install it with: pip install openai>=1.51.0, or\n"
+            "2. Provide your own llm_call_fn parameter to use a different LLM provider"
+        )
 
 
 def _build_prompt(
@@ -460,34 +629,63 @@ def interpret_scorecard(
     meta: Dict[str, Any],
     questions_df: pd.DataFrame,
     responses: Dict[str, Dict[str, Any]],
+    llm_call_fn = None,
 ) -> Dict[str, Any]:
     """
-    Call OpenAI to produce a structured interpretation of the scorecard.
-    Returns a dict with keys that app.py expects.
+    Call an LLM to produce a structured interpretation of the scorecard.
+    
+    By default uses OpenAI, but accepts an optional llm_call_fn parameter
+    for using alternative LLM providers.
+    
+    Args:
+        meta: Metadata dict with department, month, etc.
+        questions_df: DataFrame of questions with their metadata
+        responses: Dict mapping question_id to {primary, description} answers
+        llm_call_fn: Optional custom LLM function. Should have signature:
+            fn(prompt, model, temperature, max_tokens, system_prompt, **kwargs) -> str
+            If None, uses default OpenAI implementation.
+    
+    Returns:
+        dict: Structured analysis with keys:
+            - overall_summary (str)
+            - pillar_summaries (list)
+            - production_summaries (list)
+            - risks (list)
+            - priorities_next_month (list)
+            - notes_for_leadership (str)
+            
+    Raises:
+        RuntimeError: If LLM configuration fails or API returns errors
+        
+    Example:
+        >>> meta = {"department": "Artistic", "month": "2024-01"}
+        >>> result = interpret_scorecard(meta, questions_df, responses)
+        
+    Example with custom LLM:
+        >>> def my_llm(prompt, **kwargs):
+        ...     return '{"overall_summary": "..."}'
+        >>> result = interpret_scorecard(meta, df, responses, llm_call_fn=my_llm)
     """
 
     # Build a strategy-aware prompt that joins questions + answers + objectives
     prompt = _build_prompt_objective_aware(meta, questions_df, responses)
+    
+    system_prompt = (
+        "You are a senior strategy analyst for Alberta Ballet. "
+        "You interpret monthly scorecards in the context of the 2025–2030 strategic plan "
+        "and produce deep, board-ready narrative summaries in JSON format."
+    )
 
-    # Make the call
+    # Make the call using the pluggable send_to_llm function
     try:
-        client = _get_openai_client()
-        completion = client.chat.completions.create(
+        text = send_to_llm(
+            prompt=prompt,
             model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a senior strategy analyst for Alberta Ballet. "
-                        "You interpret monthly scorecards in the context of the 2025–2030 strategic plan "
-                        "and produce deep, board-ready narrative summaries in JSON format."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
             temperature=0.2,
+            system_prompt=system_prompt,
+            llm_call_fn=llm_call_fn,
         )
-        text = completion.choices[0].message.content if completion.choices else ""
+        
         try:
             data = json.loads(text)
         except Exception:
