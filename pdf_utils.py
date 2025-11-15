@@ -459,11 +459,14 @@ def build_scorecard_pdf(
     total_score = sum(score_values) / len(score_values) if score_values else None
 
     # ─────────────────────────────────────────────────────────────────────
-    # Enrich questions with response_value for the JSON payload
+    # Enrich questions with response_value + pillar_score for JSON payload
     # ─────────────────────────────────────────────────────────────────────
     questions_for_payload = questions.copy()
 
     resp_values: list[str] = []
+    pillar_scores_for_rows: list[float | None] = []
+    overall_scores_for_rows: list[float | None] = []
+
     for _, row in questions_for_payload.iterrows():
         qid = row.get("question_id")
         qid_str = str(qid)
@@ -486,7 +489,18 @@ def build_scorecard_pdf(
 
         resp_values.append(value_str)
 
+        # Match this question’s pillar to the pillar_score_map we built above
+        sp_key_raw = row.get("strategic_pillar", "")
+        sp_key = _to_plain_text(sp_key_raw).strip()
+        pillar_scores_for_rows.append(pillar_score_map.get(sp_key))
+
+        # Every row from this PDF shares the same overall_score
+        overall_scores_for_rows.append(total_score)
+
     questions_for_payload["response_value"] = resp_values
+    questions_for_payload["pillar_score"] = pillar_scores_for_rows
+    questions_for_payload["overall_score"] = overall_scores_for_rows
+
 
     # ─────────────────────────────────────────────────────────────────────
     # Build embedded JSON payload (meta + questions + scores + summary)
