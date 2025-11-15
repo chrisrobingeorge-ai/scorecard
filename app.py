@@ -1193,11 +1193,8 @@ def main():
     if "ai_result" not in st.session_state:
         st.session_state["ai_result"] = None
 
-    # Button to force a fresh AI run
-    regen_ai = st.button("↻ Regenerate AI interpretation")
-
-    # Run AI only if we click the button or there is no cached result yet
-    if regen_ai or st.session_state["ai_result"] is None:
+    # Run AI once (first time after Generate button); reuse cached result on reruns
+    if st.session_state["ai_result"] is None:
         try:
             with st.spinner("Asking AI to interpret this scorecard..."):
                 ai_result = interpret_scorecard(
@@ -1220,6 +1217,7 @@ def main():
         st.session_state["ai_result"] = ai_result
     else:
         ai_result = st.session_state["ai_result"]
+
 
     # ----- helpers just for this block --------------------------------
     def _normalise_overall(val):
