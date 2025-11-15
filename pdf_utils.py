@@ -873,7 +873,7 @@ def build_overall_board_pdf(
     else:
         header_cells.append(Spacer(0.5 * inch, 0.5 * inch))
 
-    header_cells.append(Paragraph("Overall Monthly Scorecard – Board Report", styles["BoardTitle"]))
+    header_cells.append(Paragraph("Summary Scorecard", styles["BoardTitle"]))
 
     # Two-column header: logo + title only, full width = 7.5"
     header_table = Table(
