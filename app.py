@@ -1194,21 +1194,50 @@ def main():
 
     st.success("AI summary generated.")
 
-    # AI Interpretation
+    # ─────────────────────────────────────────────────────────────
+    # AI Interpretation (with editable Executive Summary)
+    # ─────────────────────────────────────────────────────────────
     st.subheader("AI Interpretation")
 
-    overall = ai_result.get("overall_summary", "")
+    # ----- helper just for this block -----
+    def _normalise_overall(val):
+        """Turn overall_summary (string / list / dict) into a single editable string."""
+        if isinstance(val, list):
+            parts = []
+            for v in val:
+                if isinstance(v, dict) and "text" in v:
+                    parts.append(str(v["text"]))
+                else:
+                    parts.append(str(v))
+            return "\n\n".join(p for p in parts if str(p).strip())
+        if isinstance(val, dict) and "text" in val:
+            return str(val["text"])
+        return str(val or "")
+
+    # ── Editable Executive Summary ───────────────────────────────
+    raw_overall = ai_result.get("overall_summary", "")
+    default_overall = _normalise_overall(raw_overall)
+
+    st.markdown("### Executive Summary (editable)")
+    editable_overall = st.text_area(
+        "You can edit this summary before exporting to PDF:",
+        value=default_overall,
+        height=260,
+    )
+
+    # Whatever is in this box becomes the official summary used downstream
+    ai_result["overall_summary"] = editable_overall
+
+    # Optionally show it immediately below as the “final” version
+    if editable_overall.strip():
+        st.markdown("#### Final Executive Summary")
+        st.write(editable_overall)
+        st.write("")
+
+    # ── Pillar / production details (read-only AI output) ────────
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
 
-    # Strategic Summary (overall line + pillars)
-    st.markdown("#### Strategic Summary")
-
-    # Overall line at the top of Strategic Summary
-    if overall:
-        st.write(overall)
-        st.write("")  # small spacing
-
-    # Then the per-pillar entries
+    st.markdown("#### Strategic Summary by Pillar")
     if pillar_summaries:
         for ps in pillar_summaries:
             st.markdown(
@@ -1242,7 +1271,7 @@ def main():
 
     priorities = ai_result.get("priorities_next_month", []) or []
     if priorities:
-        st.markdown("#### Priorities for Next Month")
+        st.markdown("#### Priorities for Next Period")
         for p in priorities:
             st.write(f"- {p}")
 
