@@ -6,6 +6,7 @@ from io import BytesIO
 from typing import Dict, Any
 
 import json
+import re
 import pandas as pd
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -68,6 +69,21 @@ def _safe_paragraph(text: Any, style: ParagraphStyle, allow_markup: bool = False
     return Paragraph(s, style)
 
 
+def _strip_objective_codes(text: str) -> str:
+    """
+    Remove internal objective codes like ART1 / ART2 / ART3 from narrative text.
+    """
+    if not text:
+        return ""
+    # Remove "(ART1)" style codes
+    s = re.sub(r"\(ART[0-9]+\)", "", text)
+    # Remove bare ART1 / ART2 tokens
+    s = re.sub(r"\bART[0-9]+\b", "", s)
+    # Normalise excess whitespace
+    s = re.sub(r"\s{2,}", " ", s)
+    return s.strip()
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Score utilities
 # ─────────────────────────────────────────────────────────────────────────────
@@ -79,8 +95,6 @@ def _parse_score_hint(score_hint: str | None) -> float | None:
     text = str(score_hint)
 
     # Try to find a fractional pattern like ``2/3`` or ``11 / 12``.
-    import re
-
     frac_match = re.search(r"(\d+(?:\.\d+)?)\s*/\s*(\d+(?:\.\d+)?)", text)
     if frac_match:
         num = float(frac_match.group(1))
@@ -120,11 +134,24 @@ def _score_display(score: float | None) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # Tables
 # ─────────────────────────────────────────────────────────────────────────────
-def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]) -> Table:
+def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles) -> Table:
     """
-    Build a simple 2-column table of metric vs response (primary + description).
+    Build a simple 2-column table of metric vs response (primary + description),
+    with wrapped text in each cell.
     """
-    data: list[list[Any]] = [["Pillar / Production / Metric", "Response"]]
+    body_style = ParagraphStyle(
+        name="TableBody",
+        parent=styles["BodyText"],
+        fontSize=8,
+        leading=10,
+    )
+
+    data: list[list[Any]] = [
+        [
+            Paragraph("Pillar / Production / Metric", body_style),
+            Paragraph("Response", body_style),
+        ]
+    ]
 
     for _, row in questions.sort_values("display_order").iterrows():
         qid = row["question_id"]
@@ -146,7 +173,9 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]) -> Tabl
         else:
             value_str = str(raw_val)
 
-        data.append([label, value_str])
+        label_p = Paragraph(xml_escape(label), body_style)
+        value_p = Paragraph(xml_escape(value_str), body_style)
+        data.append([label_p, value_p])
 
     # Base styling
     style_cmds = [
@@ -154,7 +183,6 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]) -> Tabl
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
         ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("FONTSIZE", (0, 0), (-1, -1), 8),
         ("LEFTPADDING", (0, 0), (-1, -1), 4),
         ("RIGHTPADDING", (0, 0), (-1, -1), 4),
         ("TOPPADDING", (0, 0), (-1, -1), 2),
@@ -266,6 +294,14 @@ def build_scorecard_pdf(
             spaceAfter=1,
         )
     )
+    styles.add(
+        ParagraphStyle(
+            name="ScoreValue",
+            parent=styles["Title"],
+            fontSize=14,
+            leading=16,
+        )
+    )
 
     story: list[Flowable] = []
 
@@ -292,7 +328,7 @@ def build_scorecard_pdf(
     total_table = Table(
         [
             [Paragraph("<b>Total score</b>", styles["Small"])],
-            [Paragraph(total_value, styles["Title"])],
+            [Paragraph(total_value, styles["ScoreValue"])],
         ],
         style=TableStyle(
             [
@@ -300,15 +336,15 @@ def build_scorecard_pdf(
                 ("TEXTCOLOR", (0, 0), (-1, -1), colors.white if total_score is not None else colors.black),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("BOX", (0, 0), (-1, -1), 0.75, colors.black),
-                ("TOPPADDING", (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("BOX", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
             ]
         ),
-        colWidths=[2.0 * inch],
-        rowHeights=[0.4 * inch, 0.9 * inch],
+        colWidths=[1.7 * inch],
+        rowHeights=[0.28 * inch, 0.45 * inch],
     )
 
     # Meta info
@@ -392,7 +428,7 @@ def build_scorecard_pdf(
 
     header_table = Table(
         [header_cells],
-        colWidths=[1.2 * inch, 3.6 * inch, 2.2 * inch],
+        colWidths=[1.2 * inch, 3.8 * inch, 1.6 * inch],
         style=TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -409,13 +445,22 @@ def build_scorecard_pdf(
     story.append(Spacer(1, 12))
 
     # ─────────────────────────────────────────────────────────────────────
-    # Executive summary
+    # Executive summary – preserve paragraphs, strip ART codes
     # ─────────────────────────────────────────────────────────────────────
-    overall = _to_plain_text(ai_result.get("overall_summary", "") or "")
-    if overall:
+    overall_raw = _to_plain_text(ai_result.get("overall_summary", "") or "")
+    overall_clean = _strip_objective_codes(overall_raw)
+
+    if overall_clean.strip():
         story.append(Paragraph("Executive Summary", styles["SectionHeading"]))
-        story.append(_safe_paragraph(overall, styles["BodyText"]))
-        story.append(Spacer(1, 12))
+
+        # Split on blank lines so we preserve paragraph breaks from the AI text
+        paragraphs = [p.strip() for p in overall_clean.split("\n\n") if p.strip()]
+        for idx, para in enumerate(paragraphs):
+            story.append(_safe_paragraph(para, styles["BodyText"]))
+            if idx < len(paragraphs) - 1:
+                story.append(Spacer(1, 4))
+
+        story.append(Spacer(1, 10))
 
     # ─────────────────────────────────────────────────────────────────────
     # Strategic pillars – narrative format
@@ -424,9 +469,14 @@ def build_scorecard_pdf(
         story.append(Paragraph("Strategic Pillars", styles["SectionHeading"]))
 
         for ps in pillar_summaries:
-            pillar_name = _to_plain_text(ps.get("strategic_pillar", "Pillar")).strip() or "Pillar"
+            pillar_name_raw = _to_plain_text(ps.get("strategic_pillar", "Pillar")).strip() or "Pillar"
+            pillar_name = _strip_objective_codes(pillar_name_raw)
+
             score_hint_raw = _to_plain_text(ps.get("score_hint", "")).strip()
-            summary_text = _to_plain_text(ps.get("summary", "")).strip()
+            score_hint_clean = _strip_objective_codes(score_hint_raw)
+
+            summary_text_raw = _to_plain_text(ps.get("summary", "")).strip()
+            summary_text = _strip_objective_codes(summary_text_raw)
 
             # Parse numeric score to display as X.XX / 3 but show original hint label too
             score_value = _parse_score_hint(score_hint_raw)
@@ -436,8 +486,8 @@ def build_scorecard_pdf(
             else:
                 heading_text = pillar_name
 
-            if score_hint_raw:
-                heading_text = f"{heading_text} ({score_hint_raw})"
+            if score_hint_clean:
+                heading_text = f"{heading_text} ({score_hint_clean})"
 
             story.append(Paragraph(xml_escape(heading_text), styles["SubHeading"]))
             if summary_text:
@@ -460,7 +510,8 @@ def build_scorecard_pdf(
             if not isinstance(prod, dict):
                 continue
 
-            pname = _to_plain_text(prod.get("production") or "General").strip() or "General"
+            pname_raw = _to_plain_text(prod.get("production") or "General").strip() or "General"
+            pname = _strip_objective_codes(pname_raw)
             story.append(Paragraph(xml_escape(pname), styles["SubHeading"]))
 
             pillars = prod.get("pillars") or []
@@ -468,13 +519,18 @@ def build_scorecard_pdf(
                 if not isinstance(ps, dict):
                     continue
 
-                pillar_name = _to_plain_text(ps.get("pillar", "Category")).strip() or "Category"
-                score_hint = _to_plain_text(ps.get("score_hint", "")).strip()
-                summary_text = _to_plain_text(ps.get("summary", "")).strip()
+                pillar_name_raw = _to_plain_text(ps.get("pillar", "Category")).strip() or "Category"
+                pillar_name = _strip_objective_codes(pillar_name_raw)
+
+                score_hint_raw = _to_plain_text(ps.get("score_hint", "")).strip()
+                score_hint_clean = _strip_objective_codes(score_hint_raw)
+
+                summary_text_raw = _to_plain_text(ps.get("summary", "")).strip()
+                summary_text = _strip_objective_codes(summary_text_raw)
 
                 label_parts = [pillar_name]
-                if score_hint:
-                    label_parts.append(score_hint)
+                if score_hint_clean:
+                    label_parts.append(score_hint_clean)
                 label_text = " — ".join(label_parts)
 
                 story.append(Paragraph(xml_escape(label_text), styles["SubHeadingSmall"]))
@@ -486,10 +542,10 @@ def build_scorecard_pdf(
             story.append(Spacer(1, 8))
 
     # ─────────────────────────────────────────────────────────────────────
-    # Risks, priorities, notes
+    # Risks, priorities, notes – strip ART codes
     # ─────────────────────────────────────────────────────────────────────
     risks = [
-        _to_plain_text(r).strip()
+        _strip_objective_codes(_to_plain_text(r)).strip()
         for r in (ai_result.get("risks", []) or [])
         if _to_plain_text(r).strip()
     ]
@@ -499,7 +555,7 @@ def build_scorecard_pdf(
             story.append(_safe_paragraph(f"• {r}", styles["BodyText"]))
 
     priorities = [
-        _to_plain_text(p).strip()
+        _strip_objective_codes(_to_plain_text(p)).strip()
         for p in (ai_result.get("priorities_next_month", []) or [])
         if _to_plain_text(p).strip()
     ]
@@ -509,7 +565,8 @@ def build_scorecard_pdf(
         for p in priorities:
             story.append(_safe_paragraph(f"• {p}", styles["BodyText"]))
 
-    nfl = _to_plain_text(ai_result.get("notes_for_leadership", "")).strip()
+    nfl_raw = _to_plain_text(ai_result.get("notes_for_leadership", "")).strip()
+    nfl = _strip_objective_codes(nfl_raw)
     if nfl:
         story.append(Spacer(1, 6))
         story.append(Paragraph("Notes for Leadership", styles["SectionHeading"]))
@@ -521,7 +578,7 @@ def build_scorecard_pdf(
     story.append(PageBreak())
     story.append(Paragraph("Raw Scorecard Responses", styles["SectionHeading"]))
     story.append(Spacer(1, 6))
-    story.append(_responses_table(questions, responses))
+    story.append(_responses_table(questions, responses, styles))
 
     # ─────────────────────────────────────────────────────────────────────
     # Footer (page x, label)
