@@ -3,7 +3,7 @@
 from xml.sax.saxutils import escape as xml_escape
 
 from io import BytesIO
-from typing import Dict, Any
+from typing import Dict, Any, Iterable
 
 import json
 import pandas as pd
@@ -22,20 +22,10 @@ from reportlab.platypus import (
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 
-def _safe_paragraph(text: Any, style: ParagraphStyle, allow_markup: bool = False) -> Paragraph:
-    """
-    Create a Paragraph that won't blow up if the text contains '<', '>' or '&'.
 
-    - If allow_markup is False, we escape XML chars so ReportLab treats it as plain text.
-    - If allow_markup is True, we pass it through unchanged (for our own <b>, <font>, etc).
-    """
-    if text is None:
-        text = ""
-    s = _to_plain_text(text)
-    if not allow_markup:
-        s = xml_escape(s)
-    return Paragraph(s, style)
-
+# ─────────────────────────────────────────────────────────────────────────────
+# Helper text utilities
+# ─────────────────────────────────────────────────────────────────────────────
 def _to_plain_text(val: Any) -> str:
     """
     Normalise various AI output types to a human-readable string.
@@ -63,54 +53,26 @@ def _to_plain_text(val: Any) -> str:
     return str(val)
 
 
-def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]):
+def _safe_paragraph(text: Any, style: ParagraphStyle, allow_markup: bool = False) -> Paragraph:
     """
-    Build a simple 2-column table of metric vs response (primary + description).
+    Create a Paragraph that won't blow up if the text contains '<', '>' or '&'.
+
+    - If allow_markup is False, we escape XML chars so ReportLab treats it as plain text.
+    - If allow_markup is True, we pass it through unchanged (for our own <b>, <font>, etc).
     """
-    data = [["Pillar / Production / Metric", "Response"]]
-    for _, row in questions.sort_values("display_order").iterrows():
-        qid = row["question_id"]
+    if text is None:
+        text = ""
+    s = _to_plain_text(text)
+    if not allow_markup:
+        s = xml_escape(s)
+    return Paragraph(s, style)
 
-        # Ensure we look up using string key, since the app stores qids as strings
-        qid_str = str(qid)
 
-        prod_label = row.get("production_title", "") or row.get("production", "")
-        label = f"{row.get('strategic_pillar', '')} / {prod_label} / {row.get('metric', '')}"
-        raw_val = responses.get(qid_str, responses.get(qid, ""))
-
-        if isinstance(raw_val, dict):
-            primary = raw_val.get("primary", "")
-            desc = raw_val.get("description", "")
-            if desc:
-                value_str = f"{primary} — {desc}"
-            else:
-                value_str = str(primary)
-        else:
-            value_str = str(raw_val)
-
-        data.append([label, value_str])
-
-    table = Table(
-        data,
-        colWidths=[3.5 * inch, 3.5 * inch],
-        repeatRows=1,
-    )
-    table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-            ]
-        )
-    )
-    return table
-
+# ─────────────────────────────────────────────────────────────────────────────
+# Score utilities
+# ─────────────────────────────────────────────────────────────────────────────
 def _parse_score_hint(score_hint: str | None) -> float | None:
     """Extract an approximate 0–3 score from a score_hint string."""
-
     if not score_hint:
         return None
 
@@ -139,7 +101,6 @@ def _parse_score_hint(score_hint: str | None) -> float | None:
 
 def _score_to_colour(score: float | None) -> colors.Color:
     """Return a background colour based on score performance."""
-
     if score is None:
         return colors.Color(0.8, 0.82, 0.85)  # muted grey-blue
 
@@ -149,14 +110,15 @@ def _score_to_colour(score: float | None) -> colors.Color:
         return colors.Color(0.93, 0.73, 0.39)  # amber
     return colors.Color(0.91, 0.44, 0.32)  # coral red
 
+
 def _score_display(score: float | None) -> str:
     if score is None:
         return "N/A"
     return f"{score:.2f}"
 
 
-def _chunked(iterable, size: int):
-    chunk: list[Any] = []
+def _chunked(iterable: Iterable[Flowable], size: int):
+    chunk: list[Flowable] = []
     for item in iterable:
         chunk.append(item)
         if len(chunk) == size:
@@ -166,20 +128,30 @@ def _chunked(iterable, size: int):
         yield chunk
 
 
-def _build_pillar_card(styles, pillar_name: str, score_hint: str, summary: str) -> Flowable:
+# ─────────────────────────────────────────────────────────────────────────────
+# Layout pieces
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_pillar_card(
+    styles,
+    pillar_name: str,
+    score_hint: str | None,
+    summary: str | None,
+) -> Flowable:
     score_value = _parse_score_hint(score_hint)
     header_bg = _score_to_colour(score_value)
 
     score_hint_text = _to_plain_text(score_hint).strip()
 
-    header_parts = [f"<b>{pillar_name or 'Pillar'}</b>"]
+    header_parts: list[str] = [f"<b>{xml_escape(pillar_name or 'Pillar')}</b>"]
     score_display = _score_display(score_value)
-    header_parts.append(f"<font size=10>{score_display if score_display != 'N/A' else 'Not rated'}</font>")
+    header_parts.append(
+        f"<font size=10>{xml_escape(score_display if score_display != 'N/A' else 'Not rated')}</font>"
+    )
     if score_hint_text and score_hint_text not in header_parts[-1]:
-        header_parts.append(f"<font size=9>{score_hint_text}</font>")
+        header_parts.append(f"<font size=9>{xml_escape(score_hint_text)}</font>")
 
     header = Paragraph("<br/>".join(header_parts), styles["CardHeader"])  # keep markup
-    
+
     body = _safe_paragraph(summary or "No summary provided.", styles["CardBody"])
 
     card = Table(
@@ -203,7 +175,66 @@ def _build_pillar_card(styles, pillar_name: str, score_hint: str, summary: str) 
     )
 
     return card
-                
+
+
+def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]) -> Table:
+    """
+    Build a simple 2-column table of metric vs response (primary + description).
+    """
+    data: list[list[Any]] = [["Pillar / Production / Metric", "Response"]]
+
+    for _, row in questions.sort_values("display_order").iterrows():
+        qid = row["question_id"]
+
+        # Ensure we look up using string key, since the app stores qids as strings
+        qid_str = str(qid)
+
+        prod_label = row.get("production_title", "") or row.get("production", "")
+        label = f"{row.get('strategic_pillar', '')} / {prod_label} / {row.get('metric', '')}"
+        raw_val = responses.get(qid_str, responses.get(qid, ""))
+
+        if isinstance(raw_val, dict):
+            primary = raw_val.get("primary", "")
+            desc = raw_val.get("description", "")
+            if desc:
+                value_str = f"{primary} — {desc}"
+            else:
+                value_str = str(primary)
+        else:
+            value_str = str(raw_val)
+
+        data.append([label, value_str])
+
+    # Base styling
+    style_cmds = [
+        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 2),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+    ]
+
+    # Alternate row shading for readability
+    for i in range(1, len(data)):
+        if i % 2 == 1:
+            style_cmds.append(("BACKGROUND", (0, i), (-1, i), colors.whitesmoke))
+
+    table = Table(
+        data,
+        colWidths=[3.5 * inch, 3.5 * inch],
+        repeatRows=1,
+    )
+    table.setStyle(TableStyle(style_cmds))
+    return table
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main PDF builder
+# ─────────────────────────────────────────────────────────────────────────────
 def build_scorecard_pdf(
     meta: Dict[str, Any],
     questions: pd.DataFrame,
@@ -292,7 +323,9 @@ def build_scorecard_pdf(
 
     story: list[Flowable] = []
 
+    # ─────────────────────────────────────────────────────────────────────
     # Title block with total score call-out
+    # ─────────────────────────────────────────────────────────────────────
     staff_name = meta.get("staff_name", "Staff")
     report_month = meta.get("month", "")
     title_text = f"{staff_name} — Monthly Scorecard"
@@ -312,8 +345,8 @@ def build_scorecard_pdf(
 
     total_table = Table(
         [
-            [Paragraph("<b>Total score</b>", styles["Heading4"])],
-            [Paragraph(total_value, styles["Heading1"])],
+            [Paragraph("<b>Total score</b>", styles["Small"])],
+            [Paragraph(total_value, styles["Title"])],
         ],
         style=TableStyle(
             [
@@ -322,21 +355,23 @@ def build_scorecard_pdf(
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("BOX", (0, 0), (-1, -1), 0.75, colors.black),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
             ]
         ),
-        colWidths=[2.2 * inch],
-        rowHeights=[0.5 * inch, 0.9 * inch],
+        colWidths=[2.0 * inch],
+        rowHeights=[0.4 * inch, 0.9 * inch],
     )
 
+    # Meta info
     meta_pairs: list[tuple[str, str]] = [
         ("Staff", staff_name or "—"),
         ("Department", meta.get("department", "") or "—"),
         ("Role", meta.get("role", "") or "—"),
     ]
 
-    # Month line separated so it can render with lighter label
     if report_month:
         meta_pairs.append(("Report month", str(report_month)))
 
@@ -357,16 +392,31 @@ def build_scorecard_pdf(
         for label, value in meta_pairs
     ]
 
-    logo_flowable = None
+    meta_table = Table(
+        meta_rows,
+        colWidths=[1.4 * inch, 3.2 * inch],
+        style=TableStyle(
+            [
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ]
+        ),
+    )
+
+    # Optional logo
+    logo_flowable: Flowable | None = None
     if logo_path:
         try:
-            logo_flowable = Image(logo_path)
-            # constrain size but keep aspect
-            logo_flowable._restrictSize(1.1 * inch, 1.1 * inch)
+            img = Image(logo_path)
+            img._restrictSize(1.1 * inch, 1.1 * inch)
+            logo_flowable = img
         except Exception:
             logo_flowable = None
 
-    # Title + subtitle block
+    # Title + subtitle block as its own small table (for better alignment)
     title_block = [
         Paragraph("Summary Scorecard", styles["ScorecardTitle"]),
         Paragraph(title_text, styles["MetaLine"]),
@@ -384,10 +434,8 @@ def build_scorecard_pdf(
         ),
     )
 
-    # Total score table is already defined as total_table
-
     # Build header row: [logo] [title+subtitle] [total score]
-    header_cells = []
+    header_cells: list[Flowable] = []
     if logo_flowable:
         header_cells.append(logo_flowable)
     else:
@@ -414,31 +462,57 @@ def build_scorecard_pdf(
     story.append(meta_table)
     story.append(Spacer(1, 12))
 
-
+    # ─────────────────────────────────────────────────────────────────────
+    # Executive summary
+    # ─────────────────────────────────────────────────────────────────────
     overall = _to_plain_text(ai_result.get("overall_summary", "") or "")
     if overall:
         story.append(Paragraph("Executive Summary", styles["SectionHeading"]))
         story.append(_safe_paragraph(overall, styles["BodyText"]))
         story.append(Spacer(1, 12))
 
+    # ─────────────────────────────────────────────────────────────────────
+    # Strategic pillars as cards
+    # ─────────────────────────────────────────────────────────────────────
     if pillar_summaries:
         story.append(Paragraph("Strategic Pillars", styles["SectionHeading"]))
+        story.append(Spacer(1, 4))
 
+        cards: list[Flowable] = []
         for ps in pillar_summaries:
             pillar_name = _to_plain_text(ps.get("strategic_pillar", "Pillar"))
             score_hint = _to_plain_text(ps.get("score_hint", ""))
             summary_text = _to_plain_text(ps.get("summary", ""))
 
-            heading = pillar_name
-            if score_hint:
-                heading = f"{pillar_name} — {score_hint}"
+            card = _build_pillar_card(styles, pillar_name, score_hint, summary_text)
+            cards.append(card)
 
-            story.append(Paragraph(heading, styles["Heading3"]))
-            story.append(_safe_paragraph(summary_text, styles["BodyText"]))
-            story.append(Spacer(1, 6))
+        cols = 3
+        for chunk in _chunked(cards, cols):
+            row = list(chunk)
+            if len(row) < cols:
+                row = row + [Spacer(0, 0)] * (cols - len(row))
+
+            row_table = Table(
+                [row],
+                colWidths=[2.3 * inch] * cols,
+                style=TableStyle(
+                    [
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                    ]
+                ),
+            )
+            story.append(row_table)
+            story.append(Spacer(1, 4))
 
         story.append(Spacer(1, 12))
 
+    # ─────────────────────────────────────────────────────────────────────
+    # By Production / Programme
+    # ─────────────────────────────────────────────────────────────────────
     production_summaries = ai_result.get("production_summaries", []) or []
     if production_summaries:
         story.append(Paragraph("By Production / Programme", styles["SectionHeading"]))
@@ -447,7 +521,7 @@ def build_scorecard_pdf(
                 continue
 
             pname = _to_plain_text(prod.get("production") or "General")
-            story.append(Paragraph(f"<b>{pname}</b>", styles["BodyText"]))
+            story.append(Paragraph(f"<b>{xml_escape(pname)}</b>", styles["BodyText"]))
 
             pillars = prod.get("pillars") or []
             for ps in pillars:
@@ -464,10 +538,13 @@ def build_scorecard_pdf(
                         styles["Small"],
                     )
                 )
-                story.append(Paragraph(summary_text, styles["BodyText"]))
+                story.append(_safe_paragraph(summary_text, styles["BodyText"]))
 
             story.append(Spacer(1, 6))
 
+    # ─────────────────────────────────────────────────────────────────────
+    # Risks, priorities, notes
+    # ─────────────────────────────────────────────────────────────────────
     risks = [
         _to_plain_text(r)
         for r in (ai_result.get("risks", []) or [])
@@ -495,12 +572,26 @@ def build_scorecard_pdf(
         story.append(Paragraph("Notes for Leadership", styles["SectionHeading"]))
         story.append(_safe_paragraph(nfl, styles["BodyText"]))
 
+    # ─────────────────────────────────────────────────────────────────────
+    # Raw responses
+    # ─────────────────────────────────────────────────────────────────────
     story.append(Spacer(1, 12))
     story.append(Paragraph("Raw Scorecard Responses", styles["SectionHeading"]))
     story.append(Spacer(1, 6))
     story.append(_responses_table(questions, responses))
 
-    doc.build(story)
+    # ─────────────────────────────────────────────────────────────────────
+    # Footer (page x, label)
+    # ─────────────────────────────────────────────────────────────────────
+    def _footer(canvas, doc_):
+        canvas.saveState()
+        canvas.setFont("Helvetica", 8)
+        width, height = doc_.pagesize
+        canvas.drawString(36, 20, "Alberta Ballet — Monthly Scorecard")
+        canvas.drawRightString(width - 36, 20, f"Page {doc_.page}")
+        canvas.restoreState()
+
+    doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
     pdf_bytes = buffer.getvalue()
     buffer.close()
     return pdf_bytes
