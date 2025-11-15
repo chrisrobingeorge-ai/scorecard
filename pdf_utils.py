@@ -931,7 +931,7 @@ def build_overall_board_pdf(
     risks = ai_result.get("risks") or []
     if risks:
         story.append(Spacer(1, 10))
-        story.append(Paragraph("Cross-cutting Risks / Concerns", styles["BoardSectionHeading"]))
+        story.append(Paragraph("Strategic Pillar Risks / Concerns", styles["BoardSectionHeading"]))
         for r in risks:
             story.append(Paragraph(f"• {str(r)}", styles["BoardBody"]))
 
