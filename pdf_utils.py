@@ -765,7 +765,7 @@ def build_scorecard_pdf(
         canvas.drawString(36, 20, "Alberta Ballet — Scorecard Report")
         canvas.drawRightString(width - 36, 20, f"Page {doc_.page}")
 
-        pdf_title = f"Summary Scorecard — {department}"
+        pdf_title = f"Strategic Summary Scorecard — {department}"
         canvas.setTitle(pdf_title)
         canvas.setAuthor(str(meta.get("staff_name") or ""))
         canvas.setSubject(JSON_PREFIX + embed_json_str)
@@ -873,7 +873,7 @@ def build_overall_board_pdf(
     else:
         header_cells.append(Spacer(0.5 * inch, 0.5 * inch))
 
-    header_cells.append(Paragraph("Summary Scorecard", styles["BoardTitle"]))
+    header_cells.append(Paragraph("Strategic Summary Scorecard", styles["BoardTitle"]))
 
     # Two-column header: logo + title only, full width = 7.5"
     header_table = Table(
