@@ -17,6 +17,7 @@ from reportlab.platypus import (
     Spacer,
     Table,
     TableStyle,
+    Image,
 )
 from reportlab.lib.units import inch
 from reportlab.lib import colors
@@ -208,6 +209,7 @@ def build_scorecard_pdf(
     questions: pd.DataFrame,
     responses: Dict[str, Any],
     ai_result: Dict[str, Any],
+    logo_path: str | None = None,
 ) -> bytes:
     """
     Build and return the PDF as raw bytes.
@@ -355,37 +357,63 @@ def build_scorecard_pdf(
         for label, value in meta_pairs
     ]
 
-    meta_table = Table(
-        meta_rows,
-        colWidths=[1.4 * inch, 3.2 * inch],
+    logo_flowable = None
+    if logo_path:
+        try:
+            logo_flowable = Image(logo_path)
+            # constrain size but keep aspect
+            logo_flowable._restrictSize(1.1 * inch, 1.1 * inch)
+        except Exception:
+            logo_flowable = None
+
+    # Title + subtitle block
+    title_block = [
+        Paragraph("Summary Scorecard", styles["ScorecardTitle"]),
+        Paragraph(title_text, styles["MetaLine"]),
+    ]
+    title_table = Table(
+        [[title_block[0]], [title_block[1]]],
+        colWidths=[4.0 * inch],
         style=TableStyle(
             [
                 ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
             ]
         ),
     )
-    
+
+    # Total score table is already defined as total_table
+
+    # Build header row: [logo] [title+subtitle] [total score]
+    header_cells = []
+    if logo_flowable:
+        header_cells.append(logo_flowable)
+    else:
+        header_cells.append(Spacer(0.5 * inch, 0.5 * inch))
+
+    header_cells.append(title_table)
+    header_cells.append(total_table)
+
     header_table = Table(
-        [[Paragraph("Summary Scorecard", styles["ScorecardTitle"]), total_table]],
-        colWidths=[4.8 * inch, 2.2 * inch],
+        [header_cells],
+        colWidths=[1.2 * inch, 3.6 * inch, 2.2 * inch],
         style=TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
             ]
         ),
     )
-    
+
     story.append(header_table)
-    story.append(Paragraph(title_text, styles["MetaLine"]))
     story.append(Spacer(1, 6))
     story.append(meta_table)
     story.append(Spacer(1, 12))
+
 
     overall = _to_plain_text(ai_result.get("overall_summary", "") or "")
     if overall:
