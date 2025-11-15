@@ -1199,6 +1199,38 @@ def main():
     # ─────────────────────────────────────────────────────────────
     st.subheader("AI Interpretation (editable)")
 
+    # Initialise cached AI result
+    if "ai_result" not in st.session_state:
+        st.session_state["ai_result"] = None
+
+    # Button to force a fresh AI run
+    regen_ai = st.button("↻ Regenerate AI interpretation")
+
+    # Run AI only if we click the button or there is no cached result yet
+    if regen_ai or st.session_state["ai_result"] is None:
+        try:
+            with st.spinner("Asking AI to interpret this scorecard..."):
+                ai_result = interpret_scorecard(
+                    meta_for_ai,
+                    questions_for_ai,
+                    responses_for_ai,
+                )
+        except RuntimeError as e:
+            st.error(f"AI configuration error: {e}")
+            st.info(
+                "Check your OPENAI_API_KEY secret and that `openai>=1.51.0` "
+                "(or newer) is in requirements.txt."
+            )
+            st.stop()
+        except Exception as e:
+            st.error(f"Failed to generate AI summary: {e}")
+            st.stop()
+
+        st.success("AI summary generated.")
+        st.session_state["ai_result"] = ai_result
+    else:
+        ai_result = st.session_state["ai_result"]
+
     # ----- helpers just for this block --------------------------------
     def _normalise_overall(val):
         """Turn overall_summary (string / list / dict) into a single editable string."""
@@ -1228,11 +1260,13 @@ def main():
 
     st.markdown("### Executive Summary")
 
-    ai_result["overall_summary"] = st.text_area(
+    edited_overall = st.text_area(
         "Executive summary (this version will appear in the PDF):",
         value=default_overall,
         height=260,
+        key="overall_summary_editor",
     )
+    ai_result["overall_summary"] = edited_overall
 
     # ── Pillar summaries (editable) ──────────────────────────────
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
@@ -1326,6 +1360,7 @@ def main():
         "One risk per line:",
         value=risks_default,
         height=140,
+        key="risks_editor",
     )
     ai_result["risks"] = [
         line.strip() for line in risks_edited.splitlines() if line.strip()
@@ -1340,6 +1375,7 @@ def main():
         "One priority per line:",
         value=priorities_default,
         height=140,
+        key="priorities_editor",
     )
     ai_result["priorities_next_month"] = [
         line.strip() for line in priorities_edited.splitlines() if line.strip()
@@ -1354,8 +1390,12 @@ def main():
         "Notes for Leadership:",
         value=nfl_default,
         height=160,
+        key="notes_for_leadership_editor",
     )
     ai_result["notes_for_leadership"] = nfl_edited
+
+    # Ensure the updated AI result is cached back into session_state
+    st.session_state["ai_result"] = ai_result
 
 
     # ─────────────────────────────────────────────────────────────
