@@ -1028,7 +1028,11 @@ def main():
     
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
-    # Meta
+    # 🔹 Remember that the user has submitted at least once
+    if submitted:
+        st.session_state["scorecard_submitted"] = True
+
+    # Meta (unchanged)
     meta = {
         "staff_name": st.session_state.get("staff_name") or "Unknown",
         "role": st.session_state.get("role") or "",
@@ -1037,7 +1041,7 @@ def main():
         "production": current_production,  # normalised: "" for General, else name
     }
 
-    # Save progress (download JSON)
+    # Save progress (download JSON) — unchanged
     draft_dict = build_draft_from_state(
         questions_all_df,
         meta,
@@ -1058,8 +1062,10 @@ def main():
         mime="text/csv",
     )
 
-    if not submitted:
+    # ❗ New guard: only block BEFORE first click
+    if not st.session_state.get("scorecard_submitted", False):
         return
+
 
     # visible-only validation (CURRENT PRODUCTION ONLY)
     missing_required: List[str] = []
