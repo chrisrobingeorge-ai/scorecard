@@ -1256,17 +1256,23 @@ def main():
     # and keeps all original columns (including display_order)
     # ─────────────────────────────────────────────────────────────
     try:
-        pdf_bytes = build_scorecard_pdf(meta_for_ai, questions_for_ai, responses_for_ai, ai_result)
+        pdf_bytes = build_scorecard_pdf(
+            meta_for_ai,
+            questions_for_ai,
+            responses_for_ai,
+            ai_result,
+            logo_path="assets/alberta_ballet_logo.png",  # 👈 add this
+        )
         st.download_button(
             label="Download PDF report",
             data=pdf_bytes,
             file_name=f"scorecard_{meta_for_ai['department'].replace(' ', '_')}_{month_str}.pdf",
             mime="application/pdf",
-            logo_path="assets/alberta_ballet_logo.png",
         )
     except Exception as e:
         st.warning(f"PDF export failed: {e}")
         st.info("If this persists, check pdf_utils.py dependencies (reportlab or fpdf2).")
+
 
 if __name__ == "__main__":
     main()
