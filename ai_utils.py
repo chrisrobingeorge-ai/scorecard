@@ -356,6 +356,7 @@ def _build_prompt_objective_aware(
            - Where evidence is thin or missing, say so explicitly.
            - Be cautious about strong negative judgments when there are only one or two weak signals. In such cases, prefer language like "emerging concern" or "area to watch" instead of declaring failure.
            - Do not assume that a production is weak in visual or artistic quality unless the answers explicitly indicate that. Absence of evidence is not evidence of weakness.
+           - **CRITICAL**: Focus your assessment primarily on HIGH-importance items (ai_weight=3), with MEDIUM items (ai_weight=2) as supporting context. NEVER base strong negative conclusions or risk assessments primarily on LOW-importance items (ai_weight=1), which are optional or seasonal signals meant only to add nuance.
 
         2) "pillar_summaries":
            An array of objects, each with:
@@ -398,6 +399,11 @@ def _build_prompt_objective_aware(
            Focus on **differences between productions/programmes** and what they imply
            for strategic objectives (e.g., one show strongly supports ART2 but not ART3).
            When comparing productions or programmes, do not let a single metric (e.g., reuse of assets, a missing collaboration, or one weak answer) completely dominate your judgment. Look across all available answers before calling a production clearly strong or weak for a given objective.
+           
+           **CRITICAL IMPORTANCE WEIGHTING FOR PRODUCTION SUMMARIES**:
+           - When scoring productions/programmes, base your assessment primarily on HIGH-importance items (ai_weight=3), supported by MEDIUM-importance items (ai_weight=2).
+           - NEVER lower a production's score or make harsh negative judgments based primarily or solely on LOW-importance items (ai_weight=1).
+           - LOW-importance items (such as festival participation, artist residencies, or optional contemporary-issues questions) are seasonal/optional and should only add context or examples to your narrative—they must NOT drive the core assessment or scoring.
 
            Some questions are followed by "Why not?" explanations when the answer is "No".
            When these explanations indicate that the timing or artistic focus was intentional
@@ -421,6 +427,7 @@ def _build_prompt_objective_aware(
            An array of concise bullet-style strings.
            Focus on **strategic risks**, not trivial operational issues. Tie them to
            objectives and, where relevant, to specific productions or pillars.
+           **CRITICAL**: Base identified risks primarily on HIGH-importance items (ai_weight=3), supported by MEDIUM items (ai_weight=2). Do NOT identify risks based solely on LOW-importance items (ai_weight=1), which are optional or seasonal signals.
 
         5) "priorities_next_month":
            An array of concise, action-oriented bullet strings.
