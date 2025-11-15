@@ -8,6 +8,7 @@
 #   This app:
 #   - Shows a simple table of which departments/months you’ve loaded
 #   - Calls ai_utils.interpret_overall_scorecards(...) for the AI summary
+#   - Lets you EDIT the AI text before exporting
 #   - Uses pdf_utils.build_overall_board_pdf(...) to create a Board PDF
 
 from __future__ import annotations
@@ -49,12 +50,6 @@ def extract_department_summary(
     """
     Take the JSON payload embedded in a scorecard PDF and distill the
     key bits we need for an organisation-wide narrative.
-
-    We intentionally keep this simple:
-    - Which department and month?
-    - What is the overall score?
-    - What are the pillar scores (if present)?
-    - What is the department-level AI summary text?
     """
     meta = payload.get("meta", {}) or {}
     scores = payload.get("scores", {}) or {}
@@ -173,71 +168,170 @@ else:
 st.markdown(f"**Reporting period (inferred):** {reporting_label}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. Generate Board narrative via AI + PDF
+# 4. Board-level AI Interpretation (fully editable)
 # ─────────────────────────────────────────────────────────────────────────────
-st.subheader("Board narrative")
+st.subheader("Board Interpretation (editable)")
 
-if st.button("Generate Board Narrative with AI"):
-    with st.spinner("Generating Board narrative..."):
-        ai_result = interpret_overall_scorecards(dept_summaries)
+# Initialise cached AI result for the overall Board report
+if "overall_ai_result" not in st.session_state:
+    st.session_state["overall_ai_result"] = None
 
-    board_report = (ai_result.get("overall_summary") or "").strip()
-    pillar_summaries = ai_result.get("pillar_summaries") or []
-    risks = ai_result.get("risks") or []
-    priorities = ai_result.get("priorities_next_month") or []
-    notes_for_leadership = (ai_result.get("notes_for_leadership") or "").strip()
+# Helper normalisers (parallel to main app, but simplified for Board layer)
+def _normalise_overall(val: Any) -> str:
+    """Turn overall_summary (string / list / dict) into a single editable string."""
+    if isinstance(val, list):
+        parts = []
+        for v in val:
+            if isinstance(v, dict) and "text" in v:
+                parts.append(str(v["text"]))
+            else:
+                parts.append(str(v))
+        return "\n\n".join(p for p in parts if str(p).strip())
+    if isinstance(val, dict) and "text" in val:
+        return str(val["text"])
+    return str(val or "")
+
+def _normalise_list(val: Any) -> str:
+    """Turn list-like fields (risks, priorities) into newline-separated text."""
+    if not val:
+        return ""
+    if isinstance(val, list):
+        return "\n".join(str(x) for x in val if str(x).strip())
+    return str(val or "")
+
+# Button to (re)generate the Board-level AI interpretation
+if st.button("Generate / Refresh Board Narrative with AI"):
+    try:
+        with st.spinner("Generating Board-level narrative from departmental summaries..."):
+            ai_result = interpret_overall_scorecards(dept_summaries)
+    except RuntimeError as e:
+        st.error(f"AI configuration error: {e}")
+        st.info(
+            "Check your OPENAI_API_KEY secret and that `openai>=1.51.0` "
+            "(or newer) is in requirements.txt."
+        )
+        st.stop()
+    except Exception as e:
+        st.error(f"Failed to generate Board report: {e}")
+        st.stop()
+
+    st.success("Board-level AI report generated.")
+    st.session_state["overall_ai_result"] = ai_result
+
+overall_ai_result = st.session_state["overall_ai_result"]
+
+if overall_ai_result is None:
+    st.info("Click **Generate / Refresh Board Narrative with AI** to create the report.")
+else:
+    ai_result = overall_ai_result  # local alias for easier mutation
+
+    # ── Executive Summary / Board narrative (editable) ─────────────────────
+    raw_overall = ai_result.get("overall_summary", "")
+    default_overall = _normalise_overall(raw_overall)
+
+    st.markdown("### Draft Board Report")
+
+    edited_overall = st.text_area(
+        "Board report narrative (this version will appear in the PDF):",
+        value=default_overall,
+        height=260,
+        key="board_overall_summary_editor",
+    )
+    ai_result["overall_summary"] = edited_overall
+
+    # ── Strategic Pillars (editable) ───────────────────────────────────────
+    pillar_summaries = ai_result.get("pillar_summaries", []) or []
+    st.markdown("### Strategic Pillars")
+
+    if pillar_summaries:
+        for i, ps in enumerate(pillar_summaries):
+            pillar_label = ps.get("strategic_pillar", "Pillar") or "Pillar"
+            summary_val = str(ps.get("summary", "") or "")
+
+            st.markdown(f"#### Pillar {i+1}: {pillar_label}")
+
+            new_pillar_label = st.text_input(
+                f"Pillar name (Pillar {i+1})",
+                value=pillar_label,
+                key=f"board_pillar_name_{i}",
+            )
+            new_summary = st.text_area(
+                f"Pillar narrative (Pillar {i+1})",
+                value=summary_val,
+                height=140,
+                key=f"board_pillar_summary_{i}",
+            )
+
+            ps["strategic_pillar"] = new_pillar_label
+            ps["summary"] = new_summary
+
+    # ── Risks (editable) ───────────────────────────────────────────────────
+    risks_raw = ai_result.get("risks", []) or []
+    risks_default = _normalise_list(risks_raw)
+
+    st.markdown("### Strategic Pillar Risks / Concerns")
+    risks_edited = st.text_area(
+        "One risk / area to watch per line:",
+        value=risks_default,
+        height=140,
+        key="board_risks_editor",
+    )
+    ai_result["risks"] = [
+        line.strip() for line in risks_edited.splitlines() if line.strip()
+    ]
+
+    # ── Organisation-wide Priorities (editable) ────────────────────────────
+    priorities_raw = ai_result.get("priorities_next_month", []) or []
+    priorities_default = _normalise_list(priorities_raw)
+
+    st.markdown("### Organisation-wide Priorities for Next Period")
+    priorities_edited = st.text_area(
+        "One priority per line:",
+        value=priorities_default,
+        height=140,
+        key="board_priorities_editor",
+    )
+    ai_result["priorities_next_month"] = [
+        line.strip() for line in priorities_edited.splitlines() if line.strip()
+    ]
+
+    # ── Notes for Leadership (editable) ────────────────────────────────────
+    nfl_raw = ai_result.get("notes_for_leadership", "") or ""
+    nfl_default = str(nfl_raw)
+
+    st.markdown("### Notes for Leadership")
+    nfl_edited = st.text_area(
+        "Notes for Leadership (this will appear as prose in the PDF):",
+        value=nfl_default,
+        height=160,
+        key="board_notes_for_leadership_editor",
+    )
+    ai_result["notes_for_leadership"] = nfl_edited
+
+    # Persist the edited result back to session_state
+    st.session_state["overall_ai_result"] = ai_result
+
+    # Optional: show the underlying AI prompt (from interpret_overall_scorecards)
     prompt_used = ai_result.get("prompt", "")
-
-    if not board_report:
-        st.error("AI did not return a Board report. Check ai_utils.interpret_overall_scorecards.")
-    else:
-        # Main narrative
-        st.markdown("### Draft Board Report")
-        st.markdown(board_report)
-
-        # Strategic pillars
-        if pillar_summaries:
-            st.markdown("### Strategic Pillars")
-            for ps in pillar_summaries:
-                name = ps.get("strategic_pillar") or "Pillar"
-                summary = ps.get("summary") or ""
-                st.markdown(f"**{name}**")
-                if summary:
-                    st.markdown(summary)
-
-        # Risks / areas to watch
-        if risks:
-            st.markdown("### Areas to Watch / Risks")
-            for r in risks:
-                st.markdown(f"- {r}")
-
-        # Organisation-wide priorities
-        if priorities:
-            st.markdown("### Organisation-wide Priorities for Next Period")
-            for p in priorities:
-                st.markdown(f"- {p}")
-
-        # Notes for leadership
-        if notes_for_leadership:
-            st.markdown("### Notes for Leadership")
-            st.markdown(notes_for_leadership)
-
-        # Build a Board PDF
-        pdf_bytes = build_overall_board_pdf(
-            reporting_label=reporting_label,
-            dept_overview=df_overview,
-            ai_result=ai_result,
-            logo_path="assets/alberta_ballet_logo.png",  # <- adjust to your actual path
-        )
-
-        st.download_button(
-            label="Download Board Report PDF",
-            data=pdf_bytes,
-            file_name=f"overall_board_report_{reporting_label.replace(' ', '_')}.pdf",
-            mime="application/pdf",
-        )
-
-        # Optional debugging: comment this out if you don't want to see it
+    if prompt_used:
         with st.expander("Show AI prompt used", expanded=False):
             st.code(prompt_used, language="markdown")
 
+    # ─────────────────────────────────────────────────────────────────────
+    # 5. Build and download the Board PDF
+    # ─────────────────────────────────────────────────────────────────────
+    st.subheader("Export Board Report")
+
+    pdf_bytes = build_overall_board_pdf(
+        reporting_label=reporting_label,
+        dept_overview=df_overview,
+        ai_result=ai_result,
+        logo_path="assets/alberta_ballet_logo.png",  # adjust if needed
+    )
+
+    st.download_button(
+        label="Download Board Report PDF",
+        data=pdf_bytes,
+        file_name=f"overall_board_report_{reporting_label.replace(' ', '_')}.pdf",
+        mime="application/pdf",
+    )
