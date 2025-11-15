@@ -1222,23 +1222,17 @@ def main():
             return "\n".join(str(x) for x in val if str(x).strip())
         return str(val or "")
 
-    # ── Executive Summary (editable) ──────────────────────────────
+    # ── Executive Summary (single editable version) ──────────────
     raw_overall = ai_result.get("overall_summary", "")
     default_overall = _normalise_overall(raw_overall)
 
     st.markdown("### Executive Summary")
-    editable_overall = st.text_area(
-        "You can edit this summary before exporting to PDF:",
+
+    ai_result["overall_summary"] = st.text_area(
+        "Executive summary (this version will appear in the PDF):",
         value=default_overall,
         height=260,
     )
-    ai_result["overall_summary"] = editable_overall
-
-    # Optional immediate display of the final version
-    if editable_overall.strip():
-        st.markdown("#### Final Executive Summary (will appear in PDF)")
-        st.write(editable_overall)
-        st.write("")
 
     # ── Pillar summaries (editable) ──────────────────────────────
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
