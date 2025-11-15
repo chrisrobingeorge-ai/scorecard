@@ -3,7 +3,7 @@
 from xml.sax.saxutils import escape as xml_escape
 
 from io import BytesIO
-from typing import Dict, Any, Iterable
+from typing import Dict, Any
 
 import json
 import pandas as pd
@@ -11,13 +11,13 @@ from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (
     Flowable,
-    KeepTogether,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
     Image,
+    PageBreak,
 )
 from reportlab.lib.units import inch
 from reportlab.lib import colors
@@ -117,66 +117,9 @@ def _score_display(score: float | None) -> str:
     return f"{score:.2f}"
 
 
-def _chunked(iterable: Iterable[Flowable], size: int):
-    chunk: list[Flowable] = []
-    for item in iterable:
-        chunk.append(item)
-        if len(chunk) == size:
-            yield chunk
-            chunk = []
-    if chunk:
-        yield chunk
-
-
 # ─────────────────────────────────────────────────────────────────────────────
-# Layout pieces
+# Tables
 # ─────────────────────────────────────────────────────────────────────────────
-def _build_pillar_card(
-    styles,
-    pillar_name: str,
-    score_hint: str | None,
-    summary: str | None,
-) -> Flowable:
-    score_value = _parse_score_hint(score_hint)
-    header_bg = _score_to_colour(score_value)
-
-    score_hint_text = _to_plain_text(score_hint).strip()
-
-    header_parts: list[str] = [f"<b>{xml_escape(pillar_name or 'Pillar')}</b>"]
-    score_display = _score_display(score_value)
-    header_parts.append(
-        f"<font size=10>{xml_escape(score_display if score_display != 'N/A' else 'Not rated')}</font>"
-    )
-    if score_hint_text and score_hint_text not in header_parts[-1]:
-        header_parts.append(f"<font size=9>{xml_escape(score_hint_text)}</font>")
-
-    header = Paragraph("<br/>".join(header_parts), styles["CardHeader"])  # keep markup
-
-    body = _safe_paragraph(summary or "No summary provided.", styles["CardBody"])
-
-    card = Table(
-        [[header], [body]],
-        colWidths=[2.3 * inch],
-        style=TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), header_bg),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white if score_value is not None else colors.black),
-                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("BOX", (0, 0), (-1, -1), 0.5, colors.grey),
-                ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.grey),
-                ("BACKGROUND", (0, 1), (-1, 1), colors.whitesmoke),
-                ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ]
-        ),
-    )
-
-    return card
-
-
 def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any]) -> Table:
     """
     Build a simple 2-column table of metric vs response (primary + description).
@@ -264,7 +207,7 @@ def build_scorecard_pdf(
             parent=styles["Title"],
             fontSize=22,
             leading=26,
-            spaceAfter=6,
+            spaceAfter=4,
         )
     )
     styles.add(
@@ -296,28 +239,31 @@ def build_scorecard_pdf(
     )
     styles.add(
         ParagraphStyle(
-            name="CardHeader",
-            parent=styles["Heading4"],
-            textColor=colors.white,
-            alignment=1,
-            leading=14,
-        )
-    )
-    styles.add(
-        ParagraphStyle(
-            name="CardBody",
-            parent=styles["BodyText"],
-            fontSize=9,
-            leading=12,
-        )
-    )
-    styles.add(
-        ParagraphStyle(
             name="SectionHeading",
             parent=styles["Heading2"],
             fontSize=14,
             spaceBefore=12,
             spaceAfter=6,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="SubHeading",
+            parent=styles["Heading3"],
+            fontSize=11,
+            leading=14,
+            spaceBefore=8,
+            spaceAfter=2,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="SubHeadingSmall",
+            parent=styles["Heading4"],
+            fontSize=9.5,
+            leading=12,
+            spaceBefore=4,
+            spaceAfter=1,
         )
     )
 
@@ -472,81 +418,78 @@ def build_scorecard_pdf(
         story.append(Spacer(1, 12))
 
     # ─────────────────────────────────────────────────────────────────────
-    # Strategic pillars as cards
+    # Strategic pillars – narrative format
     # ─────────────────────────────────────────────────────────────────────
     if pillar_summaries:
         story.append(Paragraph("Strategic Pillars", styles["SectionHeading"]))
-        story.append(Spacer(1, 4))
 
-        cards: list[Flowable] = []
         for ps in pillar_summaries:
-            pillar_name = _to_plain_text(ps.get("strategic_pillar", "Pillar"))
-            score_hint = _to_plain_text(ps.get("score_hint", ""))
-            summary_text = _to_plain_text(ps.get("summary", ""))
+            pillar_name = _to_plain_text(ps.get("strategic_pillar", "Pillar")).strip() or "Pillar"
+            score_hint_raw = _to_plain_text(ps.get("score_hint", "")).strip()
+            summary_text = _to_plain_text(ps.get("summary", "")).strip()
 
-            card = _build_pillar_card(styles, pillar_name, score_hint, summary_text)
-            cards.append(card)
+            # Parse numeric score to display as X.XX / 3 but show original hint label too
+            score_value = _parse_score_hint(score_hint_raw)
+            score_str = _score_display(score_value)
+            if score_str != "N/A":
+                heading_text = f"{pillar_name} — {score_str} / 3"
+            else:
+                heading_text = pillar_name
 
-        cols = 3
-        for chunk in _chunked(cards, cols):
-            row = list(chunk)
-            if len(row) < cols:
-                row = row + [Spacer(0, 0)] * (cols - len(row))
+            if score_hint_raw:
+                heading_text = f"{heading_text} ({score_hint_raw})"
 
-            row_table = Table(
-                [row],
-                colWidths=[2.3 * inch] * cols,
-                style=TableStyle(
-                    [
-                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-                        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-                        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-                    ]
-                ),
-            )
-            story.append(row_table)
-            story.append(Spacer(1, 4))
+            story.append(Paragraph(xml_escape(heading_text), styles["SubHeading"]))
+            if summary_text:
+                story.append(_safe_paragraph(summary_text, styles["BodyText"]))
+            else:
+                story.append(_safe_paragraph("No narrative summary provided for this pillar.", styles["BodyText"]))
 
-        story.append(Spacer(1, 12))
+            story.append(Spacer(1, 6))
+
+        story.append(Spacer(1, 6))
 
     # ─────────────────────────────────────────────────────────────────────
-    # By Production / Programme
+    # By Production / Programme – narrative
     # ─────────────────────────────────────────────────────────────────────
     production_summaries = ai_result.get("production_summaries", []) or []
     if production_summaries:
         story.append(Paragraph("By Production / Programme", styles["SectionHeading"]))
+
         for prod in production_summaries:
             if not isinstance(prod, dict):
                 continue
 
-            pname = _to_plain_text(prod.get("production") or "General")
-            story.append(Paragraph(f"<b>{xml_escape(pname)}</b>", styles["BodyText"]))
+            pname = _to_plain_text(prod.get("production") or "General").strip() or "General"
+            story.append(Paragraph(xml_escape(pname), styles["SubHeading"]))
 
             pillars = prod.get("pillars") or []
             for ps in pillars:
                 if not isinstance(ps, dict):
                     continue
 
-                pillar_name = _to_plain_text(ps.get("pillar", "Category"))
-                score_hint = _to_plain_text(ps.get("score_hint", ""))
-                summary_text = _to_plain_text(ps.get("summary", ""))
+                pillar_name = _to_plain_text(ps.get("pillar", "Category")).strip() or "Category"
+                score_hint = _to_plain_text(ps.get("score_hint", "")).strip()
+                summary_text = _to_plain_text(ps.get("summary", "")).strip()
 
-                story.append(
-                    Paragraph(
-                        f"<b>{xml_escape(pillar_name)}</b> — {xml_escape(score_hint)}",
-                        styles["Small"],
-                    )
-                )
-                story.append(_safe_paragraph(summary_text, styles["BodyText"]))
+                label_parts = [pillar_name]
+                if score_hint:
+                    label_parts.append(score_hint)
+                label_text = " — ".join(label_parts)
 
-            story.append(Spacer(1, 6))
+                story.append(Paragraph(xml_escape(label_text), styles["SubHeadingSmall"]))
+                if summary_text:
+                    story.append(_safe_paragraph(summary_text, styles["BodyText"]))
+                else:
+                    story.append(_safe_paragraph("No summary provided.", styles["BodyText"]))
+
+            story.append(Spacer(1, 8))
 
     # ─────────────────────────────────────────────────────────────────────
     # Risks, priorities, notes
     # ─────────────────────────────────────────────────────────────────────
     risks = [
-        _to_plain_text(r)
+        _to_plain_text(r).strip()
         for r in (ai_result.get("risks", []) or [])
         if _to_plain_text(r).strip()
     ]
@@ -556,7 +499,7 @@ def build_scorecard_pdf(
             story.append(_safe_paragraph(f"• {r}", styles["BodyText"]))
 
     priorities = [
-        _to_plain_text(p)
+        _to_plain_text(p).strip()
         for p in (ai_result.get("priorities_next_month", []) or [])
         if _to_plain_text(p).strip()
     ]
@@ -566,16 +509,16 @@ def build_scorecard_pdf(
         for p in priorities:
             story.append(_safe_paragraph(f"• {p}", styles["BodyText"]))
 
-    nfl = _to_plain_text(ai_result.get("notes_for_leadership", ""))
-    if nfl.strip():
+    nfl = _to_plain_text(ai_result.get("notes_for_leadership", "")).strip()
+    if nfl:
         story.append(Spacer(1, 6))
         story.append(Paragraph("Notes for Leadership", styles["SectionHeading"]))
         story.append(_safe_paragraph(nfl, styles["BodyText"]))
 
     # ─────────────────────────────────────────────────────────────────────
-    # Raw responses
+    # Raw responses on a fresh page
     # ─────────────────────────────────────────────────────────────────────
-    story.append(Spacer(1, 12))
+    story.append(PageBreak())
     story.append(Paragraph("Raw Scorecard Responses", styles["SectionHeading"]))
     story.append(Spacer(1, 6))
     story.append(_responses_table(questions, responses))
