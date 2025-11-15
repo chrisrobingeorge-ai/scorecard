@@ -182,20 +182,52 @@ if st.button("Generate Board Narrative with AI"):
         ai_result = interpret_overall_scorecards(dept_summaries)
 
     board_report = (ai_result.get("overall_summary") or "").strip()
+    pillar_summaries = ai_result.get("pillar_summaries") or []
+    risks = ai_result.get("risks") or []
+    priorities = ai_result.get("priorities_next_month") or []
+    notes_for_leadership = (ai_result.get("notes_for_leadership") or "").strip()
     prompt_used = ai_result.get("prompt", "")
 
     if not board_report:
         st.error("AI did not return a Board report. Check ai_utils.interpret_overall_scorecards.")
     else:
+        # Main narrative
         st.markdown("### Draft Board Report")
         st.markdown(board_report)
+
+        # Cross-cutting pillars
+        if pillar_summaries:
+            st.markdown("### Cross-cutting Pillars")
+            for ps in pillar_summaries:
+                name = ps.get("strategic_pillar") or "Pillar"
+                summary = ps.get("summary") or ""
+                st.markdown(f"**{name}**")
+                if summary:
+                    st.markdown(summary)
+
+        # Risks / areas to watch
+        if risks:
+            st.markdown("### Areas to Watch / Risks")
+            for r in risks:
+                st.markdown(f"- {r}")
+
+        # Organisation-wide priorities
+        if priorities:
+            st.markdown("### Organisation-wide Priorities for Next Period")
+            for p in priorities:
+                st.markdown(f"- {p}")
+
+        # Notes for leadership
+        if notes_for_leadership:
+            st.markdown("### Notes for Leadership")
+            st.markdown(notes_for_leadership)
 
         # Build a Board PDF
         pdf_bytes = build_overall_board_pdf(
             reporting_label=reporting_label,
             dept_overview=df_overview,
             ai_result=ai_result,
-            logo_path=None,  # if you have a logo file, put the path here
+            logo_path=None,  # or your logo file
         )
 
         st.download_button(
@@ -205,6 +237,7 @@ if st.button("Generate Board Narrative with AI"):
             mime="application/pdf",
         )
 
-        # Optional: show the exact AI prompt used (for auditing / debugging)
-        with st.expander("Show AI prompt used"):
+        # Optional debugging: comment this out if you don't want to see it
+        with st.expander("Show AI prompt used", expanded=False):
             st.code(prompt_used, language="markdown")
+
