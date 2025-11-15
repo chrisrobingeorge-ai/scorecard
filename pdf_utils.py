@@ -441,19 +441,32 @@ def build_scorecard_pdf(
         header_cells.append(logo_flowable)
     else:
         header_cells.append(Spacer(0.5 * inch, 0.5 * inch))
-
+    
     header_cells.append(title_table)
     header_cells.append(total_table)
-
+    
+    # Content width is ~7.5" (Letter 8.5" minus 0.5" margins on each side),
+    # so colWidths sum to 7.5 to align the score box with the right margin.
     header_table = Table(
         [header_cells],
-        colWidths=[1.8 * inch, 3.5 * inch, 1.7 * inch],
+        colWidths=[2.0 * inch, 4.0 * inch, 1.5 * inch],  # logo / title / score box
+        hAlign="LEFT",
         style=TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+    
+                # Logo column: nudge slightly left to counter whitespace in the PNG
+                ("LEFTPADDING", (0, 0), (0, 0), -4),
+                ("RIGHTPADDING", (0, 0), (0, 0), 6),
+    
+                # Title column: no extra padding on left, a bit of space before score box
+                ("LEFTPADDING", (1, 0), (1, 0), 0),
+                ("RIGHTPADDING", (1, 0), (1, 0), 12),
+    
+                # Score box column: small left padding, flush to the right margin
+                ("LEFTPADDING", (2, 0), (2, 0), 6),
+                ("RIGHTPADDING", (2, 0), (2, 0), 0),
             ]
         ),
     )
