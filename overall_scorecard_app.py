@@ -46,7 +46,8 @@ def flatten_payload_to_rows(
     show_key = meta.get("show_key") or ""
 
     # Score dicts (may be missing or all None)
-    overall_score = scores.get("overall_score")
+    scores = payload.get("scores", {}) or {}
+    overall_score_default = scores.get("overall_score")
     pillar_scores = scores.get("pillar_scores") or {}
     question_scores = scores.get("question_scores") or {}
 
@@ -55,6 +56,16 @@ def flatten_payload_to_rows(
     for q in questions:
         strategic_pillar = q.get("strategic_pillar")
         qid = q.get("question_id")
+
+        # Prefer per-row scores embedded in the question itself; fall back to summary maps
+        row_overall = q.get("overall_score", overall_score_default)
+        row_pillar = q.get("pillar_score")
+        if row_pillar is None and strategic_pillar and pillar_scores:
+            row_pillar = pillar_scores.get(str(strategic_pillar))
+
+        row_question_score = q.get("question_score")
+        if row_question_score is None and question_scores:
+            row_question_score = question_scores.get(str(qid))
 
         row: Dict[str, Any] = {
             "source_file": source_name,
@@ -69,10 +80,10 @@ def flatten_payload_to_rows(
             "role": role,
             "show_key": show_key,
 
-            # Scores (may be None)
-            "overall_score": overall_score,
-            "pillar_score": pillar_scores.get(str(strategic_pillar)) if pillar_scores else None,
-            "question_score": question_scores.get(str(qid)) if question_scores else None,
+            # Scores
+            "overall_score": row_overall,
+            "pillar_score": row_pillar,
+            "question_score": row_question_score,
 
             # Question-level info
             "question_id": qid,
@@ -81,7 +92,7 @@ def flatten_payload_to_rows(
             "metric": q.get("metric") or "",
             "display_order": q.get("display_order"),
 
-            # Responses (we injected response_value in pdf_utils)
+            # Responses
             "response_value": q.get("response_value") or "",
             "response_type": q.get("response_type") or "",
             "notes": q.get("notes") or "",
