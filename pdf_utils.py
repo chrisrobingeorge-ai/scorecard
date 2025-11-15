@@ -857,10 +857,7 @@ def build_overall_board_pdf(
 
     story: list[Flowable] = []
 
-    # ─────────────────────────────────────────────────────────────────────
-    # Header: logo + title + reporting meta (mirroring scorecard style)
-    # ─────────────────────────────────────────────────────────────────────
-    # Logo
+    # ── Header: logo + title (no reporting period in the table) ─────────────
     logo_flowable: Flowable | None = None
     if logo_path:
         try:
@@ -870,79 +867,78 @@ def build_overall_board_pdf(
         except Exception:
             logo_flowable = None
 
-    # Title block
-    title_table = Table(
-        [[Paragraph("Overall Monthly Scorecard – Board Report", styles["BoardTitle"])]],
-        colWidths=[4.0 * inch],
-        style=TableStyle(
-            [
-                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-            ]
-        ),
-    )
-
-    # Simple meta (Reporting period) on the right
-    meta_rows: list[list[Flowable]] = []
-    if reporting_label:
-        meta_rows.append(
-            [
-                Paragraph("REPORTING PERIOD", styles["BoardMetaLabel"]),
-                Paragraph(str(reporting_label), styles["BoardMetaValue"]),
-            ]
-        )
-
-    meta_table: Flowable
-    if meta_rows:
-        meta_table = Table(
-            meta_rows,
-            colWidths=[1.8 * inch, 2.0 * inch],
-            hAlign="RIGHT",
-            style=TableStyle(
-                [
-                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ]
-            ),
-        )
-    else:
-        meta_table = Spacer(1, 0.1 * inch)
-
-    # Build header row
     header_cells: list[Flowable] = []
     if logo_flowable:
         header_cells.append(logo_flowable)
     else:
-        header_cells.append(Spacer(2.0 * inch, 0.5 * inch))
+        header_cells.append(Spacer(0.5 * inch, 0.5 * inch))
 
-    header_cells.append(title_table)
-    header_cells.append(meta_table)
+    header_cells.append(Paragraph("Overall Monthly Scorecard – Board Report", styles["BoardTitle"]))
 
+    # Two-column header: logo + title only, full width = 7.5"
     header_table = Table(
         [header_cells],
-        colWidths=[2.0 * inch, 4.0 * inch, 1.8 * inch],
+        colWidths=[2.0 * inch, 5.5 * inch],
         hAlign="LEFT",
         style=TableStyle(
             [
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("LEFTPADDING", (0, 0), (0, 0), -4),
                 ("RIGHTPADDING", (0, 0), (0, 0), 6),
                 ("LEFTPADDING", (1, 0), (1, 0), 0),
-                ("RIGHTPADDING", (1, 0), (1, 0), 12),
-                ("LEFTPADDING", (2, 0), (2, 0), 6),
-                ("RIGHTPADDING", (2, 0), (2, 0), 0),
+                ("RIGHTPADDING", (1, 0), (1, 0), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
             ]
         ),
     )
 
     story.append(header_table)
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 6))
+
+    # ── Reporting period: left-aligned, below header ────────────────────────
+    if reporting_label:
+        story.append(Paragraph("REPORTING PERIOD", styles["BoardMetaLabel"]))
+        story.append(Paragraph(str(reporting_label), styles["BoardMetaValue"]))
+        story.append(Spacer(1, 12))
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Departments overview table
+    # ─────────────────────────────────────────────────────────────────────
+    if not dept_overview.empty:
+        story.append(Paragraph("Departments included", styles["BoardSectionHeading"]))
+
+        display_cols = ["department", "month_label", "overall_score"]
+        display_cols = [c for c in display_cols if c in dept_overview.columns]
+
+        table_data = [
+            [col.replace("_", " ").title() for col in display_cols]
+        ]
+
+        for _, row in dept_overview[display_cols].iterrows():
+            table_data.append([str(row.get(c, "")) for c in display_cols])
+
+        table = Table(
+            table_data,
+            style=TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, 0), 9),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 4),
+                    ("ALIGN", (0, 0), (-1, 0), "LEFT"),
+
+                    ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                    ("FONTSIZE", (0, 1), (-1, -1), 9),
+                    ("VALIGN", (0, 1), (-1, -1), "TOP"),
+
+                    ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+                ]
+            ),
+            hAlign="LEFT",
+        )
+        story.append(table)
+        story.append(Spacer(1, 12))
+
 
     # ─────────────────────────────────────────────────────────────────────
     # Departments overview table
