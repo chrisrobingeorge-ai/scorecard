@@ -749,7 +749,17 @@ def build_scorecard_pdf(
     # Strategic pillars – narrative
     # ─────────────────────────────────────────────────────────────────────
     if pillar_summaries:
-        story.append(Paragraph("Strategic Pillars", styles["SectionHeading"]))
+        # For School, make the section heading explicitly about the three streams
+        dept_lower = str(department).lower()
+        if "school" in dept_lower:
+            section_label = (
+                "School Streams "
+                "(Classical Training / Attracting Students / Student Accessibility)"
+            )
+        else:
+            section_label = "Strategic Pillars"
+
+        story.append(Paragraph(section_label, styles["SectionHeading"]))
 
         for ps in pillar_summaries:
             pillar_name_raw = _to_plain_text(ps.get("strategic_pillar", "Pillar")).strip() or "Pillar"
@@ -776,7 +786,12 @@ def build_scorecard_pdf(
                 for p in _split_paragraphs(summary_text):
                     story.append(_safe_paragraph(p, styles["ReportBody"]))
             else:
-                story.append(_safe_paragraph("No narrative summary provided for this pillar.", styles["ReportBody"]))
+                story.append(
+                    _safe_paragraph(
+                        "No narrative summary provided for this pillar.",
+                        styles["ReportBody"],
+                    )
+                )
 
             story.append(Spacer(1, 6))
 
