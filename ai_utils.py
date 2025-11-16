@@ -502,10 +502,51 @@ def interpret_scorecard(
     """
     Call OpenAI to produce a structured interpretation of the scorecard.
     Returns a dict with keys that app.py expects.
+
+    For the Artistic department, we switch to an Artistic Director voice.
+    For all other departments, we keep the neutral strategy-analyst voice.
     """
 
     # Build a strategy-aware prompt that joins questions + answers + objectives
     prompt = _build_prompt_objective_aware(meta, questions_df, responses)
+
+    # Choose system voice based on department
+    dept_name = str(meta.get("department") or "").lower()
+
+    if "artistic" in dept_name:
+        # Artistic Director voice
+        system_content = (
+            "You are the Artistic Director of Alberta Ballet reporting to the Board. "
+            "You are reflecting on this month's Artistic scorecard in the context of a "
+            "five-year strategic plan (2025–2030). Not everything will be done right away, "
+            "and there is natural seasonality to the work: creation periods, rehearsal blocks, "
+            "premieres, touring, festivals, and audition cycles.\n\n"
+            "Speak in a grounded Artistic Director voice:\n"
+            "- Use natural 'we' / 'our' language where appropriate.\n"
+            "- Focus on repertoire, dancers, rehearsal and performance quality, artistic risk-taking, "
+            "collaborations, and how the season is unfolding artistically.\n"
+            "- Recognise that some months will be quieter for certain objectives (e.g., no auditions "
+            "outside the usual cycle, no festival appearances out of season). Treat these as normal "
+            "seasonal variations, not failures.\n"
+            "- Use the importance weights (ai_weight: 1=low, 2=medium, 3=high) as a guide to what "
+            "matters most, but apply common sense appropriate to a ballet company—we are not "
+            "in emergency medicine.\n\n"
+            "You still must follow the JSON output contract exactly as described in the user prompt: "
+            "return only JSON, with the required keys, and no markdown or extra commentary."
+        )
+    else:
+        # Original strategy-analyst voice for non-Artistic departments
+        system_content = (
+            "You are a senior strategy analyst for Alberta Ballet. "
+            "You interpret monthly scorecards in the context of the 2025–2030 strategic plan—"
+            "a FIVE-YEAR journey of transformation. "
+            "Each monthly scorecard represents one step in a multi-year process. "
+            "Not everything needs to be accomplished immediately. "
+            "Your role is to assess incremental progress toward long-term goals, "
+            "recognizing that strategic initiatives unfold gradually over years. "
+            "Avoid creating false urgency around issues that are simply at early stages. "
+            "You produce deep, board-ready narrative summaries in JSON format."
+        )
 
     # Make the call
     try:
@@ -515,17 +556,7 @@ def interpret_scorecard(
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "You are a senior strategy analyst for Alberta Ballet. "
-                        "You interpret monthly scorecards in the context of the 2025–2030 strategic plan—"
-                        "a FIVE-YEAR journey of transformation. "
-                        "Each monthly scorecard represents one step in a multi-year process. "
-                        "Not everything needs to be accomplished immediately. "
-                        "Your role is to assess incremental progress toward long-term goals, "
-                        "recognizing that strategic initiatives unfold gradually over years. "
-                        "Avoid creating false urgency around issues that are simply at early stages. "
-                        "You produce deep, board-ready narrative summaries in JSON format."
-                    ),
+                    "content": system_content,
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -538,13 +569,13 @@ def interpret_scorecard(
             # Try to salvage JSON object if model returned text around it
             import re
 
-            # ✅ back to the correct pattern: look for a single JSON object
+            # Look for a single JSON object
             m = re.search(r"\{.*\}", text, re.S)
             data = json.loads(m.group(0)) if m else {}
     except Exception as e:
         # Propagate as RuntimeError so app.py can show a friendly message
         raise RuntimeError(str(e))
- 
+
     # ── Optional safety filter: remove recruitment from production_summaries ──
     prod_summaries = data.get("production_summaries") or []
     cleaned_prod_summaries = []
@@ -573,7 +604,7 @@ def interpret_scorecard(
 
     data["production_summaries"] = cleaned_prod_summaries
 
-    # Normalize the output shape so app.py rendering is resilient
+    # Normalise the output shape so app.py rendering is resilient
     return {
         "overall_summary": data.get("overall_summary", ""),
         "pillar_summaries": data.get("pillar_summaries", []) or [],
