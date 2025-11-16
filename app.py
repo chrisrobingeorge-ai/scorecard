@@ -285,13 +285,21 @@ def load_questions_from_bytes(csv_bytes: bytes) -> pd.DataFrame:
 
     return df
 
-@cache_data
 def load_questions(file_path: str) -> pd.DataFrame:
+    """
+    Resolve a CSV path, read its bytes, and delegate to the cached
+    load_questions_from_bytes. This way the cache key is based on the
+    actual file contents, not just the filename.
+    """
     resolved = _resolve_path(file_path)
     if not resolved:
         raise FileNotFoundError(f"Could not find CSV: {file_path}")
+
     with open(resolved, "rb") as f:
-        return load_questions_from_bytes(f.read())
+        csv_bytes = f.read()
+
+    # This call IS cached, keyed on csv_bytes
+    return load_questions_from_bytes(csv_bytes)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Visibility rules (CSV-driven)
