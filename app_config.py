@@ -56,7 +56,7 @@ DEPARTMENT_CONFIGS = {
         has_productions=True,
         productions_csv="data/productions.csv",
         scope_label="Production",
-        allow_general_option=True,
+        allow_general_option=False,
     ),
     "School": DepartmentConfig(
         questions_csv="data/school_scorecard_questions.csv",
