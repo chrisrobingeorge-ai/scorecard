@@ -1142,8 +1142,9 @@ def main():
     # Build AI/PDF scope
     #
     # Default: use the CURRENT scope (this production only).
-    # For Artistic: widen to ALL Artistic productions for this month,
-    # and attach a production_title column with the real show name.
+    # For Artistic, Community, School, and Corporate: widen to ALL
+    # productions/programmes for this month, and attach a production_title
+    # column with the real show/programme name.
     # ─────────────────────────────────────────────────────────────
     questions_for_ai = filtered
     responses_for_ai = responses
