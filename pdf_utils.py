@@ -1,28 +1,32 @@
 # pdf_utils.py
 
-from xml.sax.saxutils import escape as xml_escape
+from __future__ import annotations
 
 from io import BytesIO
 from typing import Dict, Any
-
+from datetime import datetime
 import json
 import re
-from datetime import datetime
+
 import pandas as pd
+from xml.sax.saxutils import escape as xml_escape
+
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 from reportlab.platypus import (
     Flowable,
+    Image,
+    PageBreak,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
-    Image,
-    PageBreak,
 )
-from reportlab.lib.units import inch
-from reportlab.lib import colors
+
+from app_config import OBJECTIVES_DF
 
 JSON_PREFIX = "AB_SCORECARD_JSON:"
 
