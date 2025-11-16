@@ -675,6 +675,24 @@ def _apply_pending_draft_if_any():
 # Scope filtering helper
 # ─────────────────────────────────────────────────────────────────────────────
 def filter_questions_for_scope(questions_all_df: pd.DataFrame, current_production: str) -> pd.DataFrame:
+    """
+    Returns the subset of questions to show for the given scope.
+
+    Rules:
+      - General ("", "General"):
+          * general questions only (no production_only rows)
+      - "Auditions":
+          * questions tagged production == "Auditions"
+          * plus global "all works" style questions (if any)
+          * but NOT generic production_only questions
+      - "Festivals":
+          * questions tagged production == "Festivals"
+          * plus global "all works" style questions (if any)
+          * but NOT generic production_only questions
+      - Any other production (e.g. Nijinsky, Once Upon a Time):
+          * keep the existing behaviour:
+            generic questions + that production’s questions + production_only
+    """
     filtered = questions_all_df.copy()
 
     if "production" not in filtered.columns:
@@ -682,6 +700,10 @@ def filter_questions_for_scope(questions_all_df: pd.DataFrame, current_productio
 
     prod_col = filtered["production"].astype(str).fillna("").str.strip()
     prod_lower = prod_col.str.lower()
+
+    # Normalised current scope
+    cur = (current_production or "").strip()
+    cur_lower = cur.casefold()
 
     general_vals = ["", "all works", "school-wide", "corporate-wide", "all"]
     general_only_vals = ["general_only"]
@@ -691,23 +713,43 @@ def filter_questions_for_scope(questions_all_df: pd.DataFrame, current_productio
     general_only_mask = prod_lower.isin(general_only_vals)
     production_only_mask = prod_lower.isin(production_only_vals)
 
-    if current_production == "":
-        filtered = filtered[general_mask & ~production_only_mask]
+    # ── 1) General scope ─────────────────────────────────────────
+    if cur == "" or cur_lower == "general":
+        # General gets only general / all-works style rows, no production_only
+        return filtered[general_mask & ~production_only_mask].copy()
+
+    # ── 2) Auditions (special area) ──────────────────────────────
+    if cur_lower == "auditions":
+        specific_mask = prod_lower == "auditions"
+        # Optional: include global questions that truly apply to everything
+        global_mask = prod_lower.isin(general_vals) & ~general_only_mask & ~production_only_mask
+        return filtered[specific_mask | global_mask].copy()
+
+    # ── 3) Festivals (special area) ──────────────────────────────
+    if cur_lower == "festivals":
+        specific_mask = prod_lower == "festivals"
+        global_mask = prod_lower.isin(general_vals) & ~general_only_mask & ~production_only_mask
+        return filtered[specific_mask | global_mask].copy()
+
+    # ── 4) Normal productions (Nijinsky, OUaT, etc.) ─────────────
+    specific_mask = prod_col.str.casefold() == cur_lower
+
+    if specific_mask.any():
+        # Keep previous behaviour for "real" productions:
+        #   generic (but not general_only) + this production + production_only
+        return filtered[
+            (general_mask & ~general_only_mask & ~production_only_mask)
+            | specific_mask
+            | production_only_mask
+        ].copy()
     else:
-        cur_norm = current_production.strip()
-        specific_mask = prod_col.str.casefold() == cur_norm.casefold()
-        if specific_mask.any():
-            filtered = filtered[
-                (general_mask & ~general_only_mask & ~production_only_mask)
-                | specific_mask
-                | production_only_mask
-            ]
-        else:
-            filtered = filtered[
-                (general_mask & ~general_only_mask & ~production_only_mask)
-                | production_only_mask
-            ]
-    return filtered
+        # If we don't recognise this production name in the CSV,
+        # fall back to generic + production_only
+        return filtered[
+            (general_mask & ~general_only_mask & ~production_only_mask)
+            | production_only_mask
+        ].copy()
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Export helpers
