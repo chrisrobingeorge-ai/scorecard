@@ -60,10 +60,10 @@ DEPARTMENT_CONFIGS = {
     ),
     "School": DepartmentConfig(
         questions_csv="data/school_scorecard_questions.csv",
-        has_productions=False,              # School has no productions/programmes
-        productions_csv=None,
+        has_productions=True,
+        productions_csv="data/productions.csv",
         scope_label="Programme",
-        allow_general_option=True,
+        allow_general_option=False,
     ),
     "Community": DepartmentConfig(
         questions_csv="data/community_scorecard_questions.csv",
