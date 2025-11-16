@@ -257,7 +257,7 @@ def _build_prompt_objective_aware(
         "No strategic objective mapping was provided for these items."
     )
 
-        # Ensure ai_weight exists and is numeric: 1=LOW, 2=MEDIUM, 3=HIGH
+    # Ensure ai_weight exists and is numeric: 1=LOW, 2=MEDIUM, 3=HIGH
     if "ai_weight" in merged.columns:
         merged["ai_weight"] = pd.to_numeric(merged["ai_weight"], errors="coerce").fillna(2).astype(int)
     else:
@@ -327,7 +327,31 @@ def _build_prompt_objective_aware(
 
     objectives_text = "\n\n".join(objective_blocks)
 
-    # ── 4) Wrap in richer instructions for the model ────────────────────────
+    # ── 4) Pillar inventory for stricter guidance (esp. School) ──────────────
+    pillars = sorted(
+        {
+            str(p).strip()
+            for p in merged.get("strategic_pillar", [])
+            if str(p).strip()
+        }
+    )
+    pillar_list_text = ", ".join(pillars) if pillars else "none explicitly named"
+
+    dept_lower = str(dept).lower()
+    school_extra = ""
+    if "school" in dept_lower and pillars:
+        # For the School department, make the structure very explicit
+        school_extra = (
+            "For this School department, you MUST treat each of these pillars as a distinct stream of work.\\n"
+            f"The pillars you must use are: {pillar_list_text}.\\n"
+            "You MUST return one and only one 'pillar_summaries' entry for EACH of these pillar names.\\n"
+            "Do not invent new pillar names and do not merge them into a single generic pillar.\\n"
+            "In your 'overall_summary', start with a short integrative paragraph about the School overall,\\n"
+            "then include one paragraph for EACH of these pillars, clearly signposted in the narrative.\\n"
+            "Where evidence is thin for a pillar, say so neutrally rather than assuming poor performance.\\n"
+        )
+
+    # ── 5) Wrap in richer instructions for the model ────────────────────────
     period = meta.get("month") or ""
     scope = meta.get("scope") or (meta.get("production") or "current scope")
 
@@ -338,7 +362,7 @@ def _build_prompt_objective_aware(
         You are given questions, their answers, and their mapping to strategic objectives
         from the 2025–2030 strategic plan.
 
-        **CRITICAL CONTEXT: This is a FIVE-YEAR strategic plan (2025–2030).**
+        CRITICAL CONTEXT: This is a FIVE-YEAR strategic plan (2025–2030).
         Each monthly scorecard is one snapshot in a multi-year transformation journey.
         Strategic initiatives are expected to unfold gradually over multiple years.
         Not everything needs to be accomplished at once, and absence of immediate progress
@@ -360,28 +384,37 @@ def _build_prompt_objective_aware(
         - Period: {period}
         - Scope: {scope}
 
-        Your task is to produce a **deep, interpretive analysis**, not just a recap of answers.
+        The distinct strategic pillars / areas present in this department's data are:
+        {pillar_list_text}
 
-        Please respond with a single valid JSON object with the following keys:
+        For ALL departments:
+        - You MUST return one 'pillar_summaries' entry for EACH distinct pillar name listed above.
+        - Do not invent new pillar names and do not merge these into a single generic pillar.
+        - If no pillars are present, return an empty list for 'pillar_summaries'.
+
+        {school_extra}
+
+        Your task is to produce a deep, interpretive analysis as a single JSON object
+        with exactly these keys:
+        - "overall_summary" (string)
+        - "pillar_summaries" (array of objects)
+        - "production_summaries" (array of objects)
+        - "risks" (array of strings)
+        - "priorities_next_month" (array of strings)
+        - "notes_for_leadership" (string)
 
         1) "overall_summary":
-           A **coherent narrative of 2–4 paragraphs**, written in prose (no bullet points).
-           - Link explicitly to strategic objectives by ID and title (e.g., "ART1 – Elevate the Art of Dance").
-           - Diagnose what seems **on track**, **mixed**, or **developing**, and why.
-           - Frame progress in the context of a FIVE-YEAR strategic plan. Recognize that:
-             • Some objectives are in early stages and may show limited activity this month—that's expected.
-             • Strategic initiatives take time to mature; assess momentum and direction, not immediate completion.
-             • Absence of progress in one month doesn't indicate failure—it may simply reflect timing or sequencing.
-           - Go beyond restating answers: infer patterns, tensions, and trade-offs
-             (e.g., strong innovation but recruitment building gradually; strong community impact with capacity developing).
-           - Where evidence is thin or missing, acknowledge it neutrally—don't interpret lack of data as negative performance.
-           - Avoid urgent or alarmist language. Prefer terms like "developing," "building momentum," "early stage," 
-             "area to watch over time," rather than "at risk" or "needs immediate attention."
-           - Do not assume that a production is weak in visual or artistic quality unless the answers explicitly indicate that. 
-             Absence of evidence is not evidence of weakness.
-           - **CRITICAL**: Focus your assessment primarily on HIGH-importance items (ai_weight=3), with MEDIUM items (ai_weight=2) 
-             as supporting context. NEVER base strong negative conclusions primarily on LOW-importance items (ai_weight=1), 
-             which are optional or seasonal signals meant only to add nuance.
+           A coherent narrative of 2–4 paragraphs, written in prose (no bullet points).
+           - Link explicitly to strategic objectives by ID and title where possible.
+           - Diagnose what seems on track, developing, or lightly constrained, and why.
+           - Frame progress in the context of a FIVE-YEAR strategic plan.
+           - Go beyond restating answers: infer patterns, tensions, and trade-offs.
+           - Where evidence is thin or missing, acknowledge it neutrally.
+           - Avoid urgent or alarmist language. Prefer terms like "developing," "building momentum,"
+             "early stage," or "area to watch over time," rather than "at risk" or "needs immediate attention."
+           - Focus your assessment primarily on HIGH-importance items (ai_weight=3), with MEDIUM items (ai_weight=2)
+             as supporting context. NEVER base strong negative conclusions primarily on LOW-importance items
+             (ai_weight=1), which are optional or seasonal signals meant only to add nuance.
 
         2) "pillar_summaries":
            An array of objects, each with:
@@ -404,18 +437,14 @@ def _build_prompt_objective_aware(
            Remember: In a 5-year plan, most objectives will show gradual, incremental progress month-to-month.
            A "2/3 Steady development" is a perfectly healthy status for strategic work in progress.
 
-            Each scorecard item is also tagged with an "Importance" level derived from ai_weight:
+           Each scorecard item is also tagged with an "Importance" level derived from ai_weight:
              - Importance: HIGH  (ai_weight=3)   → core strategic levers.
              - Importance: MEDIUM (ai_weight=2) → important context.
              - Importance: LOW   (ai_weight=1)   → optional or seasonal signals.
 
            When drawing strong conclusions (especially 0/3 or 3/3):
              - Rely primarily on HIGH-importance items, supported by MEDIUM where helpful.
-             - NEVER base a 0/3 or a harsh negative judgement solely on LOW-importance items
-               such as festivals, residencies, or optional contemporary-issues content.
-             - LOW-importance items should only colour the narrative (nuance, examples), not
-               drive the overall assessment.
-
+             - NEVER base a 0/3 or a harsh negative judgement solely on LOW-importance items.
 
         3) "production_summaries":
            An array of objects, each with:
@@ -424,66 +453,40 @@ def _build_prompt_objective_aware(
                  - "pillar": pillar name
                  - "score_hint": again in the form "<n>/3 label" using the same 0–3 scale.
                  - "summary" (2–4 sentences).
-           Focus on **differences between productions/programmes** and what they imply
-           for strategic objectives (e.g., one show strongly supports ART2 but not ART3).
-           When comparing productions or programmes, do not let a single metric (e.g., reuse of assets, a missing collaboration, or one weak answer) completely dominate your judgment. Look across all available answers before calling a production clearly strong or weak for a given objective.
-           
-           **CRITICAL IMPORTANCE WEIGHTING FOR PRODUCTION SUMMARIES**:
-           - When scoring productions/programmes, base your assessment primarily on HIGH-importance items (ai_weight=3), supported by MEDIUM-importance items (ai_weight=2).
-           - NEVER lower a production's score or make harsh negative judgments based primarily or solely on LOW-importance items (ai_weight=1).
-           - LOW-importance items (such as festival participation, artist residencies, or optional contemporary-issues questions) are seasonal/optional and should only add context or examples to your narrative—they must NOT drive the core assessment or scoring.
-
-           Some questions are followed by "Why not?" explanations when the answer is "No".
-           When these explanations indicate that the timing or artistic focus was intentional
-           (e.g., "auditions are in spring", "this work is designed as a classic fairy-tale"),
-           treat the "No" as neutral rather than negative. In these cases, you may note future
-           opportunities, but do not mark the objective or production as off track solely
-           because the activity did not occur this month.
+           Focus on differences between productions/programmes and what they imply
+           for strategic objectives.
+           When comparing productions or programmes, do not let a single metric completely dominate your judgment.
+           Look across all available answers before calling a production clearly strong or weak for a given objective.
 
            Some questions are marked as "DEPARTMENT-WIDE (not tied to a single production)".
-           These describe the company or department overall (e.g., recruitment, auditions,
-           contracts) and MUST NOT be treated as attributes of any specific production.
-           When writing "production_summaries", completely ignore these questions for both
-           scoring and narrative. Do not create pillars or comments in a production summary
-           that are based on DEPARTMENT-WIDE items (for example, do NOT mention recruitment
-           or "Build a World-Class Ballet Company" inside a specific production’s summary).
-           You may refer to these items only in "overall_summary" and "pillar_summaries",
-           using department-level language ("the company", "the department") rather than
-           naming individual productions.
+           These describe the company or department overall and MUST NOT be treated as
+           attributes of any specific production. Use them only in "overall_summary" and
+           "pillar_summaries", not in "production_summaries".
 
         4) "risks":
            An array of concise bullet-style strings labeled as "Areas to Watch" or "Considerations."
-           These should identify **strategic considerations** worth monitoring over time, not immediate crises.
-           In a 5-year plan, many initiatives will show variable progress month-to-month—that's normal.
-           Only flag items that, if unaddressed over multiple periods, could impact long-term strategic success.
+           These should identify strategic considerations worth monitoring over time, not immediate crises.
            Use measured language: "Worth monitoring," "Consider tracking," "May need attention over time."
-           Avoid alarmist framing. Tie observations to specific objectives and, where relevant, to productions or pillars.
-           **CRITICAL**: Base observations primarily on HIGH-importance items (ai_weight=3), supported by MEDIUM items (ai_weight=2). 
-           Do NOT identify concerns based solely on LOW-importance items (ai_weight=1), which are optional or seasonal signals.
+           Base observations primarily on HIGH-importance items, supported by MEDIUM items.
+           Do NOT identify concerns based solely on LOW-importance items.
 
         5) "priorities_next_month":
            An array of concise, action-oriented bullet strings framed as "Next Steps in the Strategic Journey."
-           Each item should represent a **logical next step** in advancing long-term objectives, recognizing that
-           strategic work unfolds gradually. These are not urgent fixes but rather incremental progress points.
+           Each item should represent a logical next step in advancing long-term objectives.
            Frame each priority as continuing momentum, building foundations, or advancing a strategic initiative.
-           Reference the objective(s) each supports (e.g., "Continue building momentum on ART5 by...").
-           Avoid language that suggests immediate pressure or crisis response.
 
         6) "notes_for_leadership":
-           A **single narrative paragraph or two (4–8 sentences)** in prose (no bullets),
+           A single narrative paragraph or two (4–8 sentences) in prose (no bullets),
            written as if for the CEO and Board with a long-term strategic lens. Highlight:
              - the most important strategic signals from this month in the context of multi-year progress,
              - how this month's activities fit into the broader 5-year transformation journey,
              - any trade-offs or dependencies they should understand as strategic initiatives mature,
              - where sustained attention (not immediate crisis response) may support long-term success.
-           Use measured, strategic language appropriate for guiding a multi-year transformation, 
-           not language that creates false urgency or suggests immediate problems.
 
         Style guidelines:
         - Use clear, direct language suitable for a Board / senior leadership report.
-        - Avoid generic consulting clichés ("leverage synergies", "unlock potential").
-        - Do not simply repeat question text; instead, synthesise what the answers
-          imply for strategy.
+        - Avoid generic consulting clichés.
+        - Do not simply repeat question text; instead, synthesise what the answers imply for strategy.
         - It is acceptable to point out unknowns, contradictions, or data gaps.
 
         Here is the scorecard data grouped by strategic objective:
