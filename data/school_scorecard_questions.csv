@@ -49,6 +49,6 @@ section,department,strategic_pillar,production,metric,question_id,question_text,
 ,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q10,"If yes, how did we increase awareness?",text,,FALSE,470,accessibility,1,SCH_SA_Q9,SCH5
 ,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q11,How many boys did we enrol through this campaign?,number,,FALSE,480,accessibility,1,SCH_SA_Q9,SCH5
 ,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q12,Did we recommend students from AB Classes audition for Alberta Ballet School?,yes_no,"Yes,No",TRUE,460,accessibility,1,,SCH5
-,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q13,"If yes, how many did we recommend?",text,,FALSE,470,accessibility,1,SCH_SA_Q12,SCH5
-,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q14,How many accepted?,text,,FALSE,470,accessibility,1,SCH_SA_Q12,SCH5
-,School,Student Accessibility,School-wide,Boy Enrolment,SCH_SA_Q15,"If no,  please explain why.",text,,FALSE,470,accessibility,1,SCH_SA_Q12=No,SCH5
+,School,Student Accessibility,School-wide,AB Classes,SCH_SA_Q13,"If yes, how many did we recommend?",number,,FALSE,470,accessibility,1,SCH_SA_Q12,SCH5
+,School,Student Accessibility,School-wide,AB Classes,SCH_SA_Q14,How many accepted?,number,,FALSE,470,accessibility,1,SCH_SA_Q12,SCH5
+,School,Student Accessibility,School-wide,AB Classes,SCH_SA_Q15,"If no,  please explain why.",number,,FALSE,470,accessibility,1,SCH_SA_Q12=No,SCH5
