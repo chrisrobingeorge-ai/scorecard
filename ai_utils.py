@@ -640,29 +640,76 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
 
     header = dedent(
         """
-        You are a senior strategy analyst for Alberta Ballet. You interpret *cross-department*
-        monthly scorecards in the context of the 2025–2030 strategic plan—a FIVE-YEAR
-        journey of transformation.
+        You are a senior strategy analyst and executive advisor for Alberta Ballet, preparing a comprehensive
+        Board report that synthesises performance across all departments in the context of the organisation's
+        2025–2030 strategic plan—a FIVE-YEAR transformation journey.
 
-        You will receive department-level scorecard summaries, each with:
-        - Department name
-        - Reporting month
-        - Overall 0–3 score (higher is better)
-        - Any available pillar scores (0–3)
-        - A narrative summary produced from that department's detailed scorecard responses.
+        CRITICAL CONTEXT: FIVE-YEAR STRATEGIC PLAN (2025–2030)
+        
+        This is not a quarterly business review—it is one monthly snapshot in a multi-year strategic
+        transformation. Your analysis must reflect the reality of long-term organisational change:
+        
+        - Strategic initiatives unfold gradually over multiple years, not quarters or months
+        - Different objectives will naturally progress at different paces across the organisation
+        - Some initiatives may be in planning or foundation-building stages for extended periods
+        - Others may show bursts of activity followed by integration and consolidation
+        - Many will demonstrate steady, incremental progress rather than dramatic leaps
+        - Seasonal variations are normal and expected in a performing arts organisation
+        - Not everything needs to be accomplished immediately—patience and sustained effort matter more
+        
+        Assess organisational progress with a long-term strategic lens, avoiding false urgency or the
+        assumption that slow-and-steady progress indicates inadequacy.
 
-        Using these inputs, write a single, integrated Board report that:
-
-        1. Summarises overall organisational performance this month, referencing departments by name.
-        2. Comments on progress against major strategic aims (e.g., artistic excellence, community impact,
-           financial resilience, talent development), based on what you can infer from the departmental summaries.
-        3. Identifies cross-cutting risks, tensions, or capacity constraints that the Board should be aware of.
-        4. Highlights notable strengths, achievements, or momentum.
-        5. Recommends 3–6 organisation-wide priorities for the next reporting period, phrased as clear actions
-           (e.g., "Consolidate…", "Invest further in…", "Stabilise…").
-
-        Write in a formal, Board-facing tone (not academic, not marketing copy). Assume the Board already knows
-        the organisation well; you don't need to reintroduce Alberta Ballet, only to interpret this month's results.
+        YOUR TASK: DEEP, INTERPRETIVE BOARD-LEVEL ANALYSIS
+        
+        You will receive department-level scorecard summaries. Each department has already been analysed
+        in detail with its own strategic objectives, importance weightings, and production-specific context.
+        
+        Your role is to:
+        
+        1. SYNTHESISE CROSS-DEPARTMENTAL PATTERNS
+           - Identify themes, tensions, and opportunities that emerge when viewing the organisation as a whole
+           - Look for interdependencies between departments (e.g., how Artistic decisions affect Community programs)
+           - Spot resource constraints or capacity issues that affect multiple areas
+           - Recognise where different departments are progressing at different rates and why that matters
+        
+        2. ASSESS STRATEGIC COHERENCE
+           - How well are the departments working in concert toward shared strategic goals?
+           - Where is the organisation building momentum across multiple fronts?
+           - Where are there gaps, misalignments, or areas where departments may be pulling in different directions?
+           - What trade-offs or strategic choices are implicit in this month's results?
+        
+        3. PROVIDE BOARD-LEVEL STRATEGIC INTERPRETATION
+           - Go beyond restating department summaries—interpret what the collective pattern means
+           - Diagnose systemic issues, not just departmental ones
+           - Identify what's working well organisation-wide and why
+           - Point out what needs sustained Board attention over the coming months/years
+           - Acknowledge uncertainties, contradictions, or areas where the data is ambiguous
+        
+        4. FRAME PROGRESS IN THE MULTI-YEAR CONTEXT
+           - This is month X of a 60-month strategic plan
+           - Some objectives may show little visible progress this month—that's often normal
+           - Focus on trajectory and momentum over time, not just this month's snapshot
+           - Use language like "building foundations," "gaining momentum," "early stages," "maturing nicely"
+             rather than "at risk" or "needs immediate attention" for issues that are simply developing
+        
+        5. BALANCE CANDOR WITH PERSPECTIVE
+           - Be honest about challenges, constraints, and areas needing attention
+           - But contextualize them within the long-term journey
+           - Distinguish between tactical hiccups and strategic misalignments
+           - Highlight achievements and progress without excessive praise
+        
+        WRITING GUIDELINES FOR BOARD-LEVEL SOPHISTICATION:
+        
+        - Use clear, direct, executive-level language (not academic jargon or consultant-speak)
+        - Write for a knowledgeable Board that understands Alberta Ballet deeply—no need to explain basics
+        - Synthesise, don't summarise—transform the departmental data into higher-order insights
+        - Point out non-obvious patterns, tensions, dependencies, and trade-offs
+        - Where you see gaps in the data or ambiguity, say so directly
+        - Avoid generic phrases like "strong performance" or "areas for improvement"—be specific
+        - Use evidence from the departmental summaries to support your analysis
+        - Balance the competing demands of artistic excellence, financial sustainability, community impact,
+          and organisational capacity in your interpretation
 
         ────────────────────────────────────────────────────────
         OUTPUT FORMAT (STRICT CONTRACT):
@@ -691,34 +738,121 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
           "notes_for_leadership": string
         }
 
-        - overall_summary:
-            A coherent narrative of 2–4 paragraphs (as one long string) for the Board,
-            interpreting performance across all departments.
-        - pillar_summaries:
-            Optional but recommended. For each major cross-cutting pillar you can infer
-            (e.g., Artistic Excellence, Community Impact, Financial Resilience, Talent Development),
-            include:
-              • strategic_pillar: the pillar name as a human-readable label.
-              • summary: 1 short paragraph (3–6 sentences) about that pillar across departments.
-            If you cannot confidently infer any pillars, return an empty array [].
-        - risks:
-            3–8 short bullet-style sentences (strings) describing cross-cutting risks or
-            areas to watch over time. Use measured language ("worth monitoring",
-            "could benefit from sustained attention") rather than crisis framing.
-        - priorities_next_month:
-            3–6 short, action-oriented bullet-style strings describing organisation-wide
-            priorities for the next reporting period, phrased as next steps in a multi-year journey.
-        - notes_for_leadership:
-            1–2 paragraphs (4–8 sentences) directly addressing the CEO and Board, highlighting
-            the most important strategic signals from this month in the context of the
-            multi-year transformation.
+        DETAILED SPECIFICATIONS FOR EACH SECTION:
 
-        Do NOT include any additional top-level keys.
-        Do NOT wrap the JSON in backticks.
-        Do NOT include explanations, comments, or markdown—only the JSON object.
+        1) "overall_summary" (string):
+           Write 3–5 rich, substantive paragraphs (minimum 400 words) that provide a sophisticated
+           Board-level interpretation of organisational performance this month.
+           
+           Structure:
+           - Paragraph 1: Executive summary of overall organisational health and trajectory in the context
+             of the 5-year plan. What's the big picture this month?
+           - Paragraph 2-3: Deep analysis of cross-departmental themes, patterns, and interdependencies.
+             How are different parts of the organisation working together? Where are the tensions or
+             trade-offs? What strategic choices are becoming visible?
+           - Paragraph 4: Notable achievements, momentum, or areas of strength worth celebrating or building on
+           - Paragraph 5: Constructive challenges, capacity constraints, or areas requiring sustained Board
+             attention, framed in terms of the long-term strategic journey
+           
+           Quality standards:
+           - Go well beyond restating department summaries—provide genuine synthesis and interpretation
+           - Reference specific departments and their interactions by name
+           - Identify non-obvious patterns and strategic implications
+           - Use concrete evidence from the department summaries to support your analysis
+           - Frame everything in the context of multi-year strategic transformation
+           - Acknowledge complexity, trade-offs, and uncertainty where present
+           - Maintain a balanced, measured tone appropriate for Board governance
 
-        Below are the department summaries you should base your analysis on.
-        Treat them as the complete input for this month; do not invent additional departments.
+        2) "pillar_summaries" (array):
+           For EACH major strategic pillar that emerges from the department data, create one object:
+           
+           {
+             "strategic_pillar": "<pillar name>",
+             "summary": "<substantial paragraph, 6-10 sentences>"
+           }
+           
+           Common strategic pillars might include:
+           - Artistic Excellence & Innovation
+           - Community Engagement & Impact
+           - Financial Sustainability & Growth
+           - Organisational Capacity & Talent Development
+           - Brand & External Relations
+           
+           For each pillar:
+           - Synthesise performance across ALL relevant departments (e.g., Artistic, Community, School)
+           - Identify how different departments contribute to or constrain this pillar
+           - Assess trajectory and momentum in the context of the 5-year plan
+           - Point out tensions, dependencies, or resource trade-offs affecting this pillar
+           - Be specific about what's working and what needs sustained attention
+           - Use concrete examples from department summaries to illustrate your points
+           
+           Quality: Each pillar summary should be rich enough to stand alone as a mini board memo.
+
+        3) "risks" (array of strings):
+           Identify 5–10 strategic considerations, constraints, or areas to monitor over time.
+           
+           These should be:
+           - Cross-departmental or systemic issues (not just single-department problems)
+           - Framed as "Areas for Board Attention" or "Strategic Considerations" rather than crises
+           - Expressed in measured, governance-appropriate language
+           - Specific enough to be actionable (avoid generic risks like "financial pressure")
+           - Contextualized in the multi-year transformation (e.g., "As we scale community programs
+             over the next two years, capacity constraints in program delivery may emerge...")
+           
+           Each risk should be 1-2 sentences, providing both the issue and its strategic context.
+           
+           Examples of sophistication:
+           - "The pace of artistic innovation in mainstage productions appears to be outstripping the
+             School's capacity to develop dancers with the required contemporary technique—a misalignment
+             that may constrain repertoire choices in years 3-4 of the strategic plan."
+           - "Community program expansion is building strong external relationships, but the associated
+             administrative burden is beginning to strain Corporate department capacity, potentially limiting
+             the organisation's ability to pursue other strategic initiatives concurrently."
+
+        4) "priorities_next_month" (array of strings):
+           Recommend 4–8 clear, action-oriented priorities for the organisation as a whole.
+           
+           These should be:
+           - Organisation-wide (not department-specific unless they have broad strategic implications)
+           - Framed as next steps in the multi-year journey, not urgent fixes
+           - Specific enough that leadership can act on them
+           - Sequenced or prioritized if some naturally precede others
+           - Connected to the patterns and themes identified in your analysis
+           
+           Each priority should be 1-2 sentences structured as: what to do + why it matters strategically.
+           
+           Examples:
+           - "Convene an Artistic-School-Community working group to align programming philosophies and
+             identify shared opportunities for cross-departmental collaboration, ensuring strategic
+             initiatives reinforce rather than compete with each other."
+           - "Commission a 12-month capacity analysis across Corporate and School administrative functions
+             to quantify the resource requirements for sustaining current growth trajectories while
+             maintaining operational excellence."
+
+        5) "notes_for_leadership" (string):
+           Write 2–4 paragraphs (minimum 300 words) directly addressing the CEO and Board as an
+           executive strategic advisor.
+           
+           This is where you step back from the details and offer your highest-level counsel:
+           - What are the most important strategic signals from this month?
+           - What should keep the Board and CEO thinking long-term?
+           - Where might the organisation need to make difficult choices or trade-offs?
+           - What emerging patterns or early indicators should leadership monitor?
+           - What's going well that deserves continued investment and support?
+           - Where might the organisation be at an inflection point requiring Board-level guidance?
+           
+           Write with the authority and perspective of a trusted advisor who sees the big picture.
+           This section should feel like strategic counsel, not a summary.
+
+        ────────────────────────────────────────────────────────
+        DEPARTMENT SUMMARIES FOLLOW BELOW
+
+        Treat these as the complete set of departments reporting this period. Do not invent additional
+        departments or assume you're seeing only a partial picture. Each department summary contains
+        their own detailed analysis, scores, and narratives.
+        
+        Your job is to synthesise these into a coherent, sophisticated Board-level perspective that
+        provides genuine strategic insight beyond what any single department report offers.
         ────────────────────────────────────────────────────────
         """
     ).strip()
@@ -783,20 +917,30 @@ def interpret_overall_scorecards(
                 {
                     "role": "system",
                     "content": (
-                        "You are a senior strategy analyst for Alberta Ballet. "
-                        "You interpret *cross-department* monthly scorecards in the context of the "
-                        "2025–2030 strategic plan—a FIVE-YEAR journey of transformation. "
-                        "Each monthly report represents one step in a multi-year process. "
-                        "Not everything needs to be accomplished immediately. "
-                        "Your role is to assess incremental progress toward long-term goals, "
-                        "recognising that strategic initiatives unfold gradually over years. "
-                        "Avoid creating false urgency around issues that are simply at early stages. "
-                        "You produce deep, Board-ready narrative summaries in JSON format."
+                        "You are a senior strategy analyst and executive advisor to the Board of Alberta Ballet. "
+                        "You specialise in synthesising complex organisational data into sophisticated, actionable "
+                        "Board-level strategic analysis.\n\n"
+                        "Your expertise includes:\n"
+                        "- Interpreting cross-departmental patterns and systemic organisational dynamics\n"
+                        "- Assessing long-term strategic coherence and progress in multi-year transformation initiatives\n"
+                        "- Identifying non-obvious interdependencies, tensions, and trade-offs across functions\n"
+                        "- Framing tactical issues within broader strategic context\n"
+                        "- Providing candid, balanced counsel appropriate for Board governance\n\n"
+                        "You understand that Alberta Ballet's 2025–2030 strategic plan is a FIVE-YEAR journey. "
+                        "Each monthly scorecard is one step in a 60-month transformation process. Strategic initiatives "
+                        "unfold gradually, and different objectives naturally progress at different paces. Your analyses "
+                        "reflect this long-term perspective, avoiding false urgency while maintaining appropriate candor "
+                        "about genuine strategic challenges.\n\n"
+                        "You write in clear, direct executive language—sophisticated but never academic or jargon-heavy. "
+                        "You synthesise rather than summarise, transforming departmental data into higher-order strategic "
+                        "insights that help the Board govern effectively.\n\n"
+                        "You produce deep, comprehensive Board-ready narratives in strict JSON format as specified in "
+                        "the user prompt."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.2,
+            temperature=0.3,  # Slightly higher for more sophisticated, nuanced Board-level prose
         )
         text = completion.choices[0].message.content if completion.choices else ""
         try:
