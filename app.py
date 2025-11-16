@@ -466,24 +466,13 @@ def build_form_for_questions(
         if rtype == "yes_no":
             opts_display = ["— Select —"] + list(yes_no_opts)
             default_index = opts_display.index(prev_primary) if (prev_primary in yes_no_opts) else 0
-
-            # If state already has a value (e.g. from a loaded draft), let Streamlit use it
-            if widget_key in st.session_state:
-                chosen = st.radio(
-                    label_display,
-                    opts_display,
-                    horizontal=True,
-                    key=widget_key,
-                )
-            else:
-                chosen = st.radio(
-                    label_display,
-                    opts_display,
-                    horizontal=True,
-                    key=widget_key,
-                    index=default_index,
-                )
-
+            chosen = st.radio(
+                label_display,
+                opts_display,
+                horizontal=True,
+                key=widget_key,
+                index=default_index,
+            )
             entry["primary"] = chosen if chosen in yes_no_opts else None
 
         elif rtype == "scale_1_5":
@@ -493,80 +482,23 @@ def build_form_for_questions(
                     default_val = int(prev_primary)
             except Exception:
                 pass
-
-            if widget_key in st.session_state:
-                slider_val = st.slider(
-                    label_display,
-                    min_value=1,
-                    max_value=5,
-                    key=widget_key,
-                )
-            else:
-                slider_val = st.slider(
-                    label_display,
-                    min_value=1,
-                    max_value=5,
-                    key=widget_key,
-                    value=default_val,
-                )
-            entry["primary"] = int(slider_val)
+            entry["primary"] = int(
+                st.slider(label_display, min_value=1, max_value=5, key=widget_key, value=default_val)
+            )
 
         elif rtype == "number":
             default_val = float(prev_primary) if isinstance(prev_primary, (int, float)) else 0.0
-
-            if widget_key in st.session_state:
-                num_val = st.number_input(
-                    label_display,
-                    step=1.0,
-                    key=widget_key,
-                )
-            else:
-                num_val = st.number_input(
-                    label_display,
-                    step=1.0,
-                    key=widget_key,
-                    value=default_val,
-                )
-            entry["primary"] = num_val
+            entry["primary"] = st.number_input(label_display, step=1.0, key=widget_key, value=default_val)
 
         elif rtype in ("dropdown", "select") and options:
             opts = options if (len(options) > 0 and options[0] == "— Select —") else (["— Select —"] + options)
             default_index = opts.index(prev_primary) if prev_primary in opts else 0
-
-            if widget_key in st.session_state:
-                chosen = st.selectbox(
-                    label_display,
-                    opts,
-                    key=widget_key,
-                )
-            else:
-                chosen = st.selectbox(
-                    label_display,
-                    opts,
-                    key=widget_key,
-                    index=default_index,
-                )
-
+            chosen = st.selectbox(label_display, opts, key=widget_key, index=default_index)
             entry["primary"] = chosen if (chosen and chosen != "— Select —") else None
 
         else:
             default_text = str(prev_primary) if prev_primary is not None else ""
-
-            if widget_key in st.session_state:
-                txt_val = st.text_area(
-                    label_display,
-                    key=widget_key,
-                    height=60,
-                )
-            else:
-                txt_val = st.text_area(
-                    label_display,
-                    key=widget_key,
-                    value=default_text,
-                    height=60,
-                )
-
-            entry["primary"] = txt_val
+            entry["primary"] = st.text_area(label_display, key=widget_key, value=default_text, height=60)
 
         responses[qid] = entry
         rendered.add(qid)
@@ -677,8 +609,6 @@ def _apply_pending_draft_if_any():
                 normalized = _normalise_loaded_entry(str(qid_str), raw_entry)
                 if not normalized:
                     continue
-
-                # Store in the rows DataFrame (as before)
                 rows.append(
                     {
                         "department": dept_val or "",
@@ -688,12 +618,6 @@ def _apply_pending_draft_if_any():
                         "description": normalized.get("description", ""),
                     }
                 )
-
-                # 🔹 NEW: prime the widget state so the UI matches the loaded draft
-                # This key pattern MUST match build_form_for_questions → _widget_key(...)
-                widget_key = f"{dept_val}::{prod_val}::{str(qid_str)}"
-                if "primary" in normalized:
-                    st.session_state[widget_key] = normalized["primary"]
 
         for show_key, show_entries in per_show_answers.items():
             if isinstance(show_key, str) and "::" in show_key:
