@@ -314,6 +314,77 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles)
     table.setStyle(TableStyle(style_cmds))
     return table
 
+def build_strategic_index_appendix():
+    """
+    Build an appendix section (Appendix A) showing the strategic objectives index,
+    excluding the 'plan_anchor' column.
+    Returns a list of ReportLab flowables (PageBreak + heading + table).
+    """
+    styles = getSampleStyleSheet()
+    heading_style = styles["Heading2"]
+    body_style = styles["BodyText"]
+
+    df = OBJECTIVES_DF.copy()
+
+    # If nothing is configured, return a simple notice instead
+    if df.empty:
+        return [
+            PageBreak(),
+            Paragraph("Appendix A — Strategic Objectives Index", heading_style),
+            Spacer(1, 0.2 * inch),
+            Paragraph("No strategic objectives index is currently configured.", body_style),
+        ]
+
+    # Drop plan_anchor if present
+    if "plan_anchor" in df.columns:
+        df = df.drop(columns=["plan_anchor"])
+
+    # Reorder columns for readability, only if they exist
+    preferred_order = ["owner", "objective_id", "objective_title", "short_description"]
+    columns = [c for c in preferred_order if c in df.columns]
+    if columns:
+        df = df[columns]
+
+    # Header row + data rows
+    header = [col.replace("_", " ").title() for col in df.columns]
+    data = [header] + df.values.tolist()
+
+    table = Table(
+        data,
+        colWidths=[
+            1.4 * inch,  # owner
+            1.0 * inch,  # objective_id
+            2.4 * inch,  # objective_title
+            3.0 * inch,  # short_description
+        ][: len(df.columns)],  # trim if fewer columns
+        repeatRows=1,
+    )
+
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 9),
+                ("FONTSIZE", (0, 1), (-1, -1), 8),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+
+    return [
+        PageBreak(),
+        Paragraph("Appendix A — Strategic Objectives Index", heading_style),
+        Spacer(1, 0.2 * inch),
+        table,
+    ]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Main PDF builder
@@ -989,6 +1060,11 @@ def build_overall_board_pdf(
             if idx < len(parts) - 1:
                 story.append(Spacer(1, 4))
 
+    # ─────────────────────────────────────────────────────────────────────
+    # Appendix A — Strategic Objectives Index
+    # ─────────────────────────────────────────────────────────────────────
+    story.extend(build_strategic_index_appendix())
+
     # Footer with page numbers
     def _footer(canvas, doc_):
         canvas.saveState()
@@ -1002,3 +1078,4 @@ def build_overall_board_pdf(
     pdf_bytes = buffer.getvalue()
     buffer.close()
     return pdf_bytes
+
