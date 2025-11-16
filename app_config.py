@@ -74,9 +74,9 @@ DEPARTMENT_CONFIGS = {
     ),
     "Corporate": DepartmentConfig(
         questions_csv="data/corporate_scorecard_questions.csv",
-        has_productions=False,
-        productions_csv=None,
-        scope_label="Area",
-        allow_general_option=True,
+        has_productions=True,
+        productions_csv="data/productions.csv",
+        scope_label="Programme",
+        allow_general_option=False,
     ),
 }
