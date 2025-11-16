@@ -1149,7 +1149,7 @@ def main():
     responses_for_ai = responses
     meta_for_ai = meta
 
-    if dept_label in ("Artistic", "Community"):
+    if dept_label in ("Artistic", "Community", "School", "Corporate"):
         # Base questions for this department
         questions_dept = questions_all_df.copy()
 
