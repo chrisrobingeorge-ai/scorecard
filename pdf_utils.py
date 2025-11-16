@@ -345,9 +345,35 @@ def build_strategic_index_appendix():
     if columns:
         df = df[columns]
 
-    # Header row + data rows
-    header = [col.replace("_", " ").title() for col in df.columns]
-    data = [header] + df.values.tolist()
+    # Header row + data rows, with wrapped Paragraph cells
+    header_labels = [col.replace("_", " ").title() for col in df.columns]
+
+    # Smaller table style for readability
+    cell_style = ParagraphStyle(
+        name="ObjectivesCell",
+        parent=body_style,
+        fontSize=8,
+        leading=10,
+    )
+    header_style = ParagraphStyle(
+        name="ObjectivesHeaderCell",
+        parent=body_style,
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11,
+    )
+
+    # Build header row with Paragraphs
+    header = [Paragraph(xml_escape(label), header_style) for label in header_labels]
+
+    # Build data rows with Paragraphs so long text wraps
+    data = [header]
+    for _, row in df.iterrows():
+        cells = []
+        for val in row.tolist():
+            text = "" if val is None else str(val)
+            cells.append(Paragraph(xml_escape(text), cell_style))
+        data.append(cells)
 
     table = Table(
         data,
@@ -359,6 +385,7 @@ def build_strategic_index_appendix():
         ][: len(df.columns)],  # trim if fewer columns
         repeatRows=1,
     )
+
 
     table.setStyle(
         TableStyle(
