@@ -674,6 +674,33 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
         - You MUST NOT use the exact phrases “there are tensions emerging” or “this misalignment may” anywhere
           in your output.
 
+        ABSENCE & SEASONALITY RULES
+
+        - You MUST NOT treat the mere absence of an activity in this month (e.g., no provincial tour, no general
+          audition, no festival appearance) as evidence of a gap, failure, or risk.
+        - In a performing arts context, many activities are seasonal or cyclical. A month without certain activities
+          can be entirely normal.
+        - Only describe the absence of an activity as a concern if:
+          • The underlying department summary itself frames that absence as a problem, challenge, or risk, OR
+          • There is clear, repeated evidence over time (expressly stated in the summaries) that an activity is
+            expected every month and its absence is now explicitly flagged.
+        - If a department summary clearly labels an absence as seasonal or non-problematic, you MUST preserve
+          that framing and MUST NOT upgrade it to a risk (e.g., do not turn “no auditions this month – out of cycle”
+          into “potential gaps in recruitment that could impact future growth”).
+        - You MUST NOT say that “the absence of provincial tours” or “the absence of general auditions this month”
+          may limit growth, outreach, or recruitment UNLESS the department summaries explicitly state this.
+
+        PHRASE RESTRICTIONS
+
+        - Do NOT write that a department “acknowledges the need for growth” or “recognises a gap” on a specific
+          objective unless that wording (or a very close equivalent) appears in the department-level summaries
+          themselves.
+        - When in doubt, use neutral language such as “this objective remains a future area of focus” or
+          “this remains an area to watch over time” instead of asserting a need or deficiency.
+        - You MUST NOT use phrases such as “the absence of provincial tours and general auditions this month may
+          limit outreach and recruitment opportunities” unless that exact concern is already clearly articulated in the
+          input summaries.
+
         YOUR TASK: DEEP, INTERPRETIVE BOARD-LEVEL ANALYSIS
         
         You will receive department-level scorecard summaries. Each department has already been analysed
