@@ -609,6 +609,8 @@ def _apply_pending_draft_if_any():
                 normalized = _normalise_loaded_entry(str(qid_str), raw_entry)
                 if not normalized:
                     continue
+
+                # Store in the rows DataFrame (as before)
                 rows.append(
                     {
                         "department": dept_val or "",
@@ -618,6 +620,12 @@ def _apply_pending_draft_if_any():
                         "description": normalized.get("description", ""),
                     }
                 )
+
+                # 🔹 NEW: prime the widget state so the UI matches the loaded draft
+                # This key pattern MUST match build_form_for_questions → _widget_key(...)
+                widget_key = f"{dept_val}::{prod_val}::{str(qid_str)}"
+                if "primary" in normalized:
+                    st.session_state[widget_key] = normalized["primary"]
 
         for show_key, show_entries in per_show_answers.items():
             if isinstance(show_key, str) and "::" in show_key:
