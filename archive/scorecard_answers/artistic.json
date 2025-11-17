@@ -1,0 +1,257 @@
+{
+  "meta": {
+    "staff_name": "Chris",
+    "role": "CEO",
+    "department": "Artistic",
+    "month": "2025-11",
+    "production": "Once Upon a Time"
+  },
+  "answers": {
+    "ACSI01": {
+      "primary": "Family Classic"
+    },
+    "ATI01": {
+      "primary": "4 - Significant"
+    },
+    "ATI02": {
+      "primary": "Video projection backdrop\nUsed modern moving lights with very few conventional lights"
+    },
+    "ATI03": {
+      "primary": "Yes"
+    },
+    "ATI05": {
+      "primary": "Yes"
+    },
+    "FM01": {
+      "primary": 62.0
+    },
+    "FM02": {
+      "primary": 58.0
+    },
+    "FM03": {
+      "primary": 94.5
+    },
+    "ATI04": {
+      "primary": "For the next 5 years - hard scenery, ground based tree, flown elements ie. Foliage drop\nFor the next 5 years - tutus, men's tunics & tights"
+    },
+    "ACSI02": {
+      "primary": "No"
+    },
+    "ACSI04": {
+      "primary": "This work is designed as a classic fairy-tale piece, not contemporary commentary"
+    },
+    "ACSI06": {
+      "primary": "Original score created for this ballet\nSets and Costumes designed by world renowned designer Roberta Guidi de Bagno\nOriginal choreography"
+    },
+    "CR01": {
+      "primary": "Yes"
+    },
+    "CR03": {
+      "primary": "Yes"
+    },
+    "CR02": {
+      "primary": "Costume designer, Roberta Guidi de Bagno"
+    },
+    "ACSI05": {
+      "primary": "No"
+    },
+    "ACSI07": {
+      "primary": "This production was a remount from Dubai, so was created outside of Alberta a few years ago. "
+    },
+    "ATI06": {
+      "primary": "Yes"
+    },
+    "ATI07": {
+      "primary": "Saved 20-40 hours of crew time amounting to $720-1440."
+    },
+    "ACSI08": {
+      "primary": "Original score created for this ballet\nSets and Costumes designed by world renowned designer Roberta Guidi de Bagno\nOriginal choreography"
+    },
+    "CR04": {
+      "primary": "No"
+    },
+    "CR06": {
+      "primary": "Costume designer, Roberta Guidi de Bagno"
+    }
+  },
+  "per_show_answers": {
+    "Artistic::": {
+      "RA01": {
+        "primary": "No"
+      },
+      "RA03": {
+        "primary": 1.0
+      },
+      "RA04": {
+        "primary": "1.0"
+      },
+      "RA02": {
+        "primary": "Auditions aren't until the spring."
+      },
+      "RA05": {
+        "primary": 0.0
+      },
+      "RA06": {
+        "primary": 0.0
+      },
+      "FE01": {
+        "primary": "No"
+      },
+      "FE03": {
+        "primary": "Not the time of the year for festivals. "
+      }
+    },
+    "Artistic::Auditions": {
+      "RA01": {
+        "primary": "No"
+      },
+      "RA02": {
+        "primary": "Auditions aren't scheduled until spring."
+      }
+    },
+    "Artistic::Festivals": {
+      "FE01": {
+        "primary": "No"
+      },
+      "FE03": {
+        "primary": "It's not festival season."
+      }
+    },
+    "Artistic::Nijinsky": {
+      "ACSI01": {
+        "primary": "Contemporary"
+      },
+      "ATI01": {
+        "primary": "3 - Moderate"
+      },
+      "ATI02": {
+        "primary": "Bare stage with no wings\nLighting used colours and moving lights in ways not commonly used for ballet\nVideo projected in between pieces\nUsed modern moving lights with very few conventional lights"
+      },
+      "ATI03": {
+        "primary": "Yes"
+      },
+      "ATI05": {
+        "primary": "Yes"
+      },
+      "ACSI02": {
+        "primary": "Yes"
+      },
+      "ACSI04": {
+        "primary": "Yes"
+      },
+      "ACSI06": {
+        "primary": "4 new works created by Canadian choreographers and designers\nPlatform was given to 4 female Canadian choreographers to interpret historical work in their voice. \nInnovative set design\nInnovative lighting design\nOriginal costumes designed and created"
+      },
+      "CR01": {
+        "primary": "Yes"
+      },
+      "CR03": {
+        "primary": "Yes"
+      },
+      "FM01": {
+        "primary": 67.0
+      },
+      "FM02": {
+        "primary": 86.0
+      },
+      "FM03": {
+        "primary": 102.46
+      },
+      "CR02": {
+        "primary": "Chris Cran designed set of L'Apres Midi\nKirsten Wicklund, Alyssa Martin, Racheal Prince, Denise Clarke as choreographers"
+      },
+      "ATI04": {
+        "primary": "Adaptable wall, chaise, stairs\nUnitards, skirts, etc all reusable"
+      },
+      "ACSI03": {
+        "primary": "Social justice: gender equality"
+      },
+      "ACSI05": {
+        "primary": "Yes"
+      },
+      "ACSI08": {
+        "primary": "4 new works created by Canadian choreographers and designers\nPlatform was given to 4 female Canadian choreographers to interpret historical work in their voice. \nInnovative set design\nInnovative lighting design\nOriginal costumes designed and created"
+      },
+      "ATI06": {
+        "primary": "Yes"
+      },
+      "CR04": {
+        "primary": "Yes"
+      },
+      "ATI07": {
+        "primary": "Saved 20-40 hours of crew time amounting to $720-1440."
+      },
+      "CR05": {
+        "primary": "Kirsten Wicklund, Alyssa Martin, Racheal Prince, Denise Clarke as choreographers"
+      }
+    },
+    "Artistic::Once Upon a Time": {
+      "ACSI01": {
+        "primary": "Family Classic"
+      },
+      "ATI01": {
+        "primary": "4 - Significant"
+      },
+      "ATI02": {
+        "primary": "Video projection backdrop\nUsed modern moving lights with very few conventional lights"
+      },
+      "ATI03": {
+        "primary": "Yes"
+      },
+      "ATI05": {
+        "primary": "Yes"
+      },
+      "FM01": {
+        "primary": 62.0
+      },
+      "FM02": {
+        "primary": 58.0
+      },
+      "FM03": {
+        "primary": 94.5
+      },
+      "ATI04": {
+        "primary": "For the next 5 years - hard scenery, ground based tree, flown elements ie. Foliage drop\nFor the next 5 years - tutus, men's tunics & tights"
+      },
+      "ACSI02": {
+        "primary": "No"
+      },
+      "ACSI04": {
+        "primary": "This work is designed as a classic fairy-tale piece, not contemporary commentary"
+      },
+      "ACSI06": {
+        "primary": "Original score created for this ballet\nSets and Costumes designed by world renowned designer Roberta Guidi de Bagno\nOriginal choreography"
+      },
+      "CR01": {
+        "primary": "Yes"
+      },
+      "CR03": {
+        "primary": "Yes"
+      },
+      "CR02": {
+        "primary": "Costume designer, Roberta Guidi de Bagno"
+      },
+      "ACSI05": {
+        "primary": "No"
+      },
+      "ACSI07": {
+        "primary": "This production was a remount from Dubai, so was created outside of Alberta a few years ago. "
+      },
+      "ATI06": {
+        "primary": "Yes"
+      },
+      "ATI07": {
+        "primary": "Saved 20-40 hours of crew time amounting to $720-1440."
+      },
+      "ACSI08": {
+        "primary": "Original score created for this ballet\nSets and Costumes designed by world renowned designer Roberta Guidi de Bagno\nOriginal choreography"
+      },
+      "CR04": {
+        "primary": "No"
+      },
+      "CR06": {
+        "primary": "Costume designer, Roberta Guidi de Bagno"
+      }
+    }
+  }
+}
