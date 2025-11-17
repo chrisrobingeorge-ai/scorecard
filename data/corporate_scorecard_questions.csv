@@ -93,7 +93,7 @@ Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_cu
 Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5e,"If yes, in which department and which position?",text,,FALSE,395,oversight,1.2,CORP_WC_Q5d,CORP4
 Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q6,"Were there employee grievances or complaints (formal, reported) during this period?",yes_no,"Yes,No",FALSE,400,oversight,1.1,,CORP4
 Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q6a,How many and which department?,text,,FALSE,401,governance,1.2,CORP_WC_Q6,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q7,Were there employee incipdent reports during this period?,yes_no,"Yes,No",FALSE,410,governance,1.1,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q7,Were there employee incident reports during this period?,yes_no,"Yes,No",FALSE,410,governance,1.1,,CORP4
 Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q7b,How many and what was the incident (don't share confidential information)?,text,,FALSE,411,risk,1.2,CORP_WC_Q7,CORP4
 Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q1,Was a structured board recruitment process developed and/or implemented for this period?,yes_no,"Yes,No",FALSE,420,oversight,1.2,,CORP4
 Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q1a,"If not, why not?",text,,FALSE,421,oversight,1.2,CORP_BM_Q1=No,CORP4
