@@ -252,42 +252,58 @@ def _normalise_show_entry(entry: Any) -> Optional[dict]:
         return None
     return {"primary": entry}
 
-def render_financial_kpis():
-    """Render the Financial KPI editor under Corporate and store merged data in session_state."""
-    st.markdown("### Financial KPIs (Year-to-Date)")
+def render_financial_kpis(selected_area: Optional[str] = None, show_heading: bool = True):
+    """
+    Render the Financial KPI editor.
 
+    - If selected_area is provided, only show/edit that KPI area (e.g. "Donations").
+    - All edits are merged back into the full KPI set in session_state.
+    """
     if FINANCIAL_KPI_TARGETS_DF.empty:
         st.info("No financial KPI targets found. Check financial_kpi_targets.csv in the data folder.")
         return
 
-    base = FINANCIAL_KPI_TARGETS_DF.copy()
+    # Start from the full KPI target table
+    master = FINANCIAL_KPI_TARGETS_DF.copy()
 
-    # Bring back previously-entered actuals if we have them
+    # Bring back previously-entered actuals for all areas, if we have them
     prev = st.session_state.get("financial_kpis_actuals")
     if isinstance(prev, pd.DataFrame) and not prev.empty:
-        merge_cols = ["area", "category", "sub_category", "report_section", "report_order"]
         try:
-            base = base.merge(
-                prev[merge_cols + ["actual"]],
-                on=merge_cols,
+            master = master.merge(
+                prev[["area", "category", "sub_category", "actual"]],
+                on=["area", "category", "sub_category"],
                 how="left",
                 suffixes=("", "_prev"),
             )
-            base["actual"] = pd.to_numeric(base["actual_prev"], errors="coerce")
-            base.drop(columns=["actual_prev"], inplace=True)
+            # prefer previous actual where present
+            master["actual"] = master["actual_prev"]
+            master.drop(columns=["actual_prev"], inplace=True)
         except Exception:
-            base["actual"] = 0.0
+            master["actual"] = 0.0
     else:
-        base["actual"] = 0.0
+        master["actual"] = 0.0
 
     # Ensure numeric types
-    base["target"] = pd.to_numeric(base["target"], errors="coerce").fillna(0.0)
-    base["actual"] = pd.to_numeric(base["actual"], errors="coerce").fillna(0.0)
+    master["target"] = pd.to_numeric(master["target"], errors="coerce").fillna(0.0)
+    master["actual"] = pd.to_numeric(master["actual"], errors="coerce").fillna(0.0)
+
+    # Optional area scoping
+    if selected_area:
+        working = master[master["area"] == selected_area].copy()
+    else:
+        working = master.copy()
+
+    # Heading
+    if show_heading:
+        if selected_area:
+            st.markdown(f"### Financial KPIs – {selected_area}")
+        else:
+            st.markdown("### Financial KPIs (Year-to-Date)")
 
     display_cols = ["area", "category", "sub_category", "target", "actual"]
-    display_df = base[display_cols].copy()
+    display_df = working[display_cols].copy()
 
-    # 🔹 No fancy column_config, no custom format – keep it simple for now
     edited = st.data_editor(
         display_df,
         num_rows="fixed",
@@ -296,20 +312,25 @@ def render_financial_kpis():
         disabled=["area", "category", "sub_category", "target"],  # only 'actual' is editable
     )
 
-    # Re-attach edited Actuals back to full schema (including routing columns)
-    merged = FINANCIAL_KPI_TARGETS_DF.copy()
-    merged = merged.merge(
-        edited[["area", "category", "sub_category", "actual"]],
-        on=["area", "category", "sub_category"],
-        how="left",
-    )
-    merged["actual"] = pd.to_numeric(merged["actual"], errors="coerce").fillna(0.0)
-    merged["variance"] = merged["target"] - merged["actual"]
-    merged["pct_to_budget"] = merged["actual"] / merged["target"].replace(0, pd.NA)
+    # ── Write edited Actuals back into the full master table ──
+    # Start from current master, then patch the rows for the selected area
+    updated_master = master.copy()
 
-    # Store in session for AI + PDF
-    st.session_state["financial_kpis"] = merged
-    st.session_state["financial_kpis_actuals"] = merged[
+    for _, row in edited.iterrows():
+        mask = (
+            (updated_master["area"] == row["area"]) &
+            (updated_master["category"] == row["category"]) &
+            (updated_master["sub_category"] == row["sub_category"])
+        )
+        updated_master.loc[mask, "actual"] = pd.to_numeric(row["actual"], errors="coerce")
+
+    updated_master["actual"] = pd.to_numeric(updated_master["actual"], errors="coerce").fillna(0.0)
+    updated_master["variance"] = updated_master["target"] - updated_master["actual"]
+    updated_master["pct_to_budget"] = updated_master["actual"] / updated_master["target"].replace(0, pd.NA)
+
+    # Store full set (all areas) in session for AI/PDF or later use
+    st.session_state["financial_kpis"] = updated_master
+    st.session_state["financial_kpis_actuals"] = updated_master[
         ["area", "category", "sub_category", "report_section", "report_order", "actual"]
     ]
 
@@ -1010,16 +1031,41 @@ def main():
         key="dept_label",
     )
     dept_cfg = DEPARTMENT_CONFIGS[dept_label]
-    
-    # 🔹 Special case: KPIs department is *only* the financial KPI editor
+
+    # 🔹 Special case: KPIs department uses KPI "areas" as its scope
     if dept_label == "KPIs":
-        render_financial_kpis()
-    
+        if FINANCIAL_KPI_TARGETS_DF.empty:
+            st.info("No financial KPI targets found. Check financial_kpi_targets.csv in the data folder.")
+            return
+
+        st.subheader("Scope of this report")
+
+        kpi_areas = sorted(
+            FINANCIAL_KPI_TARGETS_DF["area"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        # Remember last selection for convenience
+        default_area = st.session_state.get("kpi_area") or (kpi_areas[0] if kpi_areas else "")
+        selected_area = st.selectbox(
+            "Financial KPI area",
+            kpi_areas,
+            index=kpi_areas.index(default_area) if default_area in kpi_areas else 0,
+            key="kpi_area",
+        )
+
+        # Render the editor just for that area
+        render_financial_kpis(selected_area=selected_area, show_heading=True)
+
         st.info(
             "These KPIs are saved for this reporting period and can be used in "
             "your consolidated AI/PDF summaries."
         )
         return
+
 
     # Reset production when dept changes, but DO NOT clobber a draft-applied selection
     if "last_dept_label" not in st.session_state or st.session_state["last_dept_label"] != dept_label:
