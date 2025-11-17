@@ -24,13 +24,24 @@ JSON_PREFIX = "AB_SCORECARD_JSON:"
 # ─────────────────────────────────────────────────────────────────────────────
 # Helper text utilities
 # ─────────────────────────────────────────────────────────────────────────────
-def _set_margins(doc: Document, top=0.75, bottom=0.75, left=0.75, right=0.75):
+def _set_margins(
+    doc: Document,
+    top: float = 0.75,
+    bottom: float = 0.75,
+    left: float = 0.75,
+    right: float = 0.75,
+):
     """
-    Set page margins (in inches) for all sections in the document.
+    Set page size and margins (in inches) for all sections in the document.
+    Forces Letter size so all scorecard docs are identical.
     """
     from docx.shared import Inches
 
     for section in doc.sections:
+        # Force Letter page size (8.5" x 11") for consistency
+        section.page_width = Inches(8.5)
+        section.page_height = Inches(11)
+
         section.top_margin = Inches(top)
         section.bottom_margin = Inches(bottom)
         section.left_margin = Inches(left)
