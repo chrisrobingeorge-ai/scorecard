@@ -1,4 +1,4 @@
-section,department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight,depends_on,primary_objective_id
+section,department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight,depends_on,strategic_objectives_id
 ,School,Classical Training,Classical Training,Exemplary Classical Technique,SCH_CT_Q1,Did any students achieve exemplary (90%+) technical scores in the classical ballet training curriculum (internal evaluation)?,yes_no,"Yes,No",TRUE,10,student_achievement,3,,SCH1
 ,School,Classical Training,Classical Training,Exemplary Classical Technique,SCH_CT_Q2,"If yes, tell more (name, grade, achievement mark)",text,,FALSE,20,student_achievement,2,SCH_CT_Q1,SCH1
 ,School,Classical Training,Classical Training,Exemplary Classical Technique,SCH_CT_Q3,"If not, why not?",text,,FALSE,30,student_achievement,2,SCH_CT_Q1=No,SCH1
