@@ -1256,19 +1256,6 @@ def main():
         mime="application/json",
         help="Downloads a snapshot of your current answers (this and other productions). Re-upload later to continue.",
     )
-    # 🔹 OPTIONAL: AI-summary-only download
-    if st.session_state.get("ai_result"):
-        ai_summary_payload = {
-            "meta": meta_for_ai,   # dept, month, scope, etc.
-            "ai_result": st.session_state["ai_result"],
-        }
-        st.sidebar.download_button(
-            "💾 Save AI summary only (JSON)",
-            data=json.dumps(ai_summary_payload, indent=2),
-            file_name=f"scorecard_ai_summary_{meta_for_ai['department'].replace(' ', '_')}_{month_str}.json",
-            mime="application/json",
-            help="Just the edited AI summary for this department/month.",
-        )
     st.sidebar.download_button(
         "⬇️ Download answers CSV",
         data=get_answers_df().to_csv(index=False),
@@ -1631,7 +1618,21 @@ def main():
 
     # Ensure the updated AI result is cached back into session_state
     st.session_state["ai_result"] = ai_result
-
+    # ─────────────────────────────────────────────────────────────
+    # Optional: AI-summary-only download (JSON)
+    # ─────────────────────────────────────────────────────────────
+    if st.session_state.get("ai_result"):
+        ai_summary_payload = {
+            "meta": meta_for_ai,  # dept, month, scope (already normalised for AI)
+            "ai_result": st.session_state["ai_result"],
+        }
+        st.sidebar.download_button(
+            "💾 Save AI summary only (JSON)",
+            data=json.dumps(ai_summary_payload, indent=2),
+            file_name=f"scorecard_ai_summary_{meta_for_ai['department'].replace(' ', '_')}_{month_str}.json",
+            mime="application/json",
+            help="Just the edited AI summary for this department/month.",
+        )
 
     # ─────────────────────────────────────────────────────────────
     # PDF — uses the SAME scope as AI (questions_for_ai / responses_for_ai)
