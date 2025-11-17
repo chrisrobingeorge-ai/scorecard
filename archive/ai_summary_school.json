@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "staff_name": "Unknown",
+    "role": "",
+    "department": "School",
+    "month": "2025-11",
+    "production": "",
+    "scope": "department_all_productions"
+  },
+  "ai_result": {
+    "overall_summary": "In November 2025, the Alberta Ballet School continues to navigate its strategic transformation journey as outlined in the 2025-2030 plan. The School is making steady progress across its key pillars, particularly in attracting students and enhancing student accessibility, while classical training remains in the foundational stages. The absence of exemplary technical scores in classical and contemporary training is noted, but this is expected as assessments are scheduled for mid-November.\n\nOverall, the School is building momentum in its initiatives, with some areas showing promising developments that align with long-term strategic objectives. The Attracting Students pillar is demonstrating significant activity, particularly through international recruitment events, which have yielded a substantial number of offers for summer and full-year programs. This aligns well with the strategic objective of leveraging networks for recruitment and enhancing the School's reputation.\n\nThe engagement in various international competitions and auditions indicates a proactive approach to attracting talent, although the lack of international performances this month is an area to monitor moving forward. In terms of Classical Training, the School is currently in the early stages of assessing student performance, with no exemplary scores reported yet. This is not a cause for concern, as the assessments are forthcoming, and it reflects the ongoing commitment to equip students with the necessary skills.\n\nThe focus on hosting guest teachers and choreographers is a positive step toward enriching the curriculum, although the absence of masterclasses from the Artistic Director this month is noted as an area for future attention. The Student Accessibility pillar shows promising developments, particularly with the increase in boy enrolment and the expansion of scholarship opportunities for marginalized and international students. These initiatives are crucial for fostering a diverse and inclusive student body, aligning with the strategic goal of providing accessible training opportunities.\nThe School's efforts to recommend students from Alberta Ballet Classes for auditions further support this objective, indicating a proactive stance in recruitment and support for underrepresented groups.",
+    "objective_summaries": [
+      {
+        "objective_id": "SCH1",
+        "objective_title": "Equip Students with Classical & Contemporary Proficiency",
+        "score_hint": "1/3 Early stage",
+        "summary": "The Classical Training pillar reflects the early point in the training year: no students have yet achieved exemplary technical scores in either classical or contemporary training. This is expected, given that assessments are scheduled for mid-November. The focus on hosting guest teachers and choreographers is a positive step, but the lack of masterclasses from the Artistic Director this month suggests an area for future attention as the School seeks to enhance its training offerings."
+      },
+      {
+        "objective_id": "SCH2",
+        "objective_title": "Strategic School Partnerships with Ballet & Dance Brands",
+        "score_hint": "2/3 Steady development",
+        "summary": "The school is making steady progress in forming strategic partnerships, as evidenced by the successful hosting of guest teachers and choreographers, which enriches the curriculum. Additionally, one graduate secured employment with Alberta Ballet, showcasing the effectiveness of these partnerships in enhancing student outcomes. However, the absence of masterclasses from the Artistic Director this period suggests an area for potential growth in future collaborations."
+      },
+      {
+        "objective_id": "SCH3",
+        "objective_title": "Leverage Touring & Networks for Recruitment",
+        "score_hint": "2/3 Steady development",
+        "summary": "The Attracting Students pillar is showing steady development, particularly through participation in international recruitment events. Over this period, the School was in multiple cities either for auditions or as guests at competitions, resulting in a significant number of offers for both summer and full-year programs. While the absence of international performances  by the Company this month is noted, the School\u2019s proactive efforts to scout talent indicates a strong commitment to elevating the School's profile and attracting diverse talent."
+      },
+      {
+        "objective_id": "SCH4",
+        "objective_title": "Position Alberta Ballet School as a Leader in Dance Education",
+        "score_hint": "2/3 Steady development",
+        "summary": "Alberta Ballet School is positioning itself as a leader in dance education through the showcasing of alumni success stories and increasing awareness of its affiliate programs. These initiatives are vital for attracting prospective students and enhancing the school's reputation. The ongoing efforts to build studio partnerships across Alberta further support this objective, although the impact of these initiatives on student enrollment remains to be fully realized."
+      },
+      {
+        "objective_id": "SCH5",
+        "objective_title": "Recruit and Support a Diverse, Inclusive Student Body",
+        "score_hint": "2/3 Steady development",
+        "summary": "The Student Accessibility pillar is demonstrating steady development, particularly with the successful increase in boy enrolment and the expansion of scholarship opportunities for marginalized and international students. These initiatives are crucial for fostering a diverse and inclusive student body. The proactive recommendations for auditions from Alberta classes further support the strategic goal of providing accessible training opportunities, indicating a strong commitment to inclusivity."
+      }
+    ],
+    "pillar_summaries": [
+      {
+        "objective_id": "SCH1",
+        "objective_title": "Equip Students with Classical & Contemporary Proficiency",
+        "score_hint": "1/3 Early stage",
+        "summary": "The Classical Training pillar reflects the early point in the training year: no students have yet achieved exemplary technical scores in either classical or contemporary training. This is expected, given that assessments are scheduled for mid-November. The focus on hosting guest teachers and choreographers is a positive step, but the lack of masterclasses from the Artistic Director this month suggests an area for future attention as the School seeks to enhance its training offerings."
+      },
+      {
+        "objective_id": "SCH2",
+        "objective_title": "Strategic School Partnerships with Ballet & Dance Brands",
+        "score_hint": "2/3 Steady development",
+        "summary": "The school is making steady progress in forming strategic partnerships, as evidenced by the successful hosting of guest teachers and choreographers, which enriches the curriculum. Additionally, one graduate secured employment with Alberta Ballet, showcasing the effectiveness of these partnerships in enhancing student outcomes. However, the absence of masterclasses from the Artistic Director this period suggests an area for potential growth in future collaborations."
+      },
+      {
+        "objective_id": "SCH3",
+        "objective_title": "Leverage Touring & Networks for Recruitment",
+        "score_hint": "2/3 Steady development",
+        "summary": "The Attracting Students pillar is showing steady development, particularly through participation in international recruitment events. Over this period, the School was in multiple cities either for auditions or as guests at competitions, resulting in a significant number of offers for both summer and full-year programs. While the absence of international performances  by the Company this month is noted, the School\u2019s proactive efforts to scout talent indicates a strong commitment to elevating the School's profile and attracting diverse talent."
+      },
+      {
+        "objective_id": "SCH4",
+        "objective_title": "Position Alberta Ballet School as a Leader in Dance Education",
+        "score_hint": "2/3 Steady development",
+        "summary": "Alberta Ballet School is positioning itself as a leader in dance education through the showcasing of alumni success stories and increasing awareness of its affiliate programs. These initiatives are vital for attracting prospective students and enhancing the school's reputation. The ongoing efforts to build studio partnerships across Alberta further support this objective, although the impact of these initiatives on student enrollment remains to be fully realized."
+      },
+      {
+        "objective_id": "SCH5",
+        "objective_title": "Recruit and Support a Diverse, Inclusive Student Body",
+        "score_hint": "2/3 Steady development",
+        "summary": "The Student Accessibility pillar is demonstrating steady development, particularly with the successful increase in boy enrolment and the expansion of scholarship opportunities for marginalized and international students. These initiatives are crucial for fostering a diverse and inclusive student body. The proactive recommendations for auditions from Alberta classes further support the strategic goal of providing accessible training opportunities, indicating a strong commitment to inclusivity."
+      }
+    ],
+    "production_summaries": [
+      {
+        "production": "General",
+        "objectives": [
+          {
+            "objective_id": "SCH1",
+            "objective_title": "Equip Students with Classical & Contemporary Proficiency",
+            "score_hint": "1/3 Early stage",
+            "summary": "The general production efforts have not yet yielded exemplary technical scores in classical or contemporary training, indicating that the foundational work is still underway. The upcoming assessments will be crucial in determining the effectiveness of current training methodologies."
+          },
+          {
+            "objective_id": "SCH2",
+            "objective_title": "Strategic School Partnerships with Ballet & Dance Brands",
+            "score_hint": "2/3 Steady development",
+            "summary": "General initiatives have successfully included guest teachers and choreographers, enhancing the educational experience. The employment of a graduate by Alberta Ballet underscores the positive impact of these partnerships on student career outcomes."
+          },
+          {
+            "objective_id": "SCH4",
+            "objective_title": "Position Alberta Ballet School as a Leader in Dance Education",
+            "score_hint": "2/3 Steady development",
+            "summary": "General efforts to showcase alumni success and increase affiliate program awareness are contributing positively to the school's reputation. The establishment of studio partnerships is a strategic move to enhance local engagement."
+          }
+        ]
+      }
+    ],
+    "risks": [
+      "Consider tracking the impact of the upcoming assessments on student proficiency in classical and contemporary training.",
+      "Worth monitoring the effectiveness of international recruitment events in translating to student enrollment.",
+      "May need attention over time regarding the reliance on internal funding for scholarships and the potential need for external support."
+    ],
+    "priorities_next_month": [
+      "Continue to build on the momentum from international recruitment events to maximize student offers.",
+      "Focus on the upcoming assessments to evaluate and enhance training methodologies in classical and contemporary dance.",
+      "Explore opportunities for external funding to support scholarships for marginalized and international students.",
+      "Explore opportunities for the Artistic Director to engage with students through masterclasses in the coming months."
+    ],
+    "notes_for_leadership": "This month's scorecard reflects a period of steady development across key strategic pillars, particularly in attracting students and enhancing accessibility. While classical training is still in the early stages, the upcoming assessments will be crucial in shaping future initiatives. The proactive engagement in international recruitment events and the increase in boy enrolment are positive signals of progress.\nAs we move forward, sustained attention to the integration of guest teaching and the Artistic Director's involvement will be vital in enriching the educational experience and achieving our long-term goals."
+  }
+}
