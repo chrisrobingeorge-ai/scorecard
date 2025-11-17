@@ -207,7 +207,7 @@ def _build_prompt_objective_aware(
     Build a strategy-aware prompt by joining:
     - question metadata
     - responses (primary / description)
-    - strategic objectives via primary_objective_id -> OBJECTIVES_DF
+    - strategic objectives via strategic_objectives_id -> OBJECTIVES_DF
     """
 
     import textwrap
@@ -232,11 +232,11 @@ def _build_prompt_objective_aware(
 
     merged = q_df.merge(resp_df, on="question_id", how="left")
 
-    # ── 2) Join strategic objectives via primary_objective_id ────────────────
-    if "primary_objective_id" in merged.columns and not OBJECTIVES_DF.empty:
+    # ── 2) Join strategic objectives via strategic_objectives_id ────────────────
+    if "strategic_objectives_id" in merged.columns and not OBJECTIVES_DF.empty:
         merged = merged.merge(
             OBJECTIVES_DF,
-            left_on="primary_objective_id",
+            left_on="strategic_objectives_id",
             right_on="objective_id",
             how="left",
             suffixes=("", "_obj"),
