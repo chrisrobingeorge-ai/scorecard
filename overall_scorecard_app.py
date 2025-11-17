@@ -22,6 +22,7 @@ from PyPDF2 import PdfReader
 
 from ai_utils import interpret_overall_scorecards
 from pdf_utils import build_overall_board_pdf
+from docx_utils import build_overall_board_docx
 
 JSON_PREFIX = "AB_SCORECARD_JSON:"
 
@@ -313,20 +314,38 @@ else:
 
 
     # ─────────────────────────────────────────────────────────────────────
-    # 5. Build and download the Board PDF
+    # 5. Build and download the Board Report (PDF and DOCX)
     # ─────────────────────────────────────────────────────────────────────
     st.subheader("Export Board Report")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        pdf_bytes = build_overall_board_pdf(
+            reporting_label=reporting_label,
+            dept_overview=df_overview,
+            ai_result=ai_result,
+            logo_path="assets/alberta_ballet_logo.png",  # adjust if needed
+        )
 
-    pdf_bytes = build_overall_board_pdf(
-        reporting_label=reporting_label,
-        dept_overview=df_overview,
-        ai_result=ai_result,
-        logo_path="assets/alberta_ballet_logo.png",  # adjust if needed
-    )
+        st.download_button(
+            label="📄 Download Board Report PDF",
+            data=pdf_bytes,
+            file_name=f"overall_board_report_{reporting_label.replace(' ', '_')}.pdf",
+            mime="application/pdf",
+        )
+    
+    with col2:
+        docx_bytes = build_overall_board_docx(
+            reporting_label=reporting_label,
+            dept_overview=df_overview,
+            ai_result=ai_result,
+            logo_path="assets/alberta_ballet_logo.png",  # adjust if needed
+        )
 
-    st.download_button(
-        label="Download Board Report PDF",
-        data=pdf_bytes,
-        file_name=f"overall_board_report_{reporting_label.replace(' ', '_')}.pdf",
-        mime="application/pdf",
-    )
+        st.download_button(
+            label="📝 Download Board Report DOCX",
+            data=docx_bytes,
+            file_name=f"overall_board_report_{reporting_label.replace(' ', '_')}.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
