@@ -1,0 +1,381 @@
+{
+  "meta": {
+    "staff_name": "Unknown",
+    "role": "",
+    "department": "Corporate",
+    "month": "2025-11",
+    "production": "Marketing and Sales"
+  },
+  "answers": {
+    "CORP_SU_1": {
+      "primary": "Renewed subscriptions are up over this time last year by 21% (25/26: 1688 accounts, 12,496 tickets, and $1,464,090 revenue vs 24/25: 1111 accounts, 10,660 tickets, and $1,218,675 revenue)."
+    },
+    "CORP_SU_2": {
+      "primary": "New to file subscriptions are up 67% over this time last year (25/26: 347 accounts, 3,092 tickets and $313,445 vs 24/25: 208 accounts, 1,955 tickets and $186,529 revenue)."
+    },
+    "CORP_SU_3": {
+      "primary": "NTF single tickets are up by 10% over this time last year 9054: (Nov 1 2024 - Oct 31, 2025) vs 8261 (Nov 1 2023 - Oct 31, 2024)."
+    },
+    "CORP_SU_4": {
+      "primary": "Returning single ticket numbers are up 15% over this time last year: 14,209 (Nov 1 2024 - Oct 31, 2025) vs 12,409 (Nov 1 2023 - Oct 31, 2024)."
+    },
+    "CORP_CM_Q1": {
+      "primary": "No"
+    },
+    "CORP_CM_Q1c": {
+      "primary": "No"
+    },
+    "CORP_CM_Q2": {
+      "primary": "Our website traffic is down 8% over this time last year. \nEngaged Sessions: 280,500 (Nov 1 2024 - Oct 31, 2025) vs 306,400 (Nov 1 2024 - Oct 31, 2025)\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+    },
+    "CORP_CM_Q3": {
+      "primary": "Our Ticketmaster web traffic is down 10% over this time last year.\n\nEvent Page Visits: 165,656 (Nov 1 2024 - Oct 31, 2025) vs 185,666 (Nov 1 2023 - Oct 31, 2024)."
+    },
+    "CORP_CM_Q4": {
+      "primary": "Our Instagram followers are up 18% over this time last year (Oct 31, 2025): 37,827 vs 32,193 (October 31, 2024)\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+    },
+    "CORP_CM_Q5": {
+      "primary": "Our Facebook followers are up 5% over this time last year (Oct 31, 2025): 24,895 vs 23,761 (October 31, 2024)"
+    },
+    "CORP_CM_Q6": {
+      "primary": "Our YouTube Subscribers are up 12% over this time last year (Oct 31, 2025): 1,396 vs 1,244 (October 31, 2024)."
+    },
+    "CORP_CM_Q7": {
+      "primary": "Our TikTok followers  are up 37% over this time last year (Oct 31, 2025):  21,523 (25) vs 15,721 (October 31, 2024)."
+    },
+    "CORP_SM_Q2": {
+      "primary": "Our Instagram  followers are up 15% over this time last year (Oct 31, 2025): 15,383 (25) vs 13,076 (Oct 31, 2024)"
+    },
+    "CORP_SM_Q3": {
+      "primary": "Our Facebook  followers are up 2% over this time last year (Oct 31, 2025):6,802 (25) vs 6,638 (Oct 31, 2024)"
+    },
+    "CORP_SM_Q4": {
+      "primary": "Our YouTube followers are up 32% over this time last year (Oct 31, 2025): 327 (25) vs 223 (Oct 31, 2024)"
+    },
+    "CORP_SM_Q5": {
+      "primary": "(Oct 31, 2025): 215; Year 1 in progress"
+    },
+    "CORP_SM_Q6": {
+      "primary": "4"
+    },
+    "CORP_CU_Q1": {
+      "primary": "website was just launched on Oct 31, 2025. Too early for YOY."
+    },
+    "CORP_CU_Q2": {
+      "primary": "Our Instagram followers are up 457% over this time last year (Oct 31, 2025): 1,091 (25) vs 239 (Oct 31, 2024)"
+    },
+    "CORP_CU_Q3": {
+      "primary": "Our Facebook  followers are up 556% over this time last year (Oct 31, 2025): 236 (25) vs 42 (Oct 31, 2024)"
+    },
+    "CORP_CU_Q4": {
+      "primary": "Our YouTube channel was established March 2025, Year 1 in progress"
+    },
+    "CORP_CU_Q5": {
+      "primary": "No Community TikTok channel with current resourcing"
+    },
+    "CORP_CU_Q6": {
+      "primary": "n/a"
+    },
+    "CORP_CM_Q1b": {
+      "primary": "Experiential Marketing manager went on sick leave end of October. Did not have opportunity to implement anything yet."
+    },
+    "CORP_CM_Q1e": {
+      "primary": "Not scheduled for this part in the year. We often respond to invitations (Library Gala, Top 40 Under 40, for example). We have not had invitations so far in this period. "
+    },
+    "CORP_SM_Q6a": {
+      "primary": "100 (US Campaign CTA - 24; Contact Us CTA - 74; Contact Us FR CTA - 0; Comment Form CTA - 1)"
+    }
+  },
+  "per_show_answers": {
+    "Corporate::Global Presence": {
+      "CORP_GP_Q1": {
+        "primary": "No"
+      },
+      "CORP_GP_Q2": {
+        "primary": "Yes"
+      },
+      "CORP_GP_Q3": {
+        "primary": "No"
+      },
+      "CORP_GP_Q4": {
+        "primary": "No"
+      },
+      "CORP_GP_Q1c": {
+        "primary": "We were focused on performing in our province this period."
+      },
+      "CORP_GP_Q2c": {
+        "primary": "We haven't"
+      },
+      "CORP_GP_Q2a": {
+        "primary": "We are in the midst of planning a tour to Italy with Don Quixote for January of 2027."
+      },
+      "CORP_GP_Q2b": {
+        "primary": "Global acclaim and further revenue generating opportunities from the Don Quixote production we created in May of 2025."
+      },
+      "CORP_GP_Q3c": {
+        "primary": "Not yet. The tour is only in the planning phases."
+      },
+      "CORP_GP_Q2d": {
+        "primary": "No"
+      },
+      "CORP_GP_Q2f": {
+        "primary": "No"
+      }
+    },
+    "Corporate::Governance & Board Oversight": {
+      "CORP_GBO_Q1": {
+        "primary": "No"
+      },
+      "CORP_GBO_Q4": {
+        "primary": "No"
+      },
+      "CORP_GBO_Q5": {
+        "primary": "Yes"
+      },
+      "CORP_GBO_Q5a": {
+        "primary": "Leadership & Accountability\nCalls for improved leadership consistency, fairness, and accountability. 2025 shows modest gains in mid-level trust but persistent gaps with executives.\nCommunication & Transparency\nInternal communication has improved but employees still perceive a top-down approach. Greater transparency and communication about the organization from executives needed.\nCulture & Work Environment\nWorkplace culture is stabilizing, with employees recognizing progress in respect and inclusion. More work to minimize silos between departments\nValues & Integrity\nValues are more visible but need to be lived authentically. Continued skepticism about leadership alignment with organizational values\nEmployee Wellbeing & Compensation\nWorkload, compensation, and burnout continue to be primary concerns. Employees appreciate flexibility but would like their work from home day reinstated.\nInclusion, Respect, & Safety\nImprovements in civility and psychological safety noted, but some fear and reporting concerns remain. Focus on communicating clear and anonymous reporting channels\nTeamwork & Collaboration\nInter-department collaboration improving but still siloed. Desire for more cross-functional connection and team-building activities.\nPride & Commitment\nEmployees remain proud of Alberta Ballet\u2019s artistic mission. Sustained commitment to excellence provides a foundation for culture renewal."
+      },
+      "CORP_WC_Q1": {
+        "primary": "Yes"
+      },
+      "CORP_WC_Q2": {
+        "primary": "No"
+      },
+      "CORP_WC_Q3": {
+        "primary": "No"
+      },
+      "CORP_WC_Q4": {
+        "primary": "No"
+      },
+      "CORP_WC_Q5": {
+        "primary": "Yes"
+      },
+      "CORP_WC_Q6": {
+        "primary": "No"
+      },
+      "CORP_WC_Q7": {
+        "primary": "Yes"
+      },
+      "CORP_BM_Q1": {
+        "primary": "No"
+      },
+      "CORP_BM_Q2": {
+        "primary": "No"
+      },
+      "CORP_BM_Q3": {
+        "primary": "No"
+      },
+      "CORP_BM_Q4": {
+        "primary": "No"
+      },
+      "CORP_BM_Q5": {
+        "primary": "Yes"
+      },
+      "CORP_BM_Q6": {
+        "primary": "Yes"
+      },
+      "CORP_BM_Q4a": {
+        "primary": "We did this in June already."
+      },
+      "CORP_BM_Q1a": {
+        "primary": "It's in progress. "
+      },
+      "CORP_BM_Q3a": {
+        "primary": "Formal board recruitment process is still in progress. "
+      },
+      "CORP_WC_Q7b": {
+        "primary": "One employee suffered a potential seizure at the Jubilee Nijinsky matinee in Calgary."
+      },
+      "CORP_WC_Q5a": {
+        "primary": "Aug 27 - Nov 7 = 6.8%"
+      },
+      "CORP_WC_Q5b": {
+        "primary": "6 Resignations, 6 End of Contract"
+      },
+      "CORP_WC_Q5c": {
+        "primary": "2 Terminations"
+      },
+      "CORP_WC_Q4a": {
+        "primary": "81% have completed. Dancers and crew remaining. "
+      },
+      "CORP_WC_Q3b": {
+        "primary": "They aren't completed until Spring"
+      },
+      "CORP_WC_Q2b": {
+        "primary": "They aren't completed until Spring"
+      },
+      "CORP_WC_Q1a": {
+        "primary": "Leadership & Accountability\nCalls for improved leadership consistency, fairness, and accountability. 2025 shows modest gains in mid-level trust but persistent gaps with executives.\nCommunication & Transparency\nInternal communication has improved but employees still perceive a top-down approach. Greater transparency and communication about the organization from executives needed.\nCulture & Work Environment\nWorkplace culture is stabilizing, with employees recognizing progress in respect and inclusion. More work to minimize silos between departments\nValues & Integrity\nValues are more visible but need to be lived authentically. Continued skepticism about leadership alignment with organizational values\nEmployee Wellbeing & Compensation\nWorkload, compensation, and burnout continue to be primary concerns. Employees appreciate flexibility but would like their work from home day reinstated.\nInclusion, Respect, & Safety\nImprovements in civility and psychological safety noted, but some fear and reporting concerns remain. Focus on communicating clear and anonymous reporting channels\nTeamwork & Collaboration\nInter-department collaboration improving but still siloed. Desire for more cross-functional connection and team-building activities.\nPride & Commitment\nEmployees remain proud of Alberta Ballet\u2019s artistic mission. Sustained commitment to excellence provides a foundation for culture renewal."
+      }
+    },
+    "Corporate::Leadership & Culture": {
+      "CORP_TLC_Q1": {
+        "primary": "Yes"
+      },
+      "CORP_TLC_Q2": {
+        "primary": "Yes"
+      },
+      "CORP_TLC_Q3": {
+        "primary": "No"
+      },
+      "CORP_TLC_Q4": {
+        "primary": "No"
+      },
+      "CORP_TLC_Q5": {
+        "primary": "No"
+      },
+      "CORP_TLC_Q6": {
+        "primary": "Employee survey results were compiled and compared against last year's results. Key findings from verbatim comments include:\n\n| **Theme**                        | **Key Takeaways**                                                                                                                                                                          |\n| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |\n| **Values in Action**             | Values are understood in concept but not consistently practiced. Employees want to see *Believe, Reflect, Serve* embedded in leadership behaviour, policy, and everyday interactions.      |\n| **Trust and Safety**             | There is significant fear of retaliation when reporting misconduct. HR is perceived as ineffective; third-party options are needed.                                                        |\n| **Communication & Transparency** | Communication gaps are the single strongest cross-cutting issue. Staff feel uninformed and undervalued due to opaque or sudden decisions.                                                  |\n| **Equity & Representation**      | Unequal treatment (especially of dancers and between cities) undermines the organization\u2019s stated inclusivity. Representation and outreach are seen as moral and reputational imperatives. |\n| **Morale & Stability**           | Low morale, job insecurity, and the removal of flexibility have eroded trust. Restoring consistent, fair practices is viewed as essential.                                                 |\n| **Alignment & Culture**          | The organization\u2019s divisions (Company, School, Community) need shared language, goals, and culture; otherwise, the values framework remains fragmented.                                    |\n"
+      },
+      "CORP_TLC_Q1a": {
+        "primary": "72.06% are either satisfied or very satisfied\n82.23% are either satisfied or very satisfied with team work (meaning they work effectively with their team)\n80.88% are either satisfied or very satisfied with their access to their leader\n73.53% are either satisfied or very satisfied with DEI\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+      },
+      "CORP_TLC_Q3b": {
+        "primary": "Leadership and Communication\nCommunication continues to be a priority for improvement with 2025 feedback focusing on communication and transparency from management as well as a lack of comfort with sharing ideas with executives suggesting limited improvement between surveys\nEmployee Well-Being & Job Satisfaction\nOverall satisfaction with the organization but with workload increasing, ongoing concerns about sustainability. Low participation in survey could be also an indicator of decreasing satisfaction\nSafety & Psychological Climate\nPsychological safety with leaders continues to be a focus area"
+      },
+      "CORP_TLC_Q4b": {
+        "primary": "Opportunity to continue to strengthen diversity and workplace culture with the added conversation about psychological safety and revised reporting channels for employees"
+      },
+      "CORP_TLC_Q5b": {
+        "primary": "Leadership training is required."
+      },
+      "CORP_LS_Q1": {
+        "primary": "Yes"
+      },
+      "CORP_LS_Q2": {
+        "primary": "Yes"
+      },
+      "CORP_LS_Q3": {
+        "primary": "No"
+      },
+      "CORP_TB_Q1": {
+        "primary": "No"
+      },
+      "CORP_TB_Q2": {
+        "primary": "No"
+      },
+      "CORP_TB_Q3": {
+        "primary": "Yes"
+      },
+      "CORP_TB_Q4": {
+        "primary": "No"
+      },
+      "CORP_TB_Q5": {
+        "primary": "No"
+      },
+      "CORP_PL_Q1": {
+        "primary": "No"
+      },
+      "CORP_PL_Q2": {
+        "primary": "No"
+      },
+      "CORP_PL_Q3": {
+        "primary": "Yes"
+      },
+      "CORP_LS_Q1a": {
+        "primary": "Although all the required sessions for Canadian Heritage were complete, an additional session on DEI would prove valuable. "
+      },
+      "CORP_LS_Q1b": {
+        "primary": 15.0
+      },
+      "CORP_LS_Q2a": {
+        "primary": "Improvements in civility and psychological safety noted, but some fear and reporting concerns remain. Focus on communicating clear and anonymous reporting channels\nInter-department collaboration improving but still siloed. Desire for more cross-functional connection and team-building activities."
+      },
+      "CORP_TB_Q3a": {
+        "primary": "Company office in Calgary held a bbq at the end of September including dancers and crew"
+      },
+      "CORP_TB_Q4b": {
+        "primary": "Values are more visible but need to be lived authentically. Continued skepticism about leadership alignment with organizational values\nWorkload, compensation, and burnout continue to be primary concerns. Employees appreciate flexibility but would like their work from home day reinstated."
+      },
+      "CORP_TB_Q5b": {
+        "primary": "Money for training and time to schedule in people's calendars."
+      },
+      "CORP_PL_Q1b": {
+        "primary": "It's in progress, currently with Field Law for review."
+      },
+      "CORP_PL_Q2a": {
+        "primary": "In progress. So far, Dancer Handbook is complete."
+      }
+    },
+    "Corporate::Marketing and Sales": {
+      "CORP_SU_1": {
+        "primary": "Renewed subscriptions are up over this time last year by 21% (25/26: 1688 accounts, 12,496 tickets, and $1,464,090 revenue vs 24/25: 1111 accounts, 10,660 tickets, and $1,218,675 revenue)."
+      },
+      "CORP_SU_2": {
+        "primary": "New to file subscriptions are up 67% over this time last year (25/26: 347 accounts, 3,092 tickets and $313,445 vs 24/25: 208 accounts, 1,955 tickets and $186,529 revenue)."
+      },
+      "CORP_SU_3": {
+        "primary": "NTF single tickets are up by 10% over this time last year 9054: (Nov 1 2024 - Oct 31, 2025) vs 8261 (Nov 1 2023 - Oct 31, 2024)."
+      },
+      "CORP_SU_4": {
+        "primary": "Returning single ticket numbers are up 15% over this time last year: 14,209 (Nov 1 2024 - Oct 31, 2025) vs 12,409 (Nov 1 2023 - Oct 31, 2024)."
+      },
+      "CORP_CM_Q1": {
+        "primary": "No"
+      },
+      "CORP_CM_Q1c": {
+        "primary": "No"
+      },
+      "CORP_CM_Q2": {
+        "primary": "Our website traffic is down 8% over this time last year. \nEngaged Sessions: 280,500 (Nov 1 2024 - Oct 31, 2025) vs 306,400 (Nov 1 2024 - Oct 31, 2025)\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+      },
+      "CORP_CM_Q3": {
+        "primary": "Our Ticketmaster web traffic is down 10% over this time last year.\n\nEvent Page Visits: 165,656 (Nov 1 2024 - Oct 31, 2025) vs 185,666 (Nov 1 2023 - Oct 31, 2024)."
+      },
+      "CORP_CM_Q4": {
+        "primary": "Our Instagram followers are up 18% over this time last year (Oct 31, 2025): 37,827 vs 32,193 (October 31, 2024)\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+      },
+      "CORP_CM_Q5": {
+        "primary": "Our Facebook followers are up 5% over this time last year (Oct 31, 2025): 24,895 vs 23,761 (October 31, 2024)"
+      },
+      "CORP_CM_Q6": {
+        "primary": "Our YouTube Subscribers are up 12% over this time last year (Oct 31, 2025): 1,396 vs 1,244 (October 31, 2024)."
+      },
+      "CORP_CM_Q7": {
+        "primary": "Our TikTok followers  are up 37% over this time last year (Oct 31, 2025):  21,523 (25) vs 15,721 (October 31, 2024)."
+      },
+      "CORP_SM_Q2": {
+        "primary": "Our Instagram  followers are up 15% over this time last year (Oct 31, 2025): 15,383 (25) vs 13,076 (Oct 31, 2024)"
+      },
+      "CORP_SM_Q3": {
+        "primary": "Our Facebook  followers are up 2% over this time last year (Oct 31, 2025):6,802 (25) vs 6,638 (Oct 31, 2024)"
+      },
+      "CORP_SM_Q4": {
+        "primary": "Our YouTube followers are up 32% over this time last year (Oct 31, 2025): 327 (25) vs 223 (Oct 31, 2024)"
+      },
+      "CORP_SM_Q5": {
+        "primary": "(Oct 31, 2025): 215; Year 1 in progress"
+      },
+      "CORP_SM_Q6": {
+        "primary": "4"
+      },
+      "CORP_CU_Q1": {
+        "primary": "website was just launched on Oct 31, 2025. Too early for YOY."
+      },
+      "CORP_CU_Q2": {
+        "primary": "Our Instagram followers are up 457% over this time last year (Oct 31, 2025): 1,091 (25) vs 239 (Oct 31, 2024)"
+      },
+      "CORP_CU_Q3": {
+        "primary": "Our Facebook  followers are up 556% over this time last year (Oct 31, 2025): 236 (25) vs 42 (Oct 31, 2024)"
+      },
+      "CORP_CU_Q4": {
+        "primary": "Our YouTube channel was established March 2025, Year 1 in progress"
+      },
+      "CORP_CU_Q5": {
+        "primary": "No Community TikTok channel with current resourcing"
+      },
+      "CORP_CU_Q6": {
+        "primary": "n/a"
+      },
+      "CORP_CM_Q1b": {
+        "primary": "Experiential Marketing manager went on sick leave end of October. Did not have opportunity to implement anything yet."
+      },
+      "CORP_CM_Q1e": {
+        "primary": "Not scheduled for this part in the year. We often respond to invitations (Library Gala, Top 40 Under 40, for example). We have not had invitations so far in this period. "
+      },
+      "CORP_SM_Q6a": {
+        "primary": "100 (US Campaign CTA - 24; Contact Us CTA - 74; Contact Us FR CTA - 0; Comment Form CTA - 1)"
+      }
+    }
+  }
+}
