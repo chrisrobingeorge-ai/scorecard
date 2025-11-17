@@ -766,6 +766,13 @@ def _apply_pending_draft_if_any():
         prod_norm = meta.get("production") or ""
         st.session_state["filter_production"] = prod_norm or GENERAL_PROD_LABEL
 
+        # 🔹 NEW: restore AI summary if present,
+        # so we don't have to call OpenAI again.
+        if "ai_result" in data and data["ai_result"]:
+            st.session_state["ai_result"] = data["ai_result"]
+            # Ensure the AI section + download buttons are active without re-clicking
+            st.session_state["scorecard_submitted"] = True
+
         st.session_state["loaded_draft"] = data
         st.session_state["draft_hash"] = h
         st.session_state["draft_applied"] = True
@@ -935,6 +942,12 @@ def build_draft_from_state(
         "meta": meta,  # includes the CURRENT dept/prod/month etc.
         "answers": _normalise_answers_for_export(current_answers),
     }
+
+    # 🔹 NEW: include the current AI summary (if any) so it can be reloaded later
+    ai_result = st.session_state.get("ai_result")
+    if ai_result:
+        draft["ai_result"] = ai_result
+
 
     # ---------- ALL departments/prods -> "per_show_answers" ----------
     per_show_export: Dict[str, Dict[str, dict]] = {}
@@ -1243,6 +1256,19 @@ def main():
         mime="application/json",
         help="Downloads a snapshot of your current answers (this and other productions). Re-upload later to continue.",
     )
+    # 🔹 OPTIONAL: AI-summary-only download
+    if st.session_state.get("ai_result"):
+        ai_summary_payload = {
+            "meta": meta_for_ai,   # dept, month, scope, etc.
+            "ai_result": st.session_state["ai_result"],
+        }
+        st.sidebar.download_button(
+            "💾 Save AI summary only (JSON)",
+            data=json.dumps(ai_summary_payload, indent=2),
+            file_name=f"scorecard_ai_summary_{meta_for_ai['department'].replace(' ', '_')}_{month_str}.json",
+            mime="application/json",
+            help="Just the edited AI summary for this department/month.",
+        )
     st.sidebar.download_button(
         "⬇️ Download answers CSV",
         data=get_answers_df().to_csv(index=False),
