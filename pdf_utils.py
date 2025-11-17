@@ -921,20 +921,20 @@ def build_overall_board_pdf(
 
     styles = getSampleStyleSheet()
 
-    # Reuse / parallel your existing style language
+    # Match department scorecard typography
     styles.add(
         ParagraphStyle(
-            name="BoardTitle",
+            name="ScorecardTitle",
             parent=styles["Title"],
             fontName="Helvetica-Bold",
-            fontSize=20,
-            leading=24,
-            spaceAfter=6,
+            fontSize=22,
+            leading=26,
+            spaceAfter=4,
         )
     )
     styles.add(
         ParagraphStyle(
-            name="BoardMetaLabel",
+            name="MetaLabel",
             parent=styles["Normal"],
             fontName="Helvetica",
             textColor=colors.grey,
@@ -945,7 +945,7 @@ def build_overall_board_pdf(
     )
     styles.add(
         ParagraphStyle(
-            name="BoardMetaValue",
+            name="MetaValue",
             parent=styles["BodyText"],
             fontName="Helvetica",
             fontSize=10,
@@ -954,7 +954,7 @@ def build_overall_board_pdf(
     )
     styles.add(
         ParagraphStyle(
-            name="BoardSectionHeading",
+            name="SectionHeading",
             parent=styles["Heading2"],
             fontName="Helvetica-Bold",
             fontSize=14,
@@ -964,11 +964,11 @@ def build_overall_board_pdf(
     )
     styles.add(
         ParagraphStyle(
-            name="BoardBody",
+            name="ReportBody",
             parent=styles["BodyText"],
             fontName="Helvetica",
-            fontSize=10.5,
-            leading=14,
+            fontSize=10,
+            leading=13,
         )
     )
 
@@ -990,7 +990,7 @@ def build_overall_board_pdf(
     else:
         header_cells.append(Spacer(0.5 * inch, 0.5 * inch))
 
-    header_cells.append(Paragraph("Strategic Summary Scorecard", styles["BoardTitle"]))
+    header_cells.append(Paragraph("Strategic Summary Scorecard", styles["ScorecardTitle"]))
 
     # Two-column header: logo + title only, full width = 7.5"
     header_table = Table(
@@ -1014,16 +1014,15 @@ def build_overall_board_pdf(
 
     # ── Reporting period: left-aligned, below header ────────────────────────
     if reporting_label:
-        story.append(Paragraph("REPORTING PERIOD", styles["BoardMetaLabel"]))
-        story.append(Paragraph(str(reporting_label), styles["BoardMetaValue"]))
+        story.append(Paragraph("REPORTING PERIOD", styles["MetaLabel"]))
+        story.append(Paragraph(str(reporting_label), styles["MetaValue"]))
         story.append(Spacer(1, 12))
 
     # ─────────────────────────────────────────────────────────────────────
     # Departments overview table
     # ─────────────────────────────────────────────────────────────────────
     if not dept_overview.empty:
-        story.append(Paragraph("Departments included", styles["BoardSectionHeading"]))
-
+        story.append(Paragraph("Departments included", styles["SectionHeading"]))
         display_cols = ["department", "month_label", "overall_score"]
         display_cols = [c for c in display_cols if c in dept_overview.columns]
 
@@ -1059,17 +1058,16 @@ def build_overall_board_pdf(
     # ─────────────────────────────────────────────────────────────────────
     # Main Board narrative
     # ─────────────────────────────────────────────────────────────────────
-    story.append(Paragraph("Board Narrative", styles["BoardSectionHeading"]))
-
+    story.append(Paragraph("Board Narrative", styles["SectionHeading"]))
     overall_text = (ai_result.get("overall_summary") or "").strip()
 
     if not overall_text:
-        story.append(Paragraph("No Board report text was generated.", styles["BoardBody"]))
+        story.append(Paragraph("No Board report text was generated.", styles["ReportBody"]))
     else:
         text = overall_text.replace("\r\n", "\n")
         parts = [p.strip() for p in text.split("\n\n") if p.strip()]
         for idx, para in enumerate(parts):
-            story.append(Paragraph(para, styles["BoardBody"]))
+            story.append(Paragraph(para, styles["ReportBody"]))
             if idx < len(parts) - 1:
                 story.append(Spacer(1, 6))
 
@@ -1079,26 +1077,26 @@ def build_overall_board_pdf(
     risks = ai_result.get("risks") or []
     if risks:
         story.append(Spacer(1, 10))
-        story.append(Paragraph("Strategic Pillar – Risks / Concerns", styles["BoardSectionHeading"]))
+        story.append(Paragraph("Strategic Pillar – Risks / Concerns", styles["SectionHeading"]))
         for r in risks:
-            story.append(Paragraph(f"• {str(r)}", styles["BoardBody"]))
+            story.append(Paragraph(f"• {str(r)}", styles["ReportBody"]))
 
     # Organisation-wide priorities
     priorities = ai_result.get("priorities_next_month") or []
     if priorities:
         story.append(Spacer(1, 10))
-        story.append(Paragraph("Organisation-wide Priorities for Next Period", styles["BoardSectionHeading"]))
+        story.append(Paragraph("Organization-wide Priorities for Next Period", styles["SectionHeading"]))
         for p in priorities:
-            story.append(Paragraph(f"• {str(p)}", styles["BoardBody"]))
+            story.append(Paragraph(f"• {str(p)}", styles["ReportBody"]))
 
     # Notes for leadership
     notes = (ai_result.get("notes_for_leadership") or "").strip()
     if notes:
         story.append(Spacer(1, 10))
-        story.append(Paragraph("Notes for Leadership", styles["BoardSectionHeading"]))
+        story.append(Paragraph("Notes for Leadership", styles["SectionHeading"]))
         parts = [p.strip() for p in notes.replace("\r\n", "\n").split("\n\n") if p.strip()]
         for idx, para in enumerate(parts):
-            story.append(Paragraph(para, styles["BoardBody"]))
+            story.append(Paragraph(para, styles["ReportBody"]))
             if idx < len(parts) - 1:
                 story.append(Spacer(1, 4))
 
