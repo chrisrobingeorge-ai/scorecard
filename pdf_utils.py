@@ -137,21 +137,33 @@ def _safe_paragraph(text: Any, style: ParagraphStyle, allow_markup: bool = False
 
 def _strip_objective_codes(text: str) -> str:
     """
-    Remove internal objective codes like ART1 / ART2 / ART3 and
+    Remove internal objective codes like ART1 / (ART1) and
     clean up some odd dash list framing.
+
+    Also strips any leading colon+space left behind when the code is
+    at the start of the string (e.g. 'ART1: Title' -> 'Title').
     """
     if not text:
         return ""
-    # Remove "(ART1)" style codes
-    s = re.sub(r"\(ART[0-9]+\)", "", text)
-    # Remove bare ART1 / ART2 tokens
+
+    s = text
+
+    # If the code is at the start, strip it AND any following colon/whitespace
+    # e.g. "ART1: Elevate..." or "(ART1): Elevate..." -> "Elevate..."
+    s = re.sub(r"^\s*\(?ART[0-9]+\)?\s*:\s*", "", s)
+
+    # Remove "(ART1)" style codes anywhere else
+    s = re.sub(r"\(ART[0-9]+\)", "", s)
+
+    # Remove bare ART1 / ART2 tokens elsewhere
     s = re.sub(r"\bART[0-9]+\b", "", s)
+
     # Replace en-dash bullet fragments " – " with a space
     s = s.replace(" – ", " ")
+
     # Normalise excess whitespace
     s = re.sub(r"\s{2,}", " ", s)
     return s.strip()
-
 
 def _split_paragraphs(raw_value: Any) -> list[str]:
     """
