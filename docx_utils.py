@@ -18,11 +18,24 @@ from docx.oxml import OxmlElement
 
 from app_config import OBJECTIVES_DF
 
+
 JSON_PREFIX = "AB_SCORECARD_JSON:"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helper text utilities
 # ─────────────────────────────────────────────────────────────────────────────
+def _set_margins(doc: Document, top=0.75, bottom=0.75, left=0.75, right=0.75):
+    """
+    Set page margins (in inches) for all sections in the document.
+    """
+    from docx.shared import Inches
+
+    for section in doc.sections:
+        section.top_margin = Inches(top)
+        section.bottom_margin = Inches(bottom)
+        section.left_margin = Inches(left)
+        section.right_margin = Inches(right)
+
 def _to_plain_text(val: Any) -> str:
     """
     Normalise various AI output types to a human-readable string.
@@ -280,6 +293,7 @@ def build_scorecard_docx(
       pillars, by production, risks/priorities, raw responses).
     """
     doc = Document()
+    _set_margins(doc, top=0.75, bottom=0.75, left=0.75, right=0.75)
     
     # Set default font
     style = doc.styles['Normal']
@@ -511,7 +525,8 @@ def build_overall_board_docx(
     - ai_result: the dict returned by interpret_overall_scorecards(...)
     """
     doc = Document()
-    
+    _set_margins(doc, top=0.75, bottom=0.75, left=0.75, right=0.75)
+
     # Set default font
     style = doc.styles['Normal']
     font = style.font
