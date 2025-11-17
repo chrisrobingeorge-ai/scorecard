@@ -295,8 +295,14 @@ def render_financial_kpis():
             "area": st.column_config.TextColumn("Area", disabled=True),
             "category": st.column_config.TextColumn("Category", disabled=True),
             "sub_category": st.column_config.TextColumn("Sub-category", disabled=True),
-            "target": st.column_config.NumberColumn("Target", format="$%,.0f", disabled=True),
-            "actual": st.column_config.NumberColumn("Actual (YTD)", format="$%,.0f"),
+            "target": st.column_config.NumberColumn(
+                "Target",
+                format="%.0f",      # was "$%,.0f" (or similar)
+                disabled=True,
+            ),
+            "actual": st.column_config.NumberColumn(
+                "Actual (YTD)",
+                format="%.0f",      # was "$%,.0f"
         },
     )
 
