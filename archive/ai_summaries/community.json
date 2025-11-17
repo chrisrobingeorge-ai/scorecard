@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "staff_name": "Unknown",
+    "role": "",
+    "department": "Community",
+    "month": "2025-11",
+    "production": "",
+    "scope": "department_all_productions"
+  },
+  "ai_result": {
+    "overall_summary": "In November 2025, Alberta Ballet's Community Department made notable strides toward its strategic objectives, particularly COM1 (Ensure Dance Access Across Alberta) and COM3 (Accessible Experiences for Underserved Communities). The Access Dance programming successfully reached several urban areas, serving 20-30 students in Red Deer, while plans for future programming indicate a commitment to expanding access. However, the absence of provincial touring performances this month highlights a developing area that requires attention, as it limits broader community engagement. The department's efforts to secure funding for various initiatives, including Access Dance and Newcomers Programming, reflect a proactive approach to resource acquisition, which is essential for sustaining long-term programming goals.\n\nThe Powwow & Ballet initiative demonstrated successful implementation, with programming delivered in multiple cities and positive funding outcomes. This aligns well with COM3's goal of fostering inclusivity and cultural exchange. However, the lack of rural programming delivery this month raises questions about the department's capacity to reach underserved communities in those areas. The Community Ticket Program's provision of free tickets to community members indicates a positive step toward connecting recreational students and families to the company, fulfilling the objectives outlined in COM4. Overall, while there are areas of strong progress, the department must continue to build momentum and address gaps in rural outreach and provincial touring to ensure comprehensive access across Alberta over the next five years.",
+    "objective_summaries": [
+      {
+        "objective_id": "COM1",
+        "objective_title": "Ensure Dance Access Across Alberta",
+        "score_hint": "2/3 Steady development",
+        "summary": "The Access Dance initiative is progressing well, with programming successfully delivered in Red Deer and plans for future sessions. The program has served 20-30 students and received significant funding, indicating strong community engagement and support. However, the lack of provincial touring this period suggests a need for improved scheduling and resource allocation to enhance outreach efforts across Alberta.\n\nThe Access Dance - Rural initiative is currently in an early stage. The absence of planned activities highlights the need for strategic focus on securing resources to enable outreach in rural communities. This area will require ongoing monitoring and financial support to ensure future programming can be realized."
+      },
+      {
+        "objective_id": "COM3",
+        "objective_title": "Accessible Experiences for Underserved Communities",
+        "score_hint": "2/3 Steady development",
+        "summary": "The Powwow & Ballet initiative has successfully delivered programming in urban areas, supported by significant funding, which aligns well with the goal of providing accessible experiences for underserved communities. Additionally, the Newcomers Programming has been implemented in Fort McMurray and Calgary, indicating a positive trajectory. However, the lack of rural programming delivery this month highlights a gap that needs addressing to ensure inclusivity across all communities.\n\nThe Community Ticket Program has successfully provided 100 free tickets to various community groups, fostering connections with new audiences. While this initiative is showing steady progress, the lack of funding to support ticket distribution may limit future outreach. Continued efforts to secure funding will be essential for maintaining and expanding this program."
+      },
+      {
+        "objective_id": "",
+        "objective_title": "",
+        "score_hint": "",
+        "summary": ""
+      }
+    ],
+    "pillar_summaries": [
+      {
+        "objective_id": "COM1",
+        "objective_title": "Ensure Dance Access Across Alberta",
+        "score_hint": "2/3 Steady development",
+        "summary": "The Access Dance initiative is progressing well, with programming successfully delivered in Red Deer and plans for future sessions. The program has served 20-30 students and received significant funding, indicating strong community engagement and support. However, the lack of provincial touring this period suggests a need for improved scheduling and resource allocation to enhance outreach efforts across Alberta.\n\nThe Access Dance - Rural initiative is currently in an early stage. The absence of planned activities highlights the need for strategic focus on securing resources to enable outreach in rural communities. This area will require ongoing monitoring and financial support to ensure future programming can be realized."
+      },
+      {
+        "objective_id": "COM3",
+        "objective_title": "Accessible Experiences for Underserved Communities",
+        "score_hint": "2/3 Steady development",
+        "summary": "The Powwow & Ballet initiative has successfully delivered programming in urban areas, supported by significant funding, which aligns well with the goal of providing accessible experiences for underserved communities. Additionally, the Newcomers Programming has been implemented in Fort McMurray and Calgary, indicating a positive trajectory. However, the lack of rural programming delivery this month highlights a gap that needs addressing to ensure inclusivity across all communities.\n\nThe Community Ticket Program has successfully provided 100 free tickets to various community groups, fostering connections with new audiences. While this initiative is showing steady progress, the lack of funding to support ticket distribution may limit future outreach. Continued efforts to secure funding will be essential for maintaining and expanding this program."
+      },
+      {
+        "objective_id": "",
+        "objective_title": "",
+        "score_hint": "",
+        "summary": ""
+      }
+    ],
+    "production_summaries": [
+      {
+        "production": "Access Dance",
+        "objectives": [
+          {
+            "objective_id": "COM1",
+            "objective_title": "Ensure Dance Access Across Alberta",
+            "score_hint": "2/3 Steady development",
+            "summary": "Access Dance programming has been successfully delivered in Red Deer, serving 20-30 students. This aligns with the objective of ensuring dance access across Alberta, although the absence of provincial performances this month indicates a need for further outreach efforts."
+          },
+          {
+            "objective_id": "COM3",
+            "objective_title": "Accessible Experiences for Underserved Communities",
+            "score_hint": "2/3 Steady development",
+            "summary": "While Access Dance programming has reached urban areas, the lack of rural delivery this month highlights a gap in providing experiences for underserved communities. Future plans and funding acquisition will be crucial for expanding reach."
+          }
+        ]
+      },
+      {
+        "production": "Powwow & Ballet",
+        "objectives": [
+          {
+            "objective_id": "COM3",
+            "objective_title": "Accessible Experiences for Underserved Communities",
+            "score_hint": "2/3 Steady development",
+            "summary": "The Powwow & Ballet initiative has successfully delivered programming in urban areas, supported by significant funding. This aligns with the goal of fostering inclusivity and cultural exchange among underserved communities."
+          }
+        ]
+      },
+      {
+        "production": "Newcomers Programming",
+        "objectives": [
+          {
+            "objective_id": "COM3",
+            "objective_title": "Accessible Experiences for Underserved Communities",
+            "score_hint": "2/3 Steady development",
+            "summary": "Newcomers Programming has been implemented in Fort McMurray and Calgary, serving 30-40 students in each city. This reflects a positive trajectory toward providing accessible experiences for vulnerable communities."
+          }
+        ]
+      },
+      {
+        "production": "Community Ticket Program",
+        "objectives": [
+          {
+            "objective_id": "COM4",
+            "objective_title": "Connect Recreational Students & Families to the Company",
+            "score_hint": "2/3 Steady development",
+            "summary": "The Community Ticket Program provided 100 free tickets to community groups, successfully introducing new audiences to Alberta Ballet. This initiative is crucial for building lasting connections with recreational students and their families."
+          }
+        ]
+      }
+    ],
+    "risks": [
+      "Consider tracking the absence of rural programming delivery, as it may limit access for underserved communities.",
+      "Worth monitoring the lack of provincial touring performances this month, which could impact broader community engagement.",
+      "Financial support for the Community Ticket program and Access Dance - Rural is essential to delivery.",
+      "Growing Up Strong has ambitious funding and program goals. Although annual funding support this year is strong, primarily through foundation grants, additional endowed support is needed to create sustainable programming."
+    ],
+    "priorities_next_month": [
+      "Continue to build momentum in securing funding for rural programming to enhance access across Alberta.",
+      "Focus on expanding outreach efforts to underserved communities, particularly in rural areas.",
+      "Evaluate the outcomes of the Community Ticket Program to inform future engagement strategies."
+    ],
+    "notes_for_leadership": "This month's activities reflect a steady progression toward Alberta Ballet's strategic objectives, particularly in urban programming and community engagement. However, the absence of rural programming and provincial performances highlights areas that require sustained attention to ensure comprehensive access across Alberta. As we move forward, it will be essential to balance the successes in urban outreach with efforts to reach underserved communities in rural areas. Continued focus on funding acquisition and program evaluation will support long-term success in our strategic transformation journey."
+  }
+}
