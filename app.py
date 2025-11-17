@@ -1445,39 +1445,55 @@ def main():
     )
     ai_result["overall_summary"] = edited_overall
 
-    # ── Pillar summaries (editable) ──────────────────────────────
-    pillar_summaries = ai_result.get("pillar_summaries", []) or []
-    st.markdown("### Strategic Summary by Pillar")
+    # ── Objective summaries (editable) ──────────────────────────────
+    # Support both new objective_summaries and legacy pillar_summaries
+    objective_summaries = ai_result.get("objective_summaries", []) or ai_result.get("pillar_summaries", []) or []
+    st.markdown("### Strategic Summary by Objective")
 
-    if pillar_summaries:
-        for i, ps in enumerate(pillar_summaries):
-            pillar_label = ps.get("strategic_pillar", "Pillar") or "Pillar"
-            score_hint_val = str(ps.get("score_hint", "") or "")
-            summary_val = str(ps.get("summary", "") or "")
+    if objective_summaries:
+        for i, obj_sum in enumerate(objective_summaries):
+            # Handle both old pillar structure and new objective structure
+            obj_id = obj_sum.get("objective_id", "") or ""
+            obj_title = obj_sum.get("objective_title", "") or obj_sum.get("strategic_pillar", "") or "Objective"
+            score_hint_val = str(obj_sum.get("score_hint", "") or "")
+            summary_val = str(obj_sum.get("summary", "") or "")
 
-            st.markdown(f"#### Pillar {i+1}: {pillar_label}")
+            # Display with objective ID if available, otherwise use title
+            display_label = f"{obj_id}: {obj_title}" if obj_id else obj_title
+            st.markdown(f"#### Objective {i+1}: {display_label}")
 
-            new_pillar_label = st.text_input(
-                f"Pillar name (Pillar {i+1})",
-                value=pillar_label,
-                key=f"pillar_name_{i}",
+            new_obj_id = st.text_input(
+                f"Objective ID (Objective {i+1})",
+                value=obj_id,
+                key=f"objective_id_{i}",
+            ) if obj_id else ""
+            new_obj_title = st.text_input(
+                f"Objective title (Objective {i+1})",
+                value=obj_title,
+                key=f"objective_title_{i}",
             )
             new_score_hint = st.text_input(
-                f"Score hint (Pillar {i+1})",
+                f"Score hint (Objective {i+1})",
                 value=score_hint_val,
-                key=f"pillar_score_{i}",
+                key=f"objective_score_{i}",
             )
             new_summary = st.text_area(
-                f"Pillar narrative (Pillar {i+1})",
+                f"Objective narrative (Objective {i+1})",
                 value=summary_val,
                 height=140,
-                key=f"pillar_summary_{i}",
+                key=f"objective_summary_{i}",
             )
 
-            # write back into ai_result
-            ps["strategic_pillar"] = new_pillar_label
-            ps["score_hint"] = new_score_hint
-            ps["summary"] = new_summary
+            # write back into ai_result with new structure, maintaining backward compatibility
+            if obj_id:
+                obj_sum["objective_id"] = new_obj_id
+            obj_sum["objective_title"] = new_obj_title
+            obj_sum["score_hint"] = new_score_hint
+            obj_sum["summary"] = new_summary
+            
+            # Maintain backward compatibility
+            if "strategic_pillar" in obj_sum:
+                obj_sum["strategic_pillar"] = new_obj_title
 
     # ── By Production / Programme (editable text) ─────────────────
     prod_summaries = ai_result.get("production_summaries", []) or []
@@ -1499,34 +1515,50 @@ def main():
             )
             prod["production"] = new_pname
 
-            pillars = prod.get("pillars") or []
-            for pj, ps in enumerate(pillars):
-                pillar_name = ps.get("pillar", "Category") or "Category"
-                score_hint = str(ps.get("score_hint", "") or "")
-                summary = str(ps.get("summary", "") or "")
+            # Handle both new "objectives" and legacy "pillars" structure
+            objectives = prod.get("objectives") or prod.get("pillars") or []
+            for pj, obj in enumerate(objectives):
+                # Handle both old pillar structure and new objective structure
+                obj_id = obj.get("objective_id", "") or ""
+                obj_title = obj.get("objective_title", "") or obj.get("pillar", "") or "Objective"
+                score_hint = str(obj.get("score_hint", "") or "")
+                summary = str(obj.get("summary", "") or "")
 
-                st.markdown(f"- **Pillar {pj+1}: {pillar_name}**")
+                display_label = f"{obj_id}: {obj_title}" if obj_id else obj_title
+                st.markdown(f"- **Objective {pj+1}: {display_label}**")
 
-                new_pillar_name = st.text_input(
-                    f"  Pillar name (Prod {pi+1}, Pillar {pj+1})",
-                    value=pillar_name,
-                    key=f"prod_{pi}_pillar_name_{pj}",
+                new_obj_id = st.text_input(
+                    f"  Objective ID (Prod {pi+1}, Obj {pj+1})",
+                    value=obj_id,
+                    key=f"prod_{pi}_obj_id_{pj}",
+                ) if obj_id else ""
+                new_obj_title = st.text_input(
+                    f"  Objective title (Prod {pi+1}, Obj {pj+1})",
+                    value=obj_title,
+                    key=f"prod_{pi}_obj_title_{pj}",
                 )
-                new_pillar_score = st.text_input(
-                    f"  Score hint (Prod {pi+1}, Pillar {pj+1})",
+                new_obj_score = st.text_input(
+                    f"  Score hint (Prod {pi+1}, Obj {pj+1})",
                     value=score_hint,
-                    key=f"prod_{pi}_pillar_score_{pj}",
+                    key=f"prod_{pi}_obj_score_{pj}",
                 )
-                new_pillar_summary = st.text_area(
-                    f"  Narrative (Prod {pi+1}, Pillar {pj+1})",
+                new_obj_summary = st.text_area(
+                    f"  Narrative (Prod {pi+1}, Obj {pj+1})",
                     value=summary,
                     height=120,
-                    key=f"prod_{pi}_pillar_summary_{pj}",
+                    key=f"prod_{pi}_obj_summary_{pj}",
                 )
 
-                ps["pillar"] = new_pillar_name
-                ps["score_hint"] = new_pillar_score
-                ps["summary"] = new_pillar_summary
+                # Write back with new structure, maintaining backward compatibility
+                if obj_id:
+                    obj["objective_id"] = new_obj_id
+                obj["objective_title"] = new_obj_title
+                obj["score_hint"] = new_obj_score
+                obj["summary"] = new_obj_summary
+                
+                # Maintain backward compatibility
+                if "pillar" in obj:
+                    obj["pillar"] = new_obj_title
 
     # ── Risks (editable) ─────────────────────────────────────────
     risks_raw = ai_result.get("risks", []) or []

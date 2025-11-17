@@ -327,28 +327,36 @@ def _build_prompt_objective_aware(
 
     objectives_text = "\n\n".join(objective_blocks)
 
-    # ── 4) Pillar inventory for stricter guidance (esp. School) ──────────────
-    pillars = sorted(
-        {
-            str(p).strip()
-            for p in merged.get("strategic_pillar", [])
-            if str(p).strip()
-        }
-    )
-    pillar_list_text = ", ".join(pillars) if pillars else "none explicitly named"
+    # ── 4) Build objective inventory for output structure ──────────────
+    # Collect unique strategic objectives present in the data
+    objectives_present = []
+    seen_obj_ids = set()
+    for obj_id, group in merged.groupby("objective_id"):
+        if obj_id == "UNMAPPED":
+            continue
+        if obj_id not in seen_obj_ids:
+            first = group.iloc[0]
+            objectives_present.append({
+                "objective_id": str(obj_id),
+                "objective_title": str(first.get("objective_title") or "").strip(),
+                "owner": str(first.get("owner") or "").strip(),
+            })
+            seen_obj_ids.add(obj_id)
+    
+    objectives_list_text = ", ".join([f"{o['objective_id']} ({o['objective_title']})" for o in objectives_present]) if objectives_present else "none"
 
     dept_lower = str(dept).lower()
     school_extra = ""
-    if "school" in dept_lower and pillars:
+    if "school" in dept_lower and objectives_present:
         # For the School department, make the structure very explicit
         school_extra = (
-            "For this School department, you MUST treat each of these pillars as a distinct stream of work.\\n"
-            f"The pillars you must use are: {pillar_list_text}.\\n"
-            "You MUST return one and only one 'pillar_summaries' entry for EACH of these pillar names.\\n"
-            "Do not invent new pillar names and do not merge them into a single generic pillar.\\n"
+            "For this School department, you MUST treat each strategic objective as a distinct stream of work.\\n"
+            f"The objectives you must use are: {objectives_list_text}.\\n"
+            "You MUST return one and only one 'objective_summaries' entry for EACH of these objective IDs.\\n"
+            "Do not invent new objective IDs and do not merge them into a single generic objective.\\n"
             "In your 'overall_summary', start with a short integrative paragraph about the School overall,\\n"
-            "then include one paragraph for EACH of these pillars, clearly signposted in the narrative.\\n"
-            "Where evidence is thin for a pillar, say so neutrally rather than assuming poor performance.\\n"
+            "then include one paragraph for EACH of these objectives, clearly signposted in the narrative.\\n"
+            "Where evidence is thin for an objective, say so neutrally rather than assuming poor performance.\\n"
         )
 
     # ── 5) Wrap in richer instructions for the model ────────────────────────
@@ -384,20 +392,24 @@ def _build_prompt_objective_aware(
         - Period: {period}
         - Scope: {scope}
 
-        The distinct strategic pillars / areas present in this department's data are:
-        {pillar_list_text}
+        The strategic objectives present in this department's data are:
+        {objectives_list_text}
+
+        IMPORTANT: Strategic objectives (e.g., ART1, ART2, SCH1, COM1) are the actual strategic goals from 
+        the 2025-2030 plan. Do NOT confuse these with organizational categories like "Innovation", 
+        "Collaboration", or "Recruitment" which are just ways questions are grouped.
 
         For ALL departments:
-        - You MUST return one 'pillar_summaries' entry for EACH distinct pillar name listed above.
-        - Do not invent new pillar names and do not merge these into a single generic pillar.
-        - If no pillars are present, return an empty list for 'pillar_summaries'.
+        - You MUST return one 'objective_summaries' entry for EACH strategic objective ID listed above.
+        - Do not invent new objective IDs and do not merge these objectives.
+        - If no objectives are present, return an empty list for 'objective_summaries'.
 
         {school_extra}
 
         Your task is to produce a deep, interpretive analysis as a single JSON object
         with exactly these keys:
         - "overall_summary" (string)
-        - "pillar_summaries" (array of objects)
+        - "objective_summaries" (array of objects)
         - "production_summaries" (array of objects)
         - "risks" (array of strings)
         - "priorities_next_month" (array of strings)
@@ -416,16 +428,17 @@ def _build_prompt_objective_aware(
              as supporting context. NEVER base strong negative conclusions primarily on LOW-importance items
              (ai_weight=1), which are optional or seasonal signals meant only to add nuance.
 
-        2) "pillar_summaries":
+        2) "objective_summaries":
            An array of objects, each with:
-             - "strategic_pillar": the pillar name (from the data)
+             - "objective_id": the strategic objective ID (e.g., "ART1", "ART2", "SCH1")
+             - "objective_title": the full strategic objective title
              - "score_hint": a string in the form "<n>/3 label", where n is 0, 1, 2, or 3.
                Examples: "3/3 Strong progress", "2/3 Steady development", "1/3 Early stage", "0/3 Inactive this period".
              - "summary": a short paragraph (3–6 sentences).
         
-           For each pillar, explain:
-             - what the answers suggest about progress over the long term,
-             - how this relates to specific strategic objectives and productions/programmes,
+           For each strategic objective, explain:
+             - what the answers suggest about progress over the long term toward this specific strategic goal,
+             - how different productions/programmes contribute to this objective,
              - and any underlying causes or dependencies you can infer.
         
            Use the 0–3 scale with a multi-year perspective:
@@ -449,19 +462,19 @@ def _build_prompt_objective_aware(
         3) "production_summaries":
            An array of objects, each with:
              - "production": the production/programme name (or "General")
-             - "pillars": an array of objects with:
-                 - "pillar": pillar name
+             - "objectives": an array of objects with:
+                 - "objective_id": the strategic objective ID (e.g., "ART1", "ART2")
+                 - "objective_title": the strategic objective title
                  - "score_hint": again in the form "<n>/3 label" using the same 0–3 scale.
                  - "summary" (2–4 sentences).
-           Focus on differences between productions/programmes and what they imply
-           for strategic objectives.
+           Focus on how each production/programme contributes to specific strategic objectives.
            When comparing productions or programmes, do not let a single metric completely dominate your judgment.
            Look across all available answers before calling a production clearly strong or weak for a given objective.
 
            Some questions are marked as "DEPARTMENT-WIDE (not tied to a single production)".
            These describe the company or department overall and MUST NOT be treated as
            attributes of any specific production. Use them only in "overall_summary" and
-           "pillar_summaries", not in "production_summaries".
+           "objective_summaries", not in "production_summaries".
 
         4) "risks":
            An array of concise bullet-style strings labeled as "Areas to Watch" or "Considerations."
@@ -587,35 +600,45 @@ def interpret_scorecard(
         if not isinstance(prod, dict):
             continue
 
-        pillars = prod.get("pillars") or []
-        cleaned_pillars = []
-        for ps in pillars:
-            if not isinstance(ps, dict):
+        # Handle both old "pillars" and new "objectives" structure
+        objectives = prod.get("objectives") or prod.get("pillars") or []
+        cleaned_objectives = []
+        for obj in objectives:
+            if not isinstance(obj, dict):
                 continue
-            pillar_name = str(ps.get("pillar", "")).lower()
+            
+            # Check both old pillar name and new objective_id for recruitment filtering
+            obj_name = str(obj.get("pillar", "") or obj.get("objective_title", "")).lower()
 
             # Strip anything clearly about recruitment / world-class company
-            if "recruit" in pillar_name:
+            if "recruit" in obj_name:
                 continue
-            if "build a world-class ballet company" in pillar_name:
+            if "build a world-class ballet company" in obj_name:
                 continue
 
-            cleaned_pillars.append(ps)
+            cleaned_objectives.append(obj)
 
-        prod["pillars"] = cleaned_pillars
+        # Use new "objectives" key, but maintain old "pillars" for backward compatibility
+        prod["objectives"] = cleaned_objectives
+        if "pillars" in prod:
+            prod["pillars"] = cleaned_objectives
         cleaned_prod_summaries.append(prod)
 
     data["production_summaries"] = cleaned_prod_summaries
 
     # Normalise the output shape so app.py rendering is resilient
-    return {
+    # Maintain backward compatibility by providing both objective_summaries and pillar_summaries
+    result = {
         "overall_summary": data.get("overall_summary", ""),
-        "pillar_summaries": data.get("pillar_summaries", []) or [],
+        "objective_summaries": data.get("objective_summaries", []) or [],
+        "pillar_summaries": data.get("pillar_summaries", []) or data.get("objective_summaries", []) or [],
         "production_summaries": data.get("production_summaries", []) or [],
         "risks": data.get("risks", []) or [],
         "priorities_next_month": data.get("priorities_next_month", []) or [],
         "notes_for_leadership": data.get("notes_for_leadership", "") or "",
     }
+    
+    return result
 
 from typing import List, Dict, Any
 from textwrap import dedent
