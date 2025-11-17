@@ -1,4 +1,4 @@
-section,department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight,depends_on,primary_objective_id
+section,department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight,depends_on,strategic_objectives_id
 ,Community,Access Dance,Community Programs,Cultural Access Gaps,COMM_ACCESS_Q1,"Our Access Dance strategy plans for us to deliver 40 week programming in each of the following cities each year (Fort McMurray, Grande Prarie, Edmonton (Africa Centre), Red Deer, Calgary (Ogden Hub:29), and Medicine Hat). Did we deliver any Access Dance programs to these cities across the province this reporting period?",yes_no,"Yes,No",FALSE,100,inclusion,3,,COM1
 ,Community,Access Dance,Community Programs,Cultural Access Gaps,COMM_ACCESS_Q1a,In which cities?,text,,FALSE,101,inclusion,2,COMM_ACCESS_Q1,COM1
 ,Community,Access Dance,Community Programs,Cultural Access Gaps,COMM_ACCESS_Q1b,How long were the each of the programs delivered (weeks)?,text,,FALSE,102,inclusion,2,COMM_ACCESS_Q1,COM1
