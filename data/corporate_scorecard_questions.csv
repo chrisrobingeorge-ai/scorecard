@@ -46,63 +46,63 @@ Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q3
 Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q4,What is our YOY YouTube traffic numbers and percentage for Community?,text,,FALSE,210,risk,1.1,,CORP2
 Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q5,What is our YOY TikTok traffic numbers and percentage for Community?,text,,FALSE,220,risk,1.1,,CORP2
 Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q6,What is our YOY LinkedIn traffic numbers and percentage for Corporate?,text,,FALSE,230,risk,1.1,,CORP2
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1,Are all leadership training sessions completed as per requirements from Canadian Heritage?,yes_no,"Yes,No",FALSE,240,staff_experience,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1a,What were the outcomes taught?,text,,FALSE,241,staff_experience,1.2,CORP_LS_Q1,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1b,How many people completed the training?,number,,FALSE,242,staff_experience,1.2,CORP_LS_Q1,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1c,"If they weren't all complete, which sessions remain?",text,,FALSE,243,staff_experience,1.2,CORP_LS_Q1=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2,Did you observe notable changes in staff morale or engagement this reporting period?,yes_no,"Yes,No",FALSE,250,staff_experience,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2a,"If yes, what did you observe and how is it affecting teams?",text,,FALSE,251,staff_experience,1.1,CORP_LS_Q2,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2b,"If not, are there any early warning signs or strengths worth noting?",text,,FALSE,252,staff_experience,1,CORP_LS_Q2=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q3,Did all personnel requiring coaching undergo coaching as per requirements from either Canadian Heritage or the Board of Directors?,yes_no,"Yes,No",FALSE,260,leadership_notes,1,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q3a,"If not, why not?",text,,FALSE,261,leadership_notes,1,CORP_LS_Q3=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q1,Were any formal team building events or workshops completed during this period?,yes_no,"Yes,No",FALSE,270,development,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q1a,"If yes, describe (how many people, which departments, topics covered)",text,,FALSE,271,development,1.1,CORP_TB_Q1,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q2,Were any leadership retreats implemented during this period?,yes_no,"Yes,No",FALSE,280,development,1,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q2a,"If yes, describe (how many people, which departments, topics covered)",text,,FALSE,281,development,1,CORP_TB_Q2,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q3,Were any Social Committee events held during this period?,yes_no,"Yes,No",FALSE,290,culture,1.1,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q3a,"If yes, which departments participated and what were the events?",text,,FALSE,291,culture,1.1,CORP_TB_Q3,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q4,Did your area take any actions this period to strengthen team cohesion or workplace culture?,yes_no,"Yes,No",FALSE,300,culture,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q4a,"If yes, what actions did you take and what impact did you see?",text,,FALSE,301,culture,1.1,CORP_TB_Q4,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q4b,"If not, what culture-building efforts do you feel are still needed?",text,,FALSE,302,culture,1,CORP_TB_Q4=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q5,"Did we advance any diversity, equity, or inclusion training this reporting period?",yes_no,"Yes,No",FALSE,310,dei,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q5a,"If yes, what actions were taken and what outcomes or feedback have you observed?",text,,FALSE,311,dei,1.1,CORP_TB_Q5,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q5b,"If not, what barriers are limiting progress on DEI work?",text,,FALSE,312,dei,1,CORP_TB_Q5=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q1,Was the Respect in the Workplace Policy updated this period?,yes_no,"Yes,No",FALSE,320,leadership_notes,1,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q1a,"If yes, were there substantive changes required from the last policy?",text,,FALSE,321,leadership_notes,1,CORP_PL_Q1,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q1b,"If not, why not?",text,,FALSE,322,leadership_notes,1,CORP_PL_Q1=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q2,Were all Employee Handbooks completed for this period?,yes_no,"Yes,No",FALSE,330,leadership_notes,1,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q2a,"If not, why not?",text,,FALSE,331,leadership_notes,1,CORP_PL_Q2=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q3,Were the School Teaching Guidelines updated for this period?,yes_no,"Yes,No",FALSE,340,leadership_notes,1,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q3a,"If not, why not?",text,,FALSE,341,leadership_notes,1,CORP_PL_Q3=No,CORP3
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q1,Were employee engagement surveys completed for this period?,yes_no,"Yes,No",FALSE,350,governance,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q1a,"If yes, what were the key findings and recommendations?",text,,FALSE,351,governance,1.1,CORP_WC_Q1,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q1b,"If not, why not?",text,,FALSE,352,risk,1.2,CORP_WC_Q1=No,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q2,Were student satisfaction surveys completed for this period?,yes_no,"Yes,No",FALSE,360,risk,1.1,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q2a,"If yes, what were the key findings and recommendations?",text,,FALSE,361,oversight,1.2,CORP_WC_Q2,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q2b,"If not, why not?",text,,FALSE,362,oversight,1.1,CORP_WC_Q2=No,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q3,Were parent satisfaction surveys completed for this period?,yes_no,"Yes,No",FALSE,370,governance,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q3a,"If yes, what were the key findings and recommendations?",text,,FALSE,371,governance,1.1,CORP_WC_Q3,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q3b,"If not, why not?",text,,FALSE,372,risk,1.2,CORP_WC_Q3=No,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q4,Did all employees complete Respect in the Workplace training this period?,yes_no,"Yes,No",FALSE,380,governance,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q4a,"If not, why not?",text,,FALSE,381,governance,1.1,CORP_WC_Q4=No,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5,Was there employee turnover during this last period (from last period)?,yes_no,"Yes,No",FALSE,390,risk,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5a,What was the employee turnover rate this period (from last period)?,text,,FALSE,391,risk,1.2,CORP_WC_Q5,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5b,Number of resignations? Which departments?,text,,FALSE,392,risk,1.1,CORP_WC_Q5,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5c,Number of terminations? Which departments?,text,,FALSE,393,oversight,1.2,CORP_WC_Q5,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5d,Were any of these employees key personnel?,yes_no,"Yes,No",FALSE,394,oversight,1.2,CORP_WC_Q5,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5e,"If yes, in which department and which position?",text,,FALSE,395,oversight,1.2,CORP_WC_Q5d,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q6,"Were there employee grievances or complaints (formal, reported) during this period?",yes_no,"Yes,No",FALSE,400,oversight,1.1,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q6a,How many and which department?,text,,FALSE,401,governance,1.2,CORP_WC_Q6,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q7,Were there employee incident reports during this period?,yes_no,"Yes,No",FALSE,410,governance,1.1,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q7b,How many and what was the incident (don't share confidential information)?,text,,FALSE,411,risk,1.2,CORP_WC_Q7,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q1,Was a structured board recruitment process developed and/or implemented for this period?,yes_no,"Yes,No",FALSE,420,oversight,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q1a,"If not, why not?",text,,FALSE,421,oversight,1.2,CORP_BM_Q1=No,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q2,Is the board recruitment process aligned to the strategic plan and needs of Alberta Ballet?,yes_no,"Yes,No",FALSE,430,oversight,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q3,Was a board onboarding process developed and/or implemented in this period?,yes_no,"Yes,No",FALSE,431,oversight,1.1,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q3a,"If not, why not?",text,,FALSE,432,governance,1.2,CORP_BM_Q2=No,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q4,Were any board strategy alignment workshops implemented during this period?,yes_no,"Yes,No",FALSE,440,governance,1.1,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q4a,"If not, why not?",text,,FALSE,441,risk,1.2,CORP_BM_Q4=No,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q5,Was a board effectiveness self-assessment implmented this period?,yes_no,"Yes,No",FALSE,450,oversight,1.1,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q5a,"If not, why not?",text,,FALSE,451,governance,1.2,CORP_BM_Q5=No,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q6,Did the Governance Committee enact workplace culture monitoring this period?,yes_no,"Yes,No",FALSE,460,governance,1.1,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q6a,"If not, why not?",text,,FALSE,461,risk,1.2,CORP_BM_Q6=No,CORP4
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1,Are all leadership training sessions completed as per requirements from Canadian Heritage?,yes_no,"Yes,No",FALSE,240,staff_experience,1.2,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1a,What were the outcomes taught?,text,,FALSE,241,staff_experience,1.2,CORP_LS_Q1,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1b,How many people completed the training?,number,,FALSE,242,staff_experience,1.2,CORP_LS_Q1,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1c,"If they weren't all complete, which sessions remain?",text,,FALSE,243,staff_experience,1.2,CORP_LS_Q1=No,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2,Did you observe notable changes in staff morale or engagement this reporting period?,yes_no,"Yes,No",FALSE,250,staff_experience,1.2,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2a,"If yes, what did you observe and how is it affecting teams?",text,,FALSE,251,staff_experience,1.1,CORP_LS_Q2,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2b,"If not, are there any early warning signs or strengths worth noting?",text,,FALSE,252,staff_experience,1,CORP_LS_Q2=No,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q3,Did all personnel requiring coaching undergo coaching as per requirements from either Canadian Heritage or the Board of Directors?,yes_no,"Yes,No",FALSE,260,leadership_notes,1,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q3a,"If not, why not?",text,,FALSE,261,leadership_notes,1,CORP_LS_Q3=No,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q1,Were any formal team building events or workshops completed during this period?,yes_no,"Yes,No",FALSE,270,development,1.2,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q1a,"If yes, describe (how many people, which departments, topics covered)",text,,FALSE,271,development,1.1,CORP_TB_Q1,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q2,Were any leadership retreats implemented during this period?,yes_no,"Yes,No",FALSE,280,development,1,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q2a,"If yes, describe (how many people, which departments, topics covered)",text,,FALSE,281,development,1,CORP_TB_Q2,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q3,Were any Social Committee events held during this period?,yes_no,"Yes,No",FALSE,290,culture,1.1,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q3a,"If yes, which departments participated and what were the events?",text,,FALSE,291,culture,1.1,CORP_TB_Q3,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q4,Did your area take any actions this period to strengthen team cohesion or workplace culture?,yes_no,"Yes,No",FALSE,300,culture,1.2,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q4a,"If yes, what actions did you take and what impact did you see?",text,,FALSE,301,culture,1.1,CORP_TB_Q4,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q4b,"If not, what culture-building efforts do you feel are still needed?",text,,FALSE,302,culture,1,CORP_TB_Q4=No,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q5,"Did we advance any diversity, equity, or inclusion training this reporting period?",yes_no,"Yes,No",FALSE,310,dei,1.2,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q5a,"If yes, what actions were taken and what outcomes or feedback have you observed?",text,,FALSE,311,dei,1.1,CORP_TB_Q5,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q5b,"If not, what barriers are limiting progress on DEI work?",text,,FALSE,312,dei,1,CORP_TB_Q5=No,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q1,Was the Respect in the Workplace Policy updated this period?,yes_no,"Yes,No",FALSE,320,leadership_notes,1,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q1a,"If yes, were there substantive changes required from the last policy?",text,,FALSE,321,leadership_notes,1,CORP_PL_Q1,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q1b,"If not, why not?",text,,FALSE,322,leadership_notes,1,CORP_PL_Q1=No,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q2,Were all Employee Handbooks completed for this period?,yes_no,"Yes,No",FALSE,330,leadership_notes,1,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q2a,"If not, why not?",text,,FALSE,331,leadership_notes,1,CORP_PL_Q2=No,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q3,Were the School Teaching Guidelines updated for this period?,yes_no,"Yes,No",FALSE,340,leadership_notes,1,,CORP9
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q3a,"If not, why not?",text,,FALSE,341,leadership_notes,1,CORP_PL_Q3=No,CORP9
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q1,Were employee engagement surveys completed for this period?,yes_no,"Yes,No",FALSE,350,governance,1.2,,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q1a,"If yes, what were the key findings and recommendations?",text,,FALSE,351,governance,1.1,CORP_WC_Q1,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q1b,"If not, why not?",text,,FALSE,352,risk,1.2,CORP_WC_Q1=No,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q2,Were student satisfaction surveys completed for this period?,yes_no,"Yes,No",FALSE,360,risk,1.1,,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q2a,"If yes, what were the key findings and recommendations?",text,,FALSE,361,oversight,1.2,CORP_WC_Q2,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q2b,"If not, why not?",text,,FALSE,362,oversight,1.1,CORP_WC_Q2=No,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q3,Were parent satisfaction surveys completed for this period?,yes_no,"Yes,No",FALSE,370,governance,1.2,,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q3a,"If yes, what were the key findings and recommendations?",text,,FALSE,371,governance,1.1,CORP_WC_Q3,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q3b,"If not, why not?",text,,FALSE,372,risk,1.2,CORP_WC_Q3=No,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q4,Did all employees complete Respect in the Workplace training this period?,yes_no,"Yes,No",FALSE,380,governance,1.2,,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q4a,"If not, why not?",text,,FALSE,381,governance,1.1,CORP_WC_Q4=No,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5,Was there employee turnover during this last period (from last period)?,yes_no,"Yes,No",FALSE,390,risk,1.2,,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5a,What was the employee turnover rate this period (from last period)?,text,,FALSE,391,risk,1.2,CORP_WC_Q5,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5b,Number of resignations? Which departments?,text,,FALSE,392,risk,1.1,CORP_WC_Q5,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5c,Number of terminations? Which departments?,text,,FALSE,393,oversight,1.2,CORP_WC_Q5,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5d,Were any of these employees key personnel?,yes_no,"Yes,No",FALSE,394,oversight,1.2,CORP_WC_Q5,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5e,"If yes, in which department and which position?",text,,FALSE,395,oversight,1.2,CORP_WC_Q5d,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q6,"Were there employee grievances or complaints (formal, reported) during this period?",yes_no,"Yes,No",FALSE,400,oversight,1.1,,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q6a,How many and which department?,text,,FALSE,401,governance,1.2,CORP_WC_Q6,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q7,Were there employee incident reports during this period?,yes_no,"Yes,No",FALSE,410,governance,1.1,,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q7b,How many and what was the incident (don't share confidential information)?,text,,FALSE,411,risk,1.2,CORP_WC_Q7,CORP11
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q1,Was a structured board recruitment process developed and/or implemented for this period?,yes_no,"Yes,No",FALSE,420,oversight,1.2,,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q1a,"If not, why not?",text,,FALSE,421,oversight,1.2,CORP_BM_Q1=No,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q2,Is the board recruitment process aligned to the strategic plan and needs of Alberta Ballet?,yes_no,"Yes,No",FALSE,430,oversight,1.2,,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q3,Was a board onboarding process developed and/or implemented in this period?,yes_no,"Yes,No",FALSE,431,oversight,1.1,,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q3a,"If not, why not?",text,,FALSE,432,governance,1.2,CORP_BM_Q2=No,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q4,Were any board strategy alignment workshops implemented during this period?,yes_no,"Yes,No",FALSE,440,governance,1.1,,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q4a,"If not, why not?",text,,FALSE,441,risk,1.2,CORP_BM_Q4=No,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q5,Was a board effectiveness self-assessment implmented this period?,yes_no,"Yes,No",FALSE,450,oversight,1.1,,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q5a,"If not, why not?",text,,FALSE,451,governance,1.2,CORP_BM_Q5=No,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q6,Did the Governance Committee enact workplace culture monitoring this period?,yes_no,"Yes,No",FALSE,460,governance,1.1,,CORP10
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q6a,"If not, why not?",text,,FALSE,461,risk,1.2,CORP_BM_Q6=No,CORP10
