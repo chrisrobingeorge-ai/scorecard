@@ -7,102 +7,102 @@ Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2,Did 
 Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2a,"If yes, who were the partners, what was the purpose of each partnership, and what stage are we at?",text,,FALSE,21,partnerships,1.1,CORP_GP_Q2,CORP1
 Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2b,What outcomes or next steps are expected from these partnerships?,text,,FALSE,22,partnerships,1.1,CORP_GP_Q2,CORP1
 Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2c,"If not, were there potential partnership opportunities that we postponed or declined? Explain.",text,,FALSE,23,partnerships,1,CORP_GP_Q2=No,CORP1
-Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2d,Did we form any collaborations or partnerships with luxury brands during this period?,yes_no,"Yes,No",FALSE,10,digital_infrastructure,1.2,,CORP2
-Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2e,"If so, who were they and what for?",text,,FALSE,11,digital_infrastructure,1.1,CORP_DA_Q1,CORP2
-Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2f,Did we secure any luxury brand sponsorships during this period?,yes_no,"Yes,No",FALSE,12,digital_infrastructure,1.1,CORP_DA_Q1,CORP2
-Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2g,"If so, who were they and what for? ",text,,FALSE,13,digital_infrastructure,1,CORP_DA_Q1=No,CORP2
-Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2h,How much revenue does this represent? ,text,,FALSE,20,workflow,1.2,,CORP2
-Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2i,What are the benefits to the sponsor?,text,,FALSE,21,workflow,1.1,CORP_DA_Q2,CORP2
+Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2d,Did we form any collaborations or partnerships with luxury brands during this period?,yes_no,"Yes,No",FALSE,24,digital_infrastructure,1.2,,CORP2
+Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2e,"If so, who were they and what for?",text,,FALSE,25,digital_infrastructure,1.1,CORP_GP_Q2d,CORP2
+Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2f,Did we secure any luxury brand sponsorships during this period?,yes_no,"Yes,No",FALSE,26,digital_infrastructure,1.1,,CORP2
+Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2g,"If so, who were they and what for? ",text,,FALSE,27,digital_infrastructure,1,CORP_GP_Q2f,CORP2
+Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2h,How much revenue does this represent? ,text,,FALSE,28,workflow,1.2,CORP_GP_Q2f,CORP2
+Corporate,Global Presence,Global Presence,strategic_partnerships,CORP_GP_Q2i,What are the benefits to the sponsor?,text,,FALSE,29,workflow,1.1,CORP_GP_Q2f,CORP2
 Corporate,Global Presence,Global Presence,external_presence,CORP_GP_Q3,"Did Alberta Ballet participate in any touring, showcases, or external appearances that support global presence this period?",yes_no,"Yes,No",FALSE,30,touring,1.2,,CORP1
 Corporate,Global Presence,Global Presence,external_presence,CORP_GP_Q3a,"If yes, where did we appear, what did we present, and who were the key audiences?",text,,FALSE,31,touring,1.1,CORP_GP_Q3,CORP1
 Corporate,Global Presence,Global Presence,leveraged_presence,CORP_GP_Q3b,"How did we leverage these appearances for recruitment, donor development, or brand visibility?",text,,FALSE,32,touring,1.1,CORP_GP_Q3,CORP1
 Corporate,Global Presence,Global Presence,missed_presence,CORP_GP_Q3c,"If not, were there opportunities we considered but did not pursue? Why?",text,,FALSE,33,touring,1,CORP_GP_Q3=No,CORP1
-Corporate,Marketing and Sales,Marketing and Sales,subscriptions,CORP_MS_1,What is our YOY subscription renewals numbers and percentage change in this period?,text,,FALSE,22,workflow,1,CORP_DA_Q2=No,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,subscriptions,CORP_MS_2,What is our YOY subscription NTF numbers and percentage change in this period?,yes_no,"Yes,No",FALSE,30,digital_engagement,1.2,,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,subscriptions,CORP_MS_3,What is our YOY single tickets renewals numbers and percentage change in this period?,text,,FALSE,31,digital_engagement,1.1,CORP_DA_Q3,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,subscriptions,CORP_MS_4,What is our YOY singel tickets NTF numbers and percentage change in this period?,text,,FALSE,32,digital_engagement,1.1,CORP_DA_Q3,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q3c,Did we deliver any experiential marketing events during this period?,yes_no,"Yes,No",FALSE,33,digital_engagement,1,CORP_DA_Q3=No,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4,"If so, what did we do and how many people attended each event?",text,,FALSE,40,risk,1.2,,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,"If not, why not?",text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,Did we deliver any pop-up performances during this period?,yes_no,"Yes,No",FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,"If so, what did we do and how many people attended each event?",text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,"If not, why not?",text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,What is our YOY website traffic numbers and percentage for AlbertaBallet.com?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,What is our YOY website traffic numbers and percentage for TicketMaster.com?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,What is our YOY Instagram traffic numbers and percentage for the Company?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,What is our YOY Facebook traffic numbers and percentage for the Company?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,What is our YOY YouTube traffic numbers and percentage for the Company?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_DA_Q4a,What is our YOY TikTok traffic numbers and percentage for the Company?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_DA_Q4a,What is our YOY website traffic numbers and percentage for AlbertaBalletSchool.com?,yes_no,"Yes,No",FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_DA_Q4a,What is our YOY Instagram traffic numbers and percentage for the School?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_DA_Q4a,What is our YOY Facebook traffic numbers and percentage for the School?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_DA_Q4a,What is our YOY YouTube traffic numbers and percentage for the School?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_DA_Q4a,What is our YOY TikTok traffic numbers and percentage for the School?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_DA_Q4a,How many unique Hubspot forms are in use on AlbertaBalletSchool.com?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_DA_Q4a,What is our AlbertaBalletSchool.com YOY leads captured numbers and percentage?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_DA_Q4a,What is our YOY website traffic numbers and percentage for AlbertaBalletCommunity.com?,yes_no,"Yes,No",FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_DA_Q4a,What is our YOY Instagram traffic numbers and percentage for Community?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_DA_Q4a,What is our YOY Facebook traffic numbers and percentage for Community?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_DA_Q4a,What is our YOY YouTube traffic numbers and percentage for Community?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_DA_Q4a,What is our YOY TikTok traffic numbers and percentage for Community?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_DA_Q4a,What is our YOY LinkedIn traffic numbers and percentage for Corporate?,text,,FALSE,41,risk,1.1,CORP_DA_Q4,CORP2
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_TLC_Q1,Are all leadership training sessions completed as per requirements from Canadian Heritage?,yes_no,"Yes,No",FALSE,10,staff_experience,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_TLC_Q1,What were the outcomes taught?,text,,FALSE,10,staff_experience,1.2,CORP_TLC_Q1,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_TLC_Q1,How many people completed the training?,number,,FALSE,10,staff_experience,1.2,CORP_TLC_Q1,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_TLC_Q1a,"If not, why not?",text,,FALSE,10,staff_experience,1.2,CORP_TLC_Q1=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_TLC_Q1a,Did you observe notable changes in staff morale or engagement this reporting period?,yes_no,"Yes,No",FALSE,10,staff_experience,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_TLC_Q1a,"If yes, what did you observe and how is it affecting teams?",text,,FALSE,11,staff_experience,1.1,CORP_TLC_Q1,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_TLC_Q1a,"If not, are there any early warning signs or strengths worth noting?",text,,FALSE,12,staff_experience,1,CORP_TLC_Q1=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_TLC_Q1a,Did all personnel requiring coaching undergo coaching as per requirements from either Canadian Heritage or the Board of Directors?,yes_no,"Yes,No",FALSE,60,leadership_notes,1,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_TLC_Q1a,"If not, why not?",text,,FALSE,60,leadership_notes,1,CORP_TLC_Q6=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,Were any formal team building events or workshops completed during this period?,yes_no,"Yes,No",FALSE,30,development,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,"If yes, describe (how many people, which departments, topics covered)",text,,FALSE,31,development,1.1,CORP_TLC_Q3,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,Were any leadership retreats implemented during this period?,yes_no,"Yes,No",FALSE,32,development,1,CORP_TLC_Q3=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,"If yes, describe (how many people, which departments, topics covered)",text,,FALSE,32,development,1,CORP_TLC_Q3=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,Were any Social Committee events held during this period?,yes_no,"Yes,No",FALSE,41,culture,1.1,CORP_TLC_Q4,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,"If yes, which departments participated and what were the events?",text,,FALSE,41,culture,1.1,CORP_TLC_Q4,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,Did your area take any actions this period to strengthen team cohesion or workplace culture?,yes_no,"Yes,No",FALSE,40,culture,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,"If yes, what actions did you take and what impact did you see?",text,,FALSE,41,culture,1.1,CORP_TLC_Q4,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,"If not, what culture-building efforts do you feel are still needed?",text,,FALSE,42,culture,1,CORP_TLC_Q4=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,"Did we advance any diversity, equity, or inclusion training this reporting period?",yes_no,"Yes,No",FALSE,50,dei,1.2,,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,"If yes, what actions were taken and what outcomes or feedback have you observed?",text,,FALSE,51,dei,1.1,CORP_TLC_Q5,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TLC_Q1a,"If not, what barriers are limiting progress on DEI work?",text,,FALSE,52,dei,1,CORP_TLC_Q5=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_TLC_Q1a,Was the Respect in the Workplace Policy updated this period?,yes_no,"Yes,No",FALSE,60,leadership_notes,1,CORP_TLC_Q6=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_TLC_Q1a,"If yes, were there substantive changes required from the last policy?",text,,FALSE,60,leadership_notes,1,CORP_TLC_Q6=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_TLC_Q1a,"If not, why not?",text,,FALSE,60,leadership_notes,1,CORP_TLC_Q6=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_TLC_Q1a,Were all Employee Handbooks completed for this period?,yes_no,"Yes,No",FALSE,60,leadership_notes,1,CORP_TLC_Q6=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_TLC_Q1a,"If not, why not?",text,,FALSE,60,leadership_notes,1,CORP_TLC_Q6=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_TLC_Q1a,Were the School Teaching Guidelines updated for this period?,yes_no,"Yes,No",FALSE,60,leadership_notes,1,CORP_TLC_Q6=No,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_TLC_Q1a,"If not, why not?",text,,FALSE,60,leadership_notes,1,CORP_TLC_Q6=No,CORP3
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q1,Were employee engagement surveys completed for this period?,yes_no,"Yes,No",FALSE,10,governance,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q1a,"If yes, what were the key findings and recommendations?",text,,FALSE,11,governance,1.1,CORP_GBO_Q1,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q4,"If not, why not?",text,,FALSE,40,risk,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q4a,Were student satisfaction surveys completed for this period?,yes_no,"Yes,No",FALSE,41,risk,1.1,CORP_GBO_Q4,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q5,"If yes, what were the key findings and recommendations?",text,,FALSE,50,oversight,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q5a,"If not, why not?",text,,FALSE,51,oversight,1.1,CORP_GBO_Q5,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q1,Were parent satisfaction surveys completed for this period?,yes_no,"Yes,No",FALSE,10,governance,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q1a,"If yes, what were the key findings and recommendations?",text,,FALSE,11,governance,1.1,CORP_GBO_Q1,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q4,"If not, why not?",text,,FALSE,40,risk,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q1,Did all employees complete Respect in the Workplace training this period?,yes_no,"Yes,No",FALSE,10,governance,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q1a,"If not, why not?",text,,FALSE,11,governance,1.1,CORP_GBO_Q1,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q4,Was there employee turnover during this last period (from last period)?,yes_no,"Yes,No",FALSE,40,risk,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q4,What was the employee turnover rate this period (from last period)?,text,,FALSE,40,risk,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q4a,Number of resignations? Which departments?,text,,FALSE,41,risk,1.1,CORP_GBO_Q4,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q5,Number of terminations? Which departments?,text,,FALSE,50,oversight,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q5,Were any of these employees key personnel?,yes_no,"Yes,No",FALSE,50,oversight,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q5,"If yes, in which department and which position?",text,,FALSE,50,oversight,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q5a,"Were there employee grievances or complaints (formal, reported) during this period?",yes_no,"Yes,No",FALSE,51,oversight,1.1,CORP_GBO_Q5,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q1,How many and which department?,text,,FALSE,10,governance,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q1a,Were there employee incipdent reports during this period?,yes_no,"Yes,No",FALSE,11,governance,1.1,CORP_GBO_Q1,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_GBO_Q4,How many and what was the incident (don't share confidential information)?,text,,FALSE,40,risk,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q5,Was a structured board recruitment process developed and/or implemented for this period?,text,,FALSE,50,oversight,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q5,"If not, why not?",yes_no,"Yes,No",FALSE,50,oversight,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q5,Is the board recruitment process aligned to the strategic plan and needs of Alberta Ballet?,text,,FALSE,50,oversight,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q5a,Was a board onboarding process developed and/or implemented in this period?,yes_no,"Yes,No",FALSE,51,oversight,1.1,CORP_GBO_Q5,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q1,"If not, why not?",text,,FALSE,10,governance,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q1a,Were any board strategy alignment workshops implemented during this period?,yes_no,"Yes,No",FALSE,11,governance,1.1,CORP_GBO_Q1,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q4,"If not, why not?",text,,FALSE,40,risk,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q5a,Was a board effectiveness self-assessment implmented this period?,yes_no,"Yes,No",FALSE,51,oversight,1.1,CORP_GBO_Q5,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q1,"If not, why not?",text,,FALSE,10,governance,1.2,,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q1a,Did the Governance Committee enact workplace culture monitoring this period?,yes_no,"Yes,No",FALSE,11,governance,1.1,CORP_GBO_Q1,CORP4
-Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_GBO_Q4,"If not, why not?",text,,FALSE,40,risk,1.2,,CORP4
+Corporate,Marketing and Sales,Marketing and Sales,subscriptions,CORP_SU_1,What is our YOY subscription renewals numbers and percentage change in this period?,text,,FALSE,40,workflow,1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,subscriptions,CORP_SU_2,What is our YOY subscription NTF numbers and percentage change in this period?,text,,FALSE,41,digital_engagement,1.2,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,subscriptions,CORP_SU_3,What is our YOY single tickets renewals numbers and percentage change in this period?,text,,FALSE,42,digital_engagement,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,subscriptions,CORP_SU_4,What is our YOY singel tickets NTF numbers and percentage change in this period?,text,,FALSE,43,digital_engagement,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q1,Did we deliver any experiential marketing events during this period?,yes_no,"Yes,No",FALSE,50,digital_engagement,1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q1a,"If so, what did we do and how many people attended each event?",text,,FALSE,51,risk,1.2,CORP_CM_Q1,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q1b,"If not, why not?",text,,FALSE,52,risk,1.1,CORP_CM_Q1=No,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q1c,Did we deliver any pop-up performances during this period?,yes_no,"Yes,No",FALSE,53,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q1d,"If so, what did we do and how many people attended each event?",text,,FALSE,54,risk,1.1,CORP_CM_Q1c,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q1e,"If not, why not?",text,,FALSE,55,risk,1.1,CORP_CM_Q1c=No,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q2,What is our YOY website traffic numbers and percentage for AlbertaBallet.com?,text,,FALSE,60,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q3,What is our YOY website traffic numbers and percentage for TicketMaster.com?,text,,FALSE,70,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q4,What is our YOY Instagram traffic numbers and percentage for the Company?,text,,FALSE,80,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q5,What is our YOY Facebook traffic numbers and percentage for the Company?,text,,FALSE,90,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q6,What is our YOY YouTube traffic numbers and percentage for the Company?,text,,FALSE,100,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,company_marketing,CORP_CM_Q7,What is our YOY TikTok traffic numbers and percentage for the Company?,text,,FALSE,110,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q1,What is our YOY website traffic numbers and percentage for AlbertaBalletSchool.com?,text,,FALSE,120,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q2,What is our YOY Instagram traffic numbers and percentage for the School?,text,,FALSE,130,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q3,What is our YOY Facebook traffic numbers and percentage for the School?,text,,FALSE,140,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q4,What is our YOY YouTube traffic numbers and percentage for the School?,text,,FALSE,150,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q5,What is our YOY TikTok traffic numbers and percentage for the School?,text,,FALSE,160,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q6,How many unique Hubspot forms are in use on AlbertaBalletSchool.com?,text,,FALSE,170,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q6a,What is our AlbertaBalletSchool.com YOY leads captured numbers and percentage?,text,,FALSE,170,risk,1.1,CORP_SM_Q6,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q1,What is our YOY website traffic numbers and percentage for AlbertaBalletCommunity.com?,text,,FALSE,180,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q2,What is our YOY Instagram traffic numbers and percentage for Community?,text,,FALSE,190,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q3,What is our YOY Facebook traffic numbers and percentage for Community?,text,,FALSE,200,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q4,What is our YOY YouTube traffic numbers and percentage for Community?,text,,FALSE,210,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q5,What is our YOY TikTok traffic numbers and percentage for Community?,text,,FALSE,220,risk,1.1,,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q6,What is our YOY LinkedIn traffic numbers and percentage for Corporate?,text,,FALSE,230,risk,1.1,,CORP2
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1,Are all leadership training sessions completed as per requirements from Canadian Heritage?,yes_no,"Yes,No",FALSE,240,staff_experience,1.2,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1a,What were the outcomes taught?,text,,FALSE,241,staff_experience,1.2,CORP_LS_Q1,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1b,How many people completed the training?,number,,FALSE,242,staff_experience,1.2,CORP_LS_Q1,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1c,"If they weren't all complete, which sessions remain?",text,,FALSE,243,staff_experience,1.2,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2,Did you observe notable changes in staff morale or engagement this reporting period?,yes_no,"Yes,No",FALSE,250,staff_experience,1.2,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2a,"If yes, what did you observe and how is it affecting teams?",text,,FALSE,251,staff_experience,1.1,CORP_LS_Q2,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2b,"If not, are there any early warning signs or strengths worth noting?",text,,FALSE,252,staff_experience,1,CORP_LS_Q2=No,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q3,Did all personnel requiring coaching undergo coaching as per requirements from either Canadian Heritage or the Board of Directors?,yes_no,"Yes,No",FALSE,260,leadership_notes,1,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q3a,"If not, why not?",text,,FALSE,261,leadership_notes,1,CORP_LS_Q3=No,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q1,Were any formal team building events or workshops completed during this period?,yes_no,"Yes,No",FALSE,270,development,1.2,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q1a,"If yes, describe (how many people, which departments, topics covered)",text,,FALSE,271,development,1.1,CORP_TB_Q1,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q2,Were any leadership retreats implemented during this period?,yes_no,"Yes,No",FALSE,280,development,1,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q2a,"If yes, describe (how many people, which departments, topics covered)",text,,FALSE,281,development,1,CORP_TB_Q2,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q3,Were any Social Committee events held during this period?,yes_no,"Yes,No",FALSE,290,culture,1.1,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q3a,"If yes, which departments participated and what were the events?",text,,FALSE,291,culture,1.1,CORP_TB_Q3,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q4,Did your area take any actions this period to strengthen team cohesion or workplace culture?,yes_no,"Yes,No",FALSE,300,culture,1.2,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q4a,"If yes, what actions did you take and what impact did you see?",text,,FALSE,301,culture,1.1,CORP_TB_Q4,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q4b,"If not, what culture-building efforts do you feel are still needed?",text,,FALSE,302,culture,1,CORP_TB_Q4=No,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q5,"Did we advance any diversity, equity, or inclusion training this reporting period?",yes_no,"Yes,No",FALSE,310,dei,1.2,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q5a,"If yes, what actions were taken and what outcomes or feedback have you observed?",text,,FALSE,311,dei,1.1,CORP_TB_Q5,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,team_building,CORP_TB_Q5b,"If not, what barriers are limiting progress on DEI work?",text,,FALSE,312,dei,1,CORP_TB_Q5=No,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q1,Was the Respect in the Workplace Policy updated this period?,yes_no,"Yes,No",FALSE,320,leadership_notes,1,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q1a,"If yes, were there substantive changes required from the last policy?",text,,FALSE,321,leadership_notes,1,CORP_PL_Q1,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q1b,"If not, why not?",text,,FALSE,322,leadership_notes,1,CORP_PL_Q1=No,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q2,Were all Employee Handbooks completed for this period?,yes_no,"Yes,No",FALSE,330,leadership_notes,1,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q2a,"If not, why not?",text,,FALSE,331,leadership_notes,1,CORP_PL_Q2=No,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q3,Were the School Teaching Guidelines updated for this period?,yes_no,"Yes,No",FALSE,340,leadership_notes,1,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,policies,CORP_PL_Q3a,"If not, why not?",text,,FALSE,341,leadership_notes,1,CORP_PL_Q3=No,CORP3
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q1,Were employee engagement surveys completed for this period?,yes_no,"Yes,No",FALSE,350,governance,1.2,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q1a,"If yes, what were the key findings and recommendations?",text,,FALSE,351,governance,1.1,CORP_WC_Q1,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q1b,"If not, why not?",text,,FALSE,352,risk,1.2,CORP_WC_Q1=No,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q2,Were student satisfaction surveys completed for this period?,yes_no,"Yes,No",FALSE,360,risk,1.1,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q2a,"If yes, what were the key findings and recommendations?",text,,FALSE,361,oversight,1.2,CORP_WC_Q2,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q2b,"If not, why not?",text,,FALSE,362,oversight,1.1,CORP_WC_Q2=No,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q3,Were parent satisfaction surveys completed for this period?,yes_no,"Yes,No",FALSE,370,governance,1.2,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q3a,"If yes, what were the key findings and recommendations?",text,,FALSE,371,governance,1.1,CORP_WC_Q3,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q3b,"If not, why not?",text,,FALSE,372,risk,1.2,CORP_WC_Q3=No,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q4,Did all employees complete Respect in the Workplace training this period?,yes_no,"Yes,No",FALSE,380,governance,1.2,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q4a,"If not, why not?",text,,FALSE,381,governance,1.1,CORP_WC_Q4=No,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5,Was there employee turnover during this last period (from last period)?,yes_no,"Yes,No",FALSE,390,risk,1.2,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5a,What was the employee turnover rate this period (from last period)?,text,,FALSE,391,risk,1.2,CORP_WC_Q5,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5b,Number of resignations? Which departments?,text,,FALSE,392,risk,1.1,CORP_WC_Q5,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5c,Number of terminations? Which departments?,text,,FALSE,393,oversight,1.2,CORP_WC_Q5,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5d,Were any of these employees key personnel?,yes_no,"Yes,No",FALSE,394,oversight,1.2,CORP_WC_Q5,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q5e,"If yes, in which department and which position?",text,,FALSE,395,oversight,1.2,CORP_WC_Q5d,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q6,"Were there employee grievances or complaints (formal, reported) during this period?",yes_no,"Yes,No",FALSE,400,oversight,1.1,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q6a,How many and which department?,text,,FALSE,401,governance,1.2,CORP_WC_Q6,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q7,Were there employee incipdent reports during this period?,yes_no,"Yes,No",FALSE,410,governance,1.1,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,workplace_culture,CORP_WC_Q7b,How many and what was the incident (don't share confidential information)?,text,,FALSE,411,risk,1.2,CORP_WC_Q7,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q1,Was a structured board recruitment process developed and/or implemented for this period?,yes_no,"Yes,No",FALSE,420,oversight,1.2,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q1a,"If not, why not?",text,,FALSE,421,oversight,1.2,CORP_BM_Q1=No,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q2,Is the board recruitment process aligned to the strategic plan and needs of Alberta Ballet?,yes_no,"Yes,No",FALSE,430,oversight,1.2,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q3,Was a board onboarding process developed and/or implemented in this period?,yes_no,"Yes,No",FALSE,431,oversight,1.1,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q3a,"If not, why not?",text,,FALSE,432,governance,1.2,CORP_BM_Q2=No,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q4,Were any board strategy alignment workshops implemented during this period?,yes_no,"Yes,No",FALSE,440,governance,1.1,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q4a,"If not, why not?",text,,FALSE,441,risk,1.2,CORP_BM_Q4=No,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q5,Was a board effectiveness self-assessment implmented this period?,yes_no,"Yes,No",FALSE,450,oversight,1.1,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q5a,"If not, why not?",text,,FALSE,451,governance,1.2,CORP_BM_Q5=No,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q6,Did the Governance Committee enact workplace culture monitoring this period?,yes_no,"Yes,No",FALSE,460,governance,1.1,,CORP4
+Corporate,Governance & Board Oversight,Governance & Board Oversight,board_management,CORP_BM_Q6a,"If not, why not?",text,,FALSE,461,risk,1.2,CORP_BM_Q6=No,CORP4
