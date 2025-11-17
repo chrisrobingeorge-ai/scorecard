@@ -303,6 +303,7 @@ def render_financial_kpis():
             "actual": st.column_config.NumberColumn(
                 "Actual (YTD)",
                 format="%.0f",      # was "$%,.0f"
+            ),
         },
     )
 
