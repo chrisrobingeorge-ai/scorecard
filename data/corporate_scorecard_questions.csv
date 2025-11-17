@@ -1,4 +1,4 @@
-department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight,depends_on,primary_objective_id
+department,strategic_pillar,production,metric,question_id,question_text,response_type,options,required,display_order,kpi_type,ai_weight,depends_on,strategic_objectives_id
 Corporate,Global Presence,Global Presence,global_actions,CORP_GP_Q1,Did Alberta Ballet take any actions this reporting period that expanded its national or international presence?,yes_no,"Yes,No",FALSE,10,visibility,1.2,,CORP1
 Corporate,Global Presence,Global Presence,global_actions,CORP_GP_Q1a,"If yes, what actions did we take (campaigns, partnerships, press, collaborations)?",text,,FALSE,11,visibility,1.1,CORP_GP_Q1,CORP1
 Corporate,Global Presence,Global Presence,global_outcomes,CORP_GP_Q1b,"What measurable outcomes did these actions generate (audience growth, media coverage, invitations, web or social spikes)?",text,,FALSE,12,visibility,1.1,CORP_GP_Q1,CORP1
