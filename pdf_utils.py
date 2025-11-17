@@ -540,22 +540,27 @@ def build_scorecard_pdf(
     ai_summary_text = _to_plain_text(overall_value)
 
     # ─────────────────────────────────────────────────────────────────────
-    # Derive scores from pillar_summaries (same source as your header box)
+    # Derive scores from objective_summaries (or pillar_summaries for backward compatibility)
     # ─────────────────────────────────────────────────────────────────────
-    pillar_summaries = [ps for ps in (ai_result.get("pillar_summaries") or []) if isinstance(ps, dict)]
+    objective_summaries = [ps for ps in (ai_result.get("objective_summaries") or ai_result.get("pillar_summaries") or []) if isinstance(ps, dict)]
 
     score_values: list[float] = []
     pillar_score_map: Dict[str, float] = {}
+    objective_score_map: Dict[str, float] = {}
 
-    for ps in pillar_summaries:
-        pillar_key = _to_plain_text(ps.get("strategic_pillar", "")).strip()
-        score_val = _parse_score_hint(ps.get("score_hint", ""))
+    for obj_sum in objective_summaries:
+        # Handle both old pillar structure and new objective structure
+        obj_id = obj_sum.get("objective_id", "")
+        pillar_key = _to_plain_text(obj_sum.get("strategic_pillar", "")).strip()
+        score_val = _parse_score_hint(obj_sum.get("score_hint", ""))
 
         if score_val is not None:
             score_values.append(score_val)
 
+        # Map scores by both objective_id and pillar name for compatibility
+        if obj_id and score_val is not None:
+            objective_score_map[obj_id] = score_val
         if pillar_key and score_val is not None:
-            # Use the raw strategic_pillar name as key so it matches questions
             pillar_score_map[pillar_key] = score_val
 
     total_score = sum(score_values) / len(score_values) if score_values else None
@@ -746,9 +751,9 @@ def build_scorecard_pdf(
         story.append(Spacer(1, 10))
 
     # ─────────────────────────────────────────────────────────────────────
-    # Strategic pillars – narrative
+    # Strategic objectives – narrative
     # ─────────────────────────────────────────────────────────────────────
-    if pillar_summaries:
+    if objective_summaries:
         # For School, make the section heading explicitly about the three streams
         dept_lower = str(department).lower()
         if "school" in dept_lower:
@@ -757,26 +762,34 @@ def build_scorecard_pdf(
                 "(Classical Training / Attracting Students / Student Accessibility)"
             )
         else:
-            section_label = "Strategic Pillars"
+            section_label = "Strategic Objectives"
 
         story.append(Paragraph(section_label, styles["SectionHeading"]))
 
-        for ps in pillar_summaries:
-            pillar_name_raw = _to_plain_text(ps.get("strategic_pillar", "Pillar")).strip() or "Pillar"
-            pillar_name = _strip_objective_codes(pillar_name_raw)
+        for obj_sum in objective_summaries:
+            # Handle both old pillar structure and new objective structure
+            obj_id = obj_sum.get("objective_id", "")
+            obj_title = obj_sum.get("objective_title", "") or obj_sum.get("strategic_pillar", "") or "Objective"
+            
+            # Create display name with ID if available
+            if obj_id:
+                objective_name_raw = f"{obj_id}: {obj_title}"
+            else:
+                objective_name_raw = obj_title
+            objective_name = _strip_objective_codes(_to_plain_text(objective_name_raw).strip())
 
-            score_hint_raw = _to_plain_text(ps.get("score_hint", "")).strip()
+            score_hint_raw = _to_plain_text(obj_sum.get("score_hint", "")).strip()
             score_hint_clean = _strip_objective_codes(score_hint_raw)
 
-            summary_text_raw = _to_plain_text(ps.get("summary", "")).strip()
+            summary_text_raw = _to_plain_text(obj_sum.get("summary", "")).strip()
             summary_text = _strip_objective_codes(summary_text_raw)
 
             score_value = _parse_score_hint(score_hint_raw)
             score_str = _score_display(score_value)
             if score_str != "N/A":
-                heading_text = f"{pillar_name} — {score_str} / 3"
+                heading_text = f"{objective_name} — {score_str} / 3"
             else:
-                heading_text = pillar_name
+                heading_text = objective_name
 
             if score_hint_clean:
                 heading_text = f"{heading_text} ({score_hint_clean})"
@@ -788,7 +801,7 @@ def build_scorecard_pdf(
             else:
                 story.append(
                     _safe_paragraph(
-                        "No narrative summary provided for this pillar.",
+                        "No narrative summary provided for this objective.",
                         styles["ReportBody"],
                     )
                 )
