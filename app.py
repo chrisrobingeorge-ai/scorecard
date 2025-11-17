@@ -1013,15 +1013,13 @@ def main():
     
     # 🔹 Special case: KPIs department is *only* the financial KPI editor
     if dept_label == "KPIs":
-        st.subheader("Financial KPIs (Year-to-Date)")
         render_financial_kpis()
-
+    
         st.info(
             "These KPIs are saved for this reporting period and can be used in "
             "your consolidated AI/PDF summaries."
         )
         return
-
 
     # Reset production when dept changes, but DO NOT clobber a draft-applied selection
     if "last_dept_label" not in st.session_state or st.session_state["last_dept_label"] != dept_label:
