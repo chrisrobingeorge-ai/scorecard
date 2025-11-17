@@ -49,7 +49,7 @@ Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q6
 Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1,Are all leadership training sessions completed as per requirements from Canadian Heritage?,yes_no,"Yes,No",FALSE,240,staff_experience,1.2,,CORP3
 Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1a,What were the outcomes taught?,text,,FALSE,241,staff_experience,1.2,CORP_LS_Q1,CORP3
 Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1b,How many people completed the training?,number,,FALSE,242,staff_experience,1.2,CORP_LS_Q1,CORP3
-Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1c,"If they weren't all complete, which sessions remain?",text,,FALSE,243,staff_experience,1.2,,CORP3
+Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q1c,"If they weren't all complete, which sessions remain?",text,,FALSE,243,staff_experience,1.2,CORP_LS_Q1=No,CORP3
 Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2,Did you observe notable changes in staff morale or engagement this reporting period?,yes_no,"Yes,No",FALSE,250,staff_experience,1.2,,CORP3
 Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2a,"If yes, what did you observe and how is it affecting teams?",text,,FALSE,251,staff_experience,1.1,CORP_LS_Q2,CORP3
 Corporate,Leadership & Culture,Leadership & Culture,leadership,CORP_LS_Q2b,"If not, are there any early warning signs or strengths worth noting?",text,,FALSE,252,staff_experience,1,CORP_LS_Q2=No,CORP3
