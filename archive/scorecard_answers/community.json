@@ -1,0 +1,249 @@
+{
+  "meta": {
+    "staff_name": "Unknown",
+    "role": "",
+    "department": "Community",
+    "month": "2025-11",
+    "production": "Community Programs"
+  },
+  "answers": {
+    "COMM_ACCESS_Q1": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q2": {
+      "primary": "No"
+    },
+    "COMM_ACCESS_Q2k": {
+      "primary": "No"
+    },
+    "COMM_ACCESS_Q3": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q3j": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q4": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q4k": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q5": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q6": {
+      "primary": "No"
+    },
+    "COMM_ACCESS_Q1f": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q2f": {
+      "primary": "No"
+    },
+    "COMM_ACCESS_Q2h": {
+      "primary": "We have not yet secured the funding to be able to hire someone in these communities to deliver programming. "
+    },
+    "COMM_ACCESS_Q3e": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q4f": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q1a": {
+      "primary": "Red Deer"
+    },
+    "COMM_ACCESS_Q1b": {
+      "primary": "8.0"
+    },
+    "COMM_ACCESS_Q1c": {
+      "primary": "Northside Community Centre YMCA"
+    },
+    "COMM_ACCESS_Q1d": {
+      "primary": "20-30"
+    },
+    "COMM_ACCESS_Q1i": {
+      "primary": "No"
+    },
+    "COMM_ACCESS_Q2b": {
+      "primary": "0.0"
+    },
+    "COMM_ACCESS_Q3a": {
+      "primary": "Edmonton"
+    },
+    "COMM_ACCESS_Q3c": {
+      "primary": "30-40 students"
+    },
+    "COMM_ACCESS_Q3h": {
+      "primary": "No"
+    },
+    "COMM_ACCESS_Q3k": {
+      "primary": "Alberta Foundation for the Arts gave us $150K over the next three years. We are using $70K of it in our fiscal due to the AFA fiscal timing difference (April to March)."
+    },
+    "COMM_ACCESS_Q4a": {
+      "primary": "Fort McMurray and Calgary "
+    },
+    "COMM_ACCESS_Q4b": {
+      "primary": "Fort McMurray: 8 weeks\nCalgary: year-round"
+    },
+    "COMM_ACCESS_Q4c": {
+      "primary": "Fort McMurray: Local Immigration Partnership (this is the name of the agency)\nCalgary: Centre for Newcomers (CFN)"
+    },
+    "COMM_ACCESS_Q4d": {
+      "primary": "Fort McMurray: 30-40 students\nCalgary: 30-40 students"
+    },
+    "COMM_ACCESS_Q4i": {
+      "primary": "No"
+    },
+    "COMM_ACCESS_Q5a": {
+      "primary": "100 tickets in total for Once Upon A Time and Nijinsky\nWelcoming Newcomers - Calgary: Immigrants Services Calgary, Canadian Immigrant Women's Association\nWelcoming Newcomers - Edmonton: Action for Healthy Communities\n\nCaregiver's Intermission - Calgary: Woods Homes, Caregivers Alberta\nCaregiver's Intermission - Edmonton: Norwood Child and Family Resource Centre"
+    },
+    "COMM_ACCESS_Q6c": {
+      "primary": "Not at this time. Need more dancers or more time in the schedule to be able to do this. "
+    },
+    "COMM_ACCESS_Q1k": {
+      "primary": "Yes"
+    },
+    "COMM_ACCESS_Q4l": {
+      "primary": "Calgary Foundation (Weekly programming at Calgary\u2019s Centre for Newcomers 2025) ($71K)\nNickle Foundation (Weekly programming at Calgary\u2019s Centre for Newcomers 2026) ($32K)\nChawkers Foundation (support for programs outside of Calgary and Edmonton) ($30K)\nCanadian Tire Jumpstart (support for programs outside of Calgary and Edmonton ($10K)\n\n"
+    },
+    "COMM_ACCESS_Q1l": {
+      "primary": "Calgary Flames Foundation (Southern Alberta outreach classes) ($5K)\nChawkers Foundation (support for programs outside of Calgary and Edmonton) ($30K)\nCanadian Tire Jumpstart (support for programs outside of Calgary and Edmonton ($10K)\n\n"
+    },
+    "COMM_ACCESS_Q5c": {
+      "primary": "No"
+    },
+    "COMM_ACCESS_Q1e": {
+      "primary": "Feedback will be collected on completion of the program"
+    },
+    "COMM_ACCESS_Q3d": {
+      "primary": "Program is ongoing"
+    },
+    "COMM_ACCESS_Q4e": {
+      "primary": "Program is ongoing.\nFor the short-term program, feedback is collected at the end of 8 weeks \nFor CFN, feedback is collected mid-year "
+    },
+    "COMM_ACCESS_Q5b": {
+      "primary": "these are new audiences, not repeat attendance, both from the newcomer communities and from the caregiver communtiy"
+    }
+  },
+  "per_show_answers": {
+    "Community::Community Programs": {
+      "COMM_ACCESS_Q1": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q2": {
+        "primary": "No"
+      },
+      "COMM_ACCESS_Q2k": {
+        "primary": "No"
+      },
+      "COMM_ACCESS_Q3": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q3j": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q4": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q4k": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q5": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q6": {
+        "primary": "No"
+      },
+      "COMM_ACCESS_Q1f": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q2f": {
+        "primary": "No"
+      },
+      "COMM_ACCESS_Q2h": {
+        "primary": "We have not yet secured the funding to be able to hire someone in these communities to deliver programming. "
+      },
+      "COMM_ACCESS_Q3e": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q4f": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q1a": {
+        "primary": "Red Deer"
+      },
+      "COMM_ACCESS_Q1b": {
+        "primary": "8.0"
+      },
+      "COMM_ACCESS_Q1c": {
+        "primary": "Northside Community Centre YMCA"
+      },
+      "COMM_ACCESS_Q1d": {
+        "primary": "20-30"
+      },
+      "COMM_ACCESS_Q1i": {
+        "primary": "No"
+      },
+      "COMM_ACCESS_Q2b": {
+        "primary": "0.0"
+      },
+      "COMM_ACCESS_Q3a": {
+        "primary": "Edmonton"
+      },
+      "COMM_ACCESS_Q3c": {
+        "primary": "30-40 students"
+      },
+      "COMM_ACCESS_Q3h": {
+        "primary": "No"
+      },
+      "COMM_ACCESS_Q3k": {
+        "primary": "Alberta Foundation for the Arts gave us $150K over the next three years. We are using $70K of it in our fiscal due to the AFA fiscal timing difference (April to March)."
+      },
+      "COMM_ACCESS_Q4a": {
+        "primary": "Fort McMurray and Calgary "
+      },
+      "COMM_ACCESS_Q4b": {
+        "primary": "Fort McMurray: 8 weeks\nCalgary: year-round"
+      },
+      "COMM_ACCESS_Q4c": {
+        "primary": "Fort McMurray: Local Immigration Partnership (this is the name of the agency)\nCalgary: Centre for Newcomers (CFN)"
+      },
+      "COMM_ACCESS_Q4d": {
+        "primary": "Fort McMurray: 30-40 students\nCalgary: 30-40 students"
+      },
+      "COMM_ACCESS_Q4i": {
+        "primary": "No"
+      },
+      "COMM_ACCESS_Q5a": {
+        "primary": "100 tickets in total for Once Upon A Time and Nijinsky\nWelcoming Newcomers - Calgary: Immigrants Services Calgary, Canadian Immigrant Women's Association\nWelcoming Newcomers - Edmonton: Action for Healthy Communities\n\nCaregiver's Intermission - Calgary: Woods Homes, Caregivers Alberta\nCaregiver's Intermission - Edmonton: Norwood Child and Family Resource Centre"
+      },
+      "COMM_ACCESS_Q6c": {
+        "primary": "Not at this time. Need more dancers or more time in the schedule to be able to do this. "
+      },
+      "COMM_ACCESS_Q1k": {
+        "primary": "Yes"
+      },
+      "COMM_ACCESS_Q4l": {
+        "primary": "Calgary Foundation (Weekly programming at Calgary\u2019s Centre for Newcomers 2025) ($71K)\nNickle Foundation (Weekly programming at Calgary\u2019s Centre for Newcomers 2026) ($32K)\nChawkers Foundation (support for programs outside of Calgary and Edmonton) ($30K)\nCanadian Tire Jumpstart (support for programs outside of Calgary and Edmonton ($10K)\n\n"
+      },
+      "COMM_ACCESS_Q1l": {
+        "primary": "Calgary Flames Foundation (Southern Alberta outreach classes) ($5K)\nChawkers Foundation (support for programs outside of Calgary and Edmonton) ($30K)\nCanadian Tire Jumpstart (support for programs outside of Calgary and Edmonton ($10K)\n\n"
+      },
+      "COMM_ACCESS_Q5c": {
+        "primary": "No"
+      },
+      "COMM_ACCESS_Q1e": {
+        "primary": "Feedback will be collected on completion of the program"
+      },
+      "COMM_ACCESS_Q3d": {
+        "primary": "Program is ongoing"
+      },
+      "COMM_ACCESS_Q4e": {
+        "primary": "Program is ongoing.\nFor the short-term program, feedback is collected at the end of 8 weeks \nFor CFN, feedback is collected mid-year "
+      },
+      "COMM_ACCESS_Q5b": {
+        "primary": "these are new audiences, not repeat attendance, both from the newcomer communities and from the caregiver communtiy"
+      }
+    }
+  }
+}
