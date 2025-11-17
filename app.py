@@ -52,6 +52,14 @@ except Exception:
         return b"%PDF-1.4\n% Stub PDF - pdf_utils not configured.\n"
 
 try:
+    from docx_utils import build_scorecard_docx
+except Exception:
+    def build_scorecard_docx(*args, **kwargs):
+        # Stub to avoid errors if docx_utils not configured
+        from io import BytesIO
+        return BytesIO(b"DOCX stub - docx_utils not configured.").getvalue()
+
+try:
     from app_config import FINANCIAL_KPI_TARGETS_DF
 except Exception:
     FINANCIAL_KPI_TARGETS_DF = pd.DataFrame(
@@ -1571,23 +1579,48 @@ def main():
     # PDF — uses the SAME scope as AI (questions_for_ai / responses_for_ai)
     # and keeps all original columns (including display_order)
     # ─────────────────────────────────────────────────────────────
-    try:
-        pdf_bytes = build_scorecard_pdf(
-            meta_for_ai,
-            questions_for_ai,
-            responses_for_ai,
-            ai_result,
-            logo_path="assets/alberta_ballet_logo.png",
-        )
-        st.download_button(
-            label="Download PDF report",
-            data=pdf_bytes,
-            file_name=f"scorecard_{meta_for_ai['department'].replace(' ', '_')}_{month_str}.pdf",
-            mime="application/pdf",
-        )
-    except Exception as e:
-        st.warning(f"PDF export failed: {e}")
-        st.info("If this persists, check pdf_utils.py dependencies (reportlab or fpdf2).")
+    # ─────────────────────────────────────────────────────────────
+    # Download buttons (PDF and DOCX)
+    # ─────────────────────────────────────────────────────────────
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        try:
+            pdf_bytes = build_scorecard_pdf(
+                meta_for_ai,
+                questions_for_ai,
+                responses_for_ai,
+                ai_result,
+                logo_path="assets/alberta_ballet_logo.png",
+            )
+            st.download_button(
+                label="📄 Download PDF report",
+                data=pdf_bytes,
+                file_name=f"scorecard_{meta_for_ai['department'].replace(' ', '_')}_{month_str}.pdf",
+                mime="application/pdf",
+            )
+        except Exception as e:
+            st.warning(f"PDF export failed: {e}")
+            st.info("If this persists, check pdf_utils.py dependencies (reportlab or fpdf2).")
+    
+    with col2:
+        try:
+            docx_bytes = build_scorecard_docx(
+                meta_for_ai,
+                questions_for_ai,
+                responses_for_ai,
+                ai_result,
+                logo_path="assets/alberta_ballet_logo.png",
+            )
+            st.download_button(
+                label="📝 Download DOCX report",
+                data=docx_bytes,
+                file_name=f"scorecard_{meta_for_ai['department'].replace(' ', '_')}_{month_str}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        except Exception as e:
+            st.warning(f"DOCX export failed: {e}")
+            st.info("If this persists, check docx_utils.py dependencies (python-docx).")
 
 
 if __name__ == "__main__":
