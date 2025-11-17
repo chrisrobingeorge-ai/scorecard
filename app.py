@@ -262,52 +262,41 @@ def render_financial_kpis():
 
     base = FINANCIAL_KPI_TARGETS_DF.copy()
 
-    # Previous Actuals (if any) so they persist across reruns
-    prev_actuals = st.session_state.get("financial_kpis_actuals")
-    if prev_actuals is not None:
-        # Merge prev actuals back in on the key columns
+    # Bring back previously-entered actuals if we have them
+    prev = st.session_state.get("financial_kpis_actuals")
+    if isinstance(prev, pd.DataFrame) and not prev.empty:
         merge_cols = ["area", "category", "sub_category", "report_section", "report_order"]
         try:
             base = base.merge(
-                prev_actuals[merge_cols + ["actual"]],
+                prev[merge_cols + ["actual"]],
                 on=merge_cols,
                 how="left",
                 suffixes=("", "_prev"),
             )
-            base["actual"] = base["actual_prev"].fillna(base.get("actual", 0.0))
-            base = base.drop(columns=["actual_prev"])
+            base["actual"] = pd.to_numeric(base["actual_prev"], errors="coerce")
+            base.drop(columns=["actual_prev"], inplace=True)
         except Exception:
-            # If merge fails for any reason, just ignore previous and continue
-            base["actual"] = base.get("actual", 0.0)
+            base["actual"] = 0.0
     else:
-        base["actual"] = base.get("actual", 0.0)
+        base["actual"] = 0.0
 
-    # This is what the user will see/edit
+    # Ensure numeric types
+    base["target"] = pd.to_numeric(base["target"], errors="coerce").fillna(0.0)
+    base["actual"] = pd.to_numeric(base["actual"], errors="coerce").fillna(0.0)
+
     display_cols = ["area", "category", "sub_category", "target", "actual"]
     display_df = base[display_cols].copy()
 
+    # 🔹 No fancy column_config, no custom format – keep it simple for now
     edited = st.data_editor(
         display_df,
         num_rows="fixed",
         use_container_width=True,
         key="financial_kpi_editor",
-        column_config={
-            "area": st.column_config.TextColumn("Area", disabled=True),
-            "category": st.column_config.TextColumn("Category", disabled=True),
-            "sub_category": st.column_config.TextColumn("Sub-category", disabled=True),
-            "target": st.column_config.NumberColumn(
-                "Target",
-                format="%.0f",      # was "$%,.0f" (or similar)
-                disabled=True,
-            ),
-            "actual": st.column_config.NumberColumn(
-                "Actual (YTD)",
-                format="%.0f",      # was "$%,.0f"
-            ),
-        },
+        disabled=["area", "category", "sub_category", "target"],  # only 'actual' is editable
     )
 
-    # Re-attach edited Actuals back to the full schema (including routing columns)
+    # Re-attach edited Actuals back to full schema (including routing columns)
     merged = FINANCIAL_KPI_TARGETS_DF.copy()
     merged = merged.merge(
         edited[["area", "category", "sub_category", "actual"]],
@@ -318,7 +307,7 @@ def render_financial_kpis():
     merged["variance"] = merged["target"] - merged["actual"]
     merged["pct_to_budget"] = merged["actual"] / merged["target"].replace(0, pd.NA)
 
-    # Store in session for AI/PDF later
+    # Store in session for AI + PDF
     st.session_state["financial_kpis"] = merged
     st.session_state["financial_kpis_actuals"] = merged[
         ["area", "category", "sub_category", "report_section", "report_order", "actual"]
