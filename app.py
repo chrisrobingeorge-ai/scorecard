@@ -51,6 +51,13 @@ except Exception:
         # ASCII-only stub to avoid SyntaxError on some hosts
         return b"%PDF-1.4\n% Stub PDF - pdf_utils not configured.\n"
 
+try:
+    from app_config import FINANCIAL_KPI_TARGETS_DF
+except Exception:
+    FINANCIAL_KPI_TARGETS_DF = pd.DataFrame(
+        columns=["area", "category", "sub_category", "target", "report_section", "report_order"]
+    )
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Streamlit cache guard (supports older Streamlit)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -244,6 +251,71 @@ def _normalise_show_entry(entry: Any) -> Optional[dict]:
     if entry is None:
         return None
     return {"primary": entry}
+
+def render_financial_kpis():
+    """Render the Financial KPI editor under Corporate and store merged data in session_state."""
+    st.markdown("### Financial KPIs (Year-to-Date)")
+
+    if FINANCIAL_KPI_TARGETS_DF.empty:
+        st.info("No financial KPI targets found. Check financial_kpi_targets.csv in the data folder.")
+        return
+
+    base = FINANCIAL_KPI_TARGETS_DF.copy()
+
+    # Previous Actuals (if any) so they persist across reruns
+    prev_actuals = st.session_state.get("financial_kpis_actuals")
+    if prev_actuals is not None:
+        # Merge prev actuals back in on the key columns
+        merge_cols = ["area", "category", "sub_category", "report_section", "report_order"]
+        try:
+            base = base.merge(
+                prev_actuals[merge_cols + ["actual"]],
+                on=merge_cols,
+                how="left",
+                suffixes=("", "_prev"),
+            )
+            base["actual"] = base["actual_prev"].fillna(base.get("actual", 0.0))
+            base = base.drop(columns=["actual_prev"])
+        except Exception:
+            # If merge fails for any reason, just ignore previous and continue
+            base["actual"] = base.get("actual", 0.0)
+    else:
+        base["actual"] = base.get("actual", 0.0)
+
+    # This is what the user will see/edit
+    display_cols = ["area", "category", "sub_category", "target", "actual"]
+    display_df = base[display_cols].copy()
+
+    edited = st.data_editor(
+        display_df,
+        num_rows="fixed",
+        use_container_width=True,
+        key="financial_kpi_editor",
+        column_config={
+            "area": st.column_config.TextColumn("Area", disabled=True),
+            "category": st.column_config.TextColumn("Category", disabled=True),
+            "sub_category": st.column_config.TextColumn("Sub-category", disabled=True),
+            "target": st.column_config.NumberColumn("Target", format="$%,.0f", disabled=True),
+            "actual": st.column_config.NumberColumn("Actual (YTD)", format="$%,.0f"),
+        },
+    )
+
+    # Re-attach edited Actuals back to the full schema (including routing columns)
+    merged = FINANCIAL_KPI_TARGETS_DF.copy()
+    merged = merged.merge(
+        edited[["area", "category", "sub_category", "actual"]],
+        on=["area", "category", "sub_category"],
+        how="left",
+    )
+    merged["actual"] = pd.to_numeric(merged["actual"], errors="coerce").fillna(0.0)
+    merged["variance"] = merged["target"] - merged["actual"]
+    merged["pct_to_budget"] = merged["actual"] / merged["target"].replace(0, pd.NA)
+
+    # Store in session for AI/PDF later
+    st.session_state["financial_kpis"] = merged
+    st.session_state["financial_kpis_actuals"] = merged[
+        ["area", "category", "sub_category", "report_section", "report_order", "actual"]
+    ]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
@@ -1075,8 +1147,14 @@ def main():
             primary=entry.get("primary"),
             description=entry.get("description"),
         )
-    
+
+    # 🔹 Financial KPIs only for Corporate
+    if dept_label == "Corporate":
+        st.markdown("---")
+        render_financial_kpis()
+
     submitted = st.button("Generate AI Summary & PDF", type="primary")
+
 
     # 🔹 Remember that the user has submitted at least once
     if submitted:
