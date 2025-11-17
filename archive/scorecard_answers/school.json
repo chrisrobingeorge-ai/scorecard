@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "staff_name": "Unknown",
+    "role": "",
+    "department": "School",
+    "month": "2025-11",
+    "production": "Student Accessibility"
+  },
+  "answers": {
+    "SCH_SA_Q1": {
+      "primary": "Yes"
+    },
+    "SCH_SA_Q5": {
+      "primary": "Yes"
+    },
+    "SCH_SA_Q9": {
+      "primary": "Yes"
+    },
+    "SCH_SA_Q12": {
+      "primary": "Yes"
+    },
+    "SCH_SA_Q2": {
+      "primary": "We offered 54 students financial assistance in 2025-26, total $315,800 but we actually gave out only 41 financial assistance awards"
+    },
+    "SCH_SA_Q3": {
+      "primary": "No"
+    },
+    "SCH_SA_Q6": {
+      "primary": "We offered 26 Alberta students funding for $133,100 for 2025-26 school year, but we actually only gave out funding for 21 Alberta Students for a total of $103,300"
+    },
+    "SCH_SA_Q7": {
+      "primary": "No"
+    },
+    "SCH_SA_Q10": {
+      "primary": "Boys scholarships, specifically promoted through YGP\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+    },
+    "SCH_SA_Q11": {
+      "primary": 14.0
+    },
+    "SCH_SA_Q13": {
+      "primary": 13.0
+    },
+    "SCH_SA_Q14": {
+      "primary": 5.0
+    }
+  },
+  "per_show_answers": {
+    "School::Attracting Students": {
+      "SCH_AS_Q1": {
+        "primary": "No"
+      },
+      "SCH_AS_Q5": {
+        "primary": "Yes"
+      },
+      "SCH_AS_Q16": {
+        "primary": "Yes"
+      },
+      "SCH_AS_Q18": {
+        "primary": "Yes"
+      },
+      "SCH_AS_Q20": {
+        "primary": "Yes"
+      },
+      "SCH_AS_Q23": {
+        "primary": "No"
+      },
+      "SCH_AS_Q7": {
+        "primary": "Perth, Sydney, Melbourne, Auckland, Christchurch, Wellington\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+      },
+      "SCH_AS_Q9": {
+        "primary": "Australia, Singapore, Philippines and Japan (we might also want to count Italy in July, Portugal in August and Korea in August - as these all gave results for Summer 2026 and 2026-27 school year. \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+      },
+      "SCH_AS_Q8": {
+        "primary": 102.0
+      },
+      "SCH_AS_Q10": {
+        "primary": "234 offers in total for summer intensive 2026 and 51 offers for full year 2026-27"
+      },
+      "SCH_AS_Q11": {
+        "primary": "Too early to receive notice"
+      },
+      "SCH_AS_Q12": {
+        "primary": "No"
+      },
+      "SCH_AS_Q17": {
+        "primary": "We offered 84 summer intensive full and partial scholarships, 11 full year full and partial scholarships, and 128 short-term scholarships\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+      },
+      "SCH_AS_Q19": {
+        "primary": "16 in total: 15 featured on ABS.com, ABS social channels, 1 - Dance Media, 1- New York Times\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+      },
+      "SCH_AS_Q21": {
+        "primary": "Built 48 studio partners across the province"
+      },
+      "SCH_AS_Q22": {
+        "primary": 91.0
+      }
+    },
+    "School::Classical Training": {
+      "SCH_CT_Q1": {
+        "primary": "No"
+      },
+      "SCH_CT_Q4": {
+        "primary": "No"
+      },
+      "SCH_CT_Q7": {
+        "primary": "No"
+      },
+      "SCH_CT_Q10": {
+        "primary": "Yes"
+      },
+      "SCH_CT_Q12": {
+        "primary": "Yes"
+      },
+      "SCH_CT_Q3": {
+        "primary": "Assessments aren't until Nov 18. "
+      },
+      "SCH_CT_Q6": {
+        "primary": "Assessments aren't until Nov 18. "
+      },
+      "SCH_CT_Q11": {
+        "primary": "One student got a contract with Alberta Ballet in October"
+      },
+      "SCH_CT_Q13": {
+        "primary": "Racheal Prince and Brandon Alley"
+      }
+    },
+    "School::Student Accessibility": {
+      "SCH_SA_Q1": {
+        "primary": "Yes"
+      },
+      "SCH_SA_Q5": {
+        "primary": "Yes"
+      },
+      "SCH_SA_Q9": {
+        "primary": "Yes"
+      },
+      "SCH_SA_Q12": {
+        "primary": "Yes"
+      },
+      "SCH_SA_Q2": {
+        "primary": "We offered 54 students financial assistance in 2025-26, total $315,800 but we actually gave out only 41 financial assistance awards"
+      },
+      "SCH_SA_Q3": {
+        "primary": "No"
+      },
+      "SCH_SA_Q6": {
+        "primary": "We offered 26 Alberta students funding for $133,100 for 2025-26 school year, but we actually only gave out funding for 21 Alberta Students for a total of $103,300"
+      },
+      "SCH_SA_Q7": {
+        "primary": "No"
+      },
+      "SCH_SA_Q10": {
+        "primary": "Boys scholarships, specifically promoted through YGP\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+      },
+      "SCH_SA_Q11": {
+        "primary": 14.0
+      },
+      "SCH_SA_Q13": {
+        "primary": 13.0
+      },
+      "SCH_SA_Q14": {
+        "primary": 5.0
+      }
+    }
+  }
+}
