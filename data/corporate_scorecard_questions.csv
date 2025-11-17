@@ -39,7 +39,7 @@ Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q3,Wh
 Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q4,What is our YOY YouTube traffic numbers and percentage for the School?,text,,FALSE,150,risk,1.1,,CORP2
 Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q5,What is our YOY TikTok traffic numbers and percentage for the School?,text,,FALSE,160,risk,1.1,,CORP2
 Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q6,How many unique Hubspot forms are in use on AlbertaBalletSchool.com?,text,,FALSE,170,risk,1.1,,CORP2
-Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q6a,What is our AlbertaBalletSchool.com YOY leads captured numbers and percentage?,text,,FALSE,170,risk,1.1,CORP_SM_Q6,CORP2
+Corporate,Marketing and Sales,Marketing and Sales,school_marketing,CORP_SM_Q6a,What is our AlbertaBalletSchool.com YOY leads captured numbers and percentage?,text,,FALSE,170,risk,1.1,,CORP2
 Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q1,What is our YOY website traffic numbers and percentage for AlbertaBalletCommunity.com?,text,,FALSE,180,risk,1.1,,CORP2
 Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q2,What is our YOY Instagram traffic numbers and percentage for Community?,text,,FALSE,190,risk,1.1,,CORP2
 Corporate,Marketing and Sales,Marketing and Sales,community_marketing,CORP_CU_Q3,What is our YOY Facebook traffic numbers and percentage for Community?,text,,FALSE,200,risk,1.1,,CORP2
