@@ -59,16 +59,18 @@ def _build_embed_payload(
     overall_score: float | None = None,
     pillar_scores: Dict[str, float] | None = None,
     question_scores: Dict[str, float] | None = None,
+    ai_result: Dict[str, Any] | None = None,
 ) -> str:
     """
     Build the JSON object we embed into the PDF metadata.
 
     - `meta` is the same dict you already pass around (month, department, etc.)
     - `questions_df` is your question/answer table (we expect response_value to be included)
-    - `ai_summary_text` is the main AI narrative text
+    - `ai_summary_text` is the main AI narrative text (for backward compatibility)
     - overall_score / pillar_scores / question_scores can be passed explicitly
       (e.g. from AI header scoring). If they are None/empty, we fall back to
       deriving from a numeric 'score' column on questions_df, if present.
+    - `ai_result` is the full AI interpretation dict (includes objective_summaries, etc.)
     """
 
     # Start from explicit scores if provided
@@ -102,6 +104,19 @@ def _build_embed_payload(
         except Exception:
             question_scores_val = {}
 
+    # Build ai_interpretation - include full ai_result if provided
+    if ai_result:
+        # Include the complete AI result (objective_summaries, pillar_summaries, etc.)
+        ai_interpretation = dict(ai_result)
+        # Ensure overall_summary is present for backward compatibility
+        if "overall_summary" not in ai_interpretation:
+            ai_interpretation["overall_summary"] = ai_summary_text
+    else:
+        # Fallback to just the summary text
+        ai_interpretation = {
+            "overall_summary": ai_summary_text,
+        }
+
     payload = {
         "schema_version": 1,
         "app_name": "ab_monthly_scorecard",
@@ -114,9 +129,7 @@ def _build_embed_payload(
             "question_scores": question_scores_val,
         },
         "questions": questions_df.to_dict(orient="records"),
-        "ai_interpretation": {
-            "overall_summary": ai_summary_text,
-        },
+        "ai_interpretation": ai_interpretation,
     }
 
     # Minified JSON to keep the Subject field shorter
@@ -641,6 +654,8 @@ def build_scorecard_pdf(
         pillar_scores=pillar_score_map,
         # No per-question numeric scores yet
         question_scores=None,
+        # Pass full ai_result to preserve objective_summaries and other fields
+        ai_result=ai_result,
     )
 
     # ─────────────────────────────────────────────────────────────────────
