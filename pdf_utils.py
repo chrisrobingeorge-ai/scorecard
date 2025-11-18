@@ -264,7 +264,7 @@ def _score_display(score: float | None) -> str:
 def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles) -> Table:
     """
     Build a 3-column table of context / question / response with wrapped text.
-    Returns a table suitable for landscape orientation.
+    Note: PDF uses portrait orientation; DOCX uses landscape for this table.
     """
     body_style = ParagraphStyle(
         name="TableBody",
@@ -324,10 +324,11 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles)
         if i % 2 == 1:
             style_cmds.append(("BACKGROUND", (0, i), (-1, i), colors.whitesmoke))
 
-    # Use landscape-friendly column widths (10" width available in landscape)
+    # Portrait mode: ~7" usable width (8.5" - 1.5" margins)
+    # Optimized for readability with text wrapping
     table = Table(
         data,
-        colWidths=[2.2 * inch, 3.3 * inch, 3.8 * inch],
+        colWidths=[1.8 * inch, 2.2 * inch, 3.0 * inch],
         repeatRows=1,
         hAlign="LEFT",
     )
