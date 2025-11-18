@@ -1486,7 +1486,17 @@ def main():
                 objectives = prod.get("objectives") or prod.get("pillars") or []
                 prod_summaries_text = []
                 for obj in objectives:
+                    obj_id = obj.get("objective_id", "") or ""
+                    obj_title = obj.get("objective_title", "") or obj.get("pillar", "") or ""
+                    score_hint = str(obj.get("score_hint", "") or "")
                     summary = str(obj.get("summary", "") or "")
+                    
+                    # Include objective info if available
+                    if obj_id and score_hint:
+                        prod_summaries_text.append(f"[{obj_id}: {obj_title} ({score_hint})]")
+                    elif obj_title and score_hint:
+                        prod_summaries_text.append(f"[{obj_title} ({score_hint})]")
+                    
                     if summary:
                         prod_summaries_text.append(summary)
                 
@@ -1574,7 +1584,13 @@ def main():
                 header = lines[0].strip()
                 summary_text = lines[1].strip() if len(lines) > 1 else ""
                 
-                # Just update the summary text, preserving other metadata
+                # Extract score_hint from header if present (format: "--- Title (score_hint) ---")
+                score_hint_match = re.search(r'\(([^)]+)\)\s*---\s*$', header)
+                if score_hint_match:
+                    new_score_hint = score_hint_match.group(1).strip()
+                    objective_summaries[i]["score_hint"] = new_score_hint
+                
+                # Update the summary text
                 objective_summaries[i]["summary"] = summary_text
         
         # Parse Production Summaries - update while preserving structure
@@ -1599,13 +1615,44 @@ def main():
                 if not block.strip() or i >= len(prod_summaries):
                     continue
                     
-                lines = block.split('\n', 1)
-                summary_text = lines[1].strip() if len(lines) > 1 else ""
+                lines = block.split('\n')
+                # Skip the header line (--- Production Name ---)
+                content_lines = lines[1:] if len(lines) > 1 else []
                 
-                # Update the combined summary in the first objective
                 objectives = prod_summaries[i].get("objectives") or prod_summaries[i].get("pillars") or []
-                if objectives and len(objectives) > 0:
-                    objectives[0]["summary"] = summary_text
+                
+                # Parse objectives with scores from content
+                obj_idx = 0
+                current_summary = []
+                
+                for line in content_lines:
+                    # Check if this is an objective header line [OBJ_ID: Title (score)]
+                    obj_header_match = re.match(r'\[([^\]]+)\]\s*$', line.strip())
+                    if obj_header_match:
+                        # Save previous objective's summary if any
+                        if current_summary and obj_idx > 0 and obj_idx <= len(objectives):
+                            objectives[obj_idx - 1]["summary"] = '\n'.join(current_summary).strip()
+                        
+                        # Parse the new objective header for score
+                        header_content = obj_header_match.group(1)
+                        score_match = re.search(r'\(([^)]+)\)\s*$', header_content)
+                        if score_match and obj_idx < len(objectives):
+                            new_score_hint = score_match.group(1).strip()
+                            objectives[obj_idx]["score_hint"] = new_score_hint
+                        
+                        current_summary = []
+                        obj_idx += 1
+                    else:
+                        current_summary.append(line)
+                
+                # Save the last objective's summary
+                if current_summary and obj_idx > 0 and obj_idx <= len(objectives):
+                    objectives[obj_idx - 1]["summary"] = '\n'.join(current_summary).strip()
+                
+                # If there were no objective headers, treat all content as a single summary for the first objective
+                if obj_idx == 0 and objectives and len(objectives) > 0:
+                    combined_summary = '\n'.join(content_lines).strip()
+                    objectives[0]["summary"] = combined_summary
         
         # Parse Risks - simple line-by-line
         if 'KEY RISKS / CONCERNS' in sections:

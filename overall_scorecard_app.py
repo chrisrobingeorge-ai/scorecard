@@ -244,8 +244,13 @@ else:
             parts.append("=== STRATEGIC PILLARS ===")
             for ps in pillar_summaries:
                 pillar_label = ps.get("strategic_pillar", "Pillar") or "Pillar"
+                score_hint = str(ps.get("score_hint", "") or "")
                 summary_val = str(ps.get("summary", "") or "")
-                parts.append(f"--- {pillar_label} ---")
+                
+                if score_hint:
+                    parts.append(f"--- {pillar_label} ({score_hint}) ---")
+                else:
+                    parts.append(f"--- {pillar_label} ---")
                 parts.append(summary_val)
                 parts.append("")
         
@@ -325,8 +330,17 @@ else:
                 header = lines[0].strip()
                 summary_text = lines[1].strip() if len(lines) > 1 else ""
                 
-                # Extract pillar name from header (format: "--- Pillar Name ---")
-                pillar_name = header.strip('-').strip()
+                # Extract score_hint from header if present (format: "--- Pillar Name (score_hint) ---")
+                import re
+                score_hint_match = re.search(r'\(([^)]+)\)\s*---\s*$', header)
+                if score_hint_match:
+                    new_score_hint = score_hint_match.group(1).strip()
+                    pillar_summaries[i]["score_hint"] = new_score_hint
+                    # Extract pillar name without score
+                    pillar_name = re.sub(r'\s*\([^)]+\)\s*---\s*$', '', header.strip('-')).strip()
+                else:
+                    # Extract pillar name from header (format: "--- Pillar Name ---")
+                    pillar_name = header.strip('-').strip()
                 
                 # Update the pillar
                 pillar_summaries[i]["strategic_pillar"] = pillar_name

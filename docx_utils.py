@@ -415,6 +415,79 @@ def build_scorecard_docx(
         doc.add_paragraph()  # spacing
 
     # ─────────────────────────────────────────────────────────────────────
+    # Strategic Objectives Score Table
+    # ─────────────────────────────────────────────────────────────────────
+    if objective_summaries:
+        doc.add_heading('Strategic Objectives — Summary', level=2)
+        
+        # Create table
+        table = doc.add_table(rows=1, cols=4)
+        table.style = 'Light Grid Accent 1'
+        
+        # Header row
+        header_cells = table.rows[0].cells
+        header_cells[0].text = "Objective ID"
+        header_cells[1].text = "Objective"
+        header_cells[2].text = "Score"
+        header_cells[3].text = "Status"
+        
+        # Make header bold
+        for cell in header_cells:
+            for paragraph in cell.paragraphs:
+                for run in paragraph.runs:
+                    run.font.bold = True
+                    run.font.size = Pt(10)
+        
+        # Data rows
+        for obj_sum in objective_summaries:
+            obj_id = obj_sum.get("objective_id", "")
+            obj_title = obj_sum.get("objective_title", "") or obj_sum.get("strategic_pillar", "") or "Objective"
+            score_hint_raw = _to_plain_text(obj_sum.get("score_hint", "")).strip()
+            
+            # Parse score
+            score_value = _parse_score_hint(score_hint_raw)
+            score_str = _score_display(score_value)
+            score_colour = _score_to_color(score_value)
+            
+            # Extract status label from score_hint
+            status_label = score_hint_raw
+            if "/" in score_hint_raw:
+                parts = score_hint_raw.split("/", 1)
+                if len(parts) > 1:
+                    after_slash = parts[1].strip()
+                    status_parts = after_slash.split(None, 1)
+                    if len(status_parts) > 1:
+                        status_label = status_parts[1]
+                    else:
+                        status_label = score_hint_raw
+            
+            # Add row
+            row_cells = table.add_row().cells
+            row_cells[0].text = obj_id or "—"
+            row_cells[1].text = _strip_objective_codes(obj_title)
+            row_cells[2].text = f"{score_str} / 3"
+            row_cells[3].text = status_label
+            
+            # Format score cell with color
+            score_cell = row_cells[2]
+            _set_cell_background(score_cell, score_colour)
+            for paragraph in score_cell.paragraphs:
+                for run in paragraph.runs:
+                    run.font.bold = True
+                    run.font.size = Pt(10)
+                    if score_value is not None and score_value >= 1.5:
+                        run.font.color.rgb = RGBColor(255, 255, 255)
+            
+            # Format other cells
+            for i, cell in enumerate(row_cells):
+                if i != 2:  # not score cell
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            run.font.size = Pt(10)
+        
+        doc.add_paragraph()  # spacing
+
+    # ─────────────────────────────────────────────────────────────────────
     # Strategic objectives – narrative
     # ─────────────────────────────────────────────────────────────────────
     if objective_summaries:
@@ -632,6 +705,78 @@ def build_overall_board_docx(
         parts = [p.strip() for p in text.split("\n\n") if p.strip()]
         for para in parts:
             doc.add_paragraph(para)
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Strategic Pillars Score Table
+    # ─────────────────────────────────────────────────────────────────────
+    pillar_summaries = ai_result.get("pillar_summaries", []) or []
+    if pillar_summaries:
+        doc.add_paragraph()  # spacing
+        doc.add_heading('Strategic Pillars — Summary', level=2)
+        
+        # Create table
+        table = doc.add_table(rows=1, cols=3)
+        table.style = 'Light Grid Accent 1'
+        
+        # Header row
+        header_cells = table.rows[0].cells
+        header_cells[0].text = "Strategic Pillar"
+        header_cells[1].text = "Score"
+        header_cells[2].text = "Status"
+        
+        # Make header bold
+        for cell in header_cells:
+            for paragraph in cell.paragraphs:
+                for run in paragraph.runs:
+                    run.font.bold = True
+                    run.font.size = Pt(10)
+        
+        # Data rows
+        for pillar_sum in pillar_summaries:
+            pillar_name = pillar_sum.get("strategic_pillar", "Pillar") or "Pillar"
+            score_hint_raw = _to_plain_text(pillar_sum.get("score_hint", "")).strip()
+            
+            # Parse score
+            score_value = _parse_score_hint(score_hint_raw)
+            score_str = _score_display(score_value)
+            score_colour = _score_to_color(score_value)
+            
+            # Extract status label from score_hint
+            status_label = score_hint_raw
+            if "/" in score_hint_raw:
+                parts = score_hint_raw.split("/", 1)
+                if len(parts) > 1:
+                    after_slash = parts[1].strip()
+                    status_parts = after_slash.split(None, 1)
+                    if len(status_parts) > 1:
+                        status_label = status_parts[1]
+                    else:
+                        status_label = score_hint_raw
+            
+            # Add row
+            row_cells = table.add_row().cells
+            row_cells[0].text = pillar_name
+            row_cells[1].text = f"{score_str} / 3"
+            row_cells[2].text = status_label
+            
+            # Format score cell with color
+            score_cell = row_cells[1]
+            _set_cell_background(score_cell, score_colour)
+            for paragraph in score_cell.paragraphs:
+                for run in paragraph.runs:
+                    run.font.bold = True
+                    run.font.size = Pt(10)
+                    if score_value is not None and score_value >= 1.5:
+                        run.font.color.rgb = RGBColor(255, 255, 255)
+            
+            # Format other cells
+            for i, cell in enumerate(row_cells):
+                if i != 1:  # not score cell
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            run.font.size = Pt(10)
+        
+        doc.add_paragraph()  # spacing
 
     # ─────────────────────────────────────────────────────────────────────
     # Strategic Pillar risks / concerns
