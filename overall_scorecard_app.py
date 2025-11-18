@@ -226,92 +226,168 @@ if overall_ai_result is None:
 else:
     ai_result = overall_ai_result  # local alias for easier mutation
 
-    # ── Executive Summary / Board narrative (editable) ─────────────────────
-    raw_overall = ai_result.get("overall_summary", "")
-    default_overall = _normalise_overall(raw_overall)
+    # ── Helper functions for consolidated editor ─────────────────────────────
+    def _build_consolidated_summary():
+        """Build a single text representation of the entire Board AI summary."""
+        parts = []
+        
+        # Board Narrative
+        parts.append("=== BOARD NARRATIVE ===")
+        raw_overall = ai_result.get("overall_summary", "")
+        default_overall = _normalise_overall(raw_overall)
+        parts.append(default_overall)
+        parts.append("")
+        
+        # Strategic Pillars
+        pillar_summaries = ai_result.get("pillar_summaries", []) or []
+        if pillar_summaries:
+            parts.append("=== STRATEGIC PILLARS ===")
+            for ps in pillar_summaries:
+                pillar_label = ps.get("strategic_pillar", "Pillar") or "Pillar"
+                summary_val = str(ps.get("summary", "") or "")
+                parts.append(f"--- {pillar_label} ---")
+                parts.append(summary_val)
+                parts.append("")
+        
+        # Risks
+        parts.append("=== STRATEGIC PILLAR RISKS / CONCERNS ===")
+        risks_raw = ai_result.get("risks", []) or []
+        risks_default = _normalise_list(risks_raw)
+        parts.append(risks_default)
+        parts.append("")
+        
+        # Priorities
+        parts.append("=== ORGANISATION-WIDE PRIORITIES FOR NEXT PERIOD ===")
+        priorities_raw = ai_result.get("priorities_next_month", []) or []
+        priorities_default = _normalise_list(priorities_raw)
+        parts.append(priorities_default)
+        parts.append("")
+        
+        # Notes for leadership
+        parts.append("=== NOTES FOR LEADERSHIP ===")
+        nfl_raw = ai_result.get("notes_for_leadership", "") or ""
+        parts.append(str(nfl_raw))
+        
+        return "\n".join(parts)
+    
+    def _parse_consolidated_summary(text: str):
+        """Parse the consolidated text back into the ai_result structure."""
+        # Split into major sections using the === markers
+        sections = {}
+        current_section = None
+        current_content = []
+        
+        for line in text.split('\n'):
+            # Check for main section headers
+            if line.strip().startswith('=== ') and line.strip().endswith(' ==='):
+                if current_section:
+                    sections[current_section] = '\n'.join(current_content).strip()
+                current_section = line.strip()[4:-4].strip()
+                current_content = []
+            else:
+                current_content.append(line)
+        
+        # Don't forget the last section
+        if current_section:
+            sections[current_section] = '\n'.join(current_content).strip()
+        
+        # Parse Board Narrative
+        if 'BOARD NARRATIVE' in sections:
+            ai_result["overall_summary"] = sections['BOARD NARRATIVE']
+        
+        # Parse Strategic Pillars
+        if 'STRATEGIC PILLARS' in sections:
+            pillar_text = sections['STRATEGIC PILLARS']
+            # Split by the --- markers for each pillar
+            pillar_blocks = []
+            current_pillar = []
+            for line in pillar_text.split('\n'):
+                if line.strip().startswith('---') and line.strip().endswith('---'):
+                    if current_pillar:
+                        pillar_blocks.append('\n'.join(current_pillar).strip())
+                    current_pillar = [line]
+                else:
+                    current_pillar.append(line)
+            if current_pillar:
+                pillar_blocks.append('\n'.join(current_pillar).strip())
+            
+            pillar_summaries = ai_result.get("pillar_summaries", []) or []
+            
+            for i, block in enumerate(pillar_blocks):
+                if not block.strip() or i >= len(pillar_summaries):
+                    continue
+                
+                # Split header from content
+                lines = block.split('\n', 1)
+                if len(lines) < 2:
+                    continue
+                    
+                header = lines[0].strip()
+                summary_text = lines[1].strip() if len(lines) > 1 else ""
+                
+                # Extract pillar name from header (format: "--- Pillar Name ---")
+                pillar_name = header.strip('-').strip()
+                
+                # Update the pillar
+                pillar_summaries[i]["strategic_pillar"] = pillar_name
+                pillar_summaries[i]["summary"] = summary_text
+        
+        # Parse Risks
+        if 'STRATEGIC PILLAR RISKS / CONCERNS' in sections:
+            risks_text = sections['STRATEGIC PILLAR RISKS / CONCERNS']
+            ai_result["risks"] = [
+                line.strip() for line in risks_text.splitlines() if line.strip()
+            ]
+        
+        # Parse Priorities
+        if 'ORGANISATION-WIDE PRIORITIES FOR NEXT PERIOD' in sections:
+            priorities_text = sections['ORGANISATION-WIDE PRIORITIES FOR NEXT PERIOD']
+            ai_result["priorities_next_month"] = [
+                line.strip() for line in priorities_text.splitlines() if line.strip()
+            ]
+        
+        # Parse Notes for Leadership
+        if 'NOTES FOR LEADERSHIP' in sections:
+            ai_result["notes_for_leadership"] = sections['NOTES FOR LEADERSHIP']
 
-    st.markdown("### Draft Board Report")
-
-    edited_overall = st.text_area(
-        "Board report narrative (this version will appear in the PDF):",
-        value=default_overall,
-        height=260,
-        key="board_overall_summary_editor",
+    # ── Consolidated AI Summary Editor ──────────────────────────────────────
+    st.markdown("### Draft Board Report (Consolidated Editor)")
+    st.info(
+        "Edit all sections in one box below. The sections are marked with "
+        "`=== SECTION NAME ===` headers. When done, changes are automatically saved."
     )
-    ai_result["overall_summary"] = edited_overall
-
-    # ── Strategic Pillars (editable) ───────────────────────────────────────
-    pillar_summaries = ai_result.get("pillar_summaries", []) or []
-    st.markdown("### Strategic Pillars")
-
-    if pillar_summaries:
-        for i, ps in enumerate(pillar_summaries):
-            pillar_label = ps.get("strategic_pillar", "Pillar") or "Pillar"
-            summary_val = str(ps.get("summary", "") or "")
-
-            st.markdown(f"#### Pillar {i+1}: {pillar_label}")
-
-            new_pillar_label = st.text_input(
-                f"Pillar name (Pillar {i+1})",
-                value=pillar_label,
-                key=f"board_pillar_name_{i}",
-            )
-            new_summary = st.text_area(
-                f"Pillar narrative (Pillar {i+1})",
-                value=summary_val,
-                height=140,
-                key=f"board_pillar_summary_{i}",
-            )
-
-            ps["strategic_pillar"] = new_pillar_label
-            ps["summary"] = new_summary
-
-    # ── Risks (editable) ───────────────────────────────────────────────────
-    risks_raw = ai_result.get("risks", []) or []
-    risks_default = _normalise_list(risks_raw)
-
-    st.markdown("### Strategic Pillar Risks / Concerns")
-    risks_edited = st.text_area(
-        "One risk / area to watch per line:",
-        value=risks_default,
-        height=140,
-        key="board_risks_editor",
+    
+    consolidated_text = _build_consolidated_summary()
+    
+    edited_consolidated = st.text_area(
+        "Board report (all sections):",
+        value=consolidated_text,
+        height=600,
+        key="board_consolidated_editor",
     )
-    ai_result["risks"] = [
-        line.strip() for line in risks_edited.splitlines() if line.strip()
-    ]
-
-    # ── Organisation-wide Priorities (editable) ────────────────────────────
-    priorities_raw = ai_result.get("priorities_next_month", []) or []
-    priorities_default = _normalise_list(priorities_raw)
-
-    st.markdown("### Organisation-wide Priorities for Next Period")
-    priorities_edited = st.text_area(
-        "One priority per line:",
-        value=priorities_default,
-        height=140,
-        key="board_priorities_editor",
-    )
-    ai_result["priorities_next_month"] = [
-        line.strip() for line in priorities_edited.splitlines() if line.strip()
-    ]
-
-    # ── Notes for Leadership (editable) ────────────────────────────────────
-    nfl_raw = ai_result.get("notes_for_leadership", "") or ""
-    nfl_default = str(nfl_raw)
-
-    st.markdown("### Notes for Leadership")
-    nfl_edited = st.text_area(
-        "Notes for Leadership (this will appear as prose in the PDF):",
-        value=nfl_default,
-        height=160,
-        key="board_notes_for_leadership_editor",
-    )
-    ai_result["notes_for_leadership"] = nfl_edited
+    
+    # Parse the edited text back into ai_result
+    _parse_consolidated_summary(edited_consolidated)
 
     # Persist the edited result back to session_state
     st.session_state["overall_ai_result"] = ai_result
 
+    # ─────────────────────────────────────────────────────────────────────
+    # 4.5. Save AI summary as JSON
+    # ─────────────────────────────────────────────────────────────────────
+    if st.session_state.get("overall_ai_result"):
+        ai_summary_payload = {
+            "reporting_label": reporting_label,
+            "dept_summaries": dept_summaries,
+            "ai_result": st.session_state["overall_ai_result"],
+        }
+        st.sidebar.download_button(
+            "💾 Save AI summary only (JSON)",
+            data=json.dumps(ai_summary_payload, indent=2),
+            file_name=f"overall_ai_summary_{reporting_label.replace(' ', '_')}.json",
+            mime="application/json",
+            help="Just the edited AI summary for the overall Board report.",
+        )
 
     # ─────────────────────────────────────────────────────────────────────
     # 5. Build and download the Board Report (PDF and DOCX)
