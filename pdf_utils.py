@@ -772,6 +772,85 @@ def build_scorecard_pdf(
         story.append(Spacer(1, 10))
 
     # ─────────────────────────────────────────────────────────────────────
+    # Strategic Objectives Score Table
+    # ─────────────────────────────────────────────────────────────────────
+    if objective_summaries:
+        story.append(Paragraph("Strategic Objectives — Summary", styles["SectionHeading"]))
+        story.append(Spacer(1, 6))
+        
+        # Build table data
+        table_data = [
+            [
+                Paragraph("<b>Objective ID</b>", styles["BodyText"]),
+                Paragraph("<b>Objective</b>", styles["BodyText"]),
+                Paragraph("<b>Score</b>", styles["BodyText"]),
+                Paragraph("<b>Status</b>", styles["BodyText"]),
+            ]
+        ]
+        
+        for obj_sum in objective_summaries:
+            obj_id = obj_sum.get("objective_id", "")
+            obj_title = obj_sum.get("objective_title", "") or obj_sum.get("strategic_pillar", "") or "Objective"
+            score_hint_raw = _to_plain_text(obj_sum.get("score_hint", "")).strip()
+            
+            # Parse score
+            score_value = _parse_score_hint(score_hint_raw)
+            score_str = _score_display(score_value)
+            score_colour = _score_to_colour(score_value)
+            
+            # Extract status label from score_hint (e.g., "2/3 Steady progress" -> "Steady progress")
+            status_label = score_hint_raw
+            if "/" in score_hint_raw:
+                parts = score_hint_raw.split("/", 1)
+                if len(parts) > 1:
+                    after_slash = parts[1].strip()
+                    # Remove the denominator (e.g., "3 Steady progress" -> "Steady progress")
+                    status_parts = after_slash.split(None, 1)
+                    if len(status_parts) > 1:
+                        status_label = status_parts[1]
+                    else:
+                        status_label = score_hint_raw
+            
+            # Create table row
+            obj_id_cell = Paragraph(xml_escape(obj_id or "—"), styles["BodyText"])
+            obj_title_cell = Paragraph(xml_escape(_strip_objective_codes(obj_title)), styles["BodyText"])
+            score_cell = Paragraph(f"<b>{score_str} / 3</b>", styles["BodyText"])
+            status_cell = Paragraph(xml_escape(status_label), styles["BodyText"])
+            
+            table_data.append([obj_id_cell, obj_title_cell, score_cell, status_cell])
+        
+        # Create table with colored score cells
+        obj_table = Table(table_data, colWidths=[0.8*inch, 2.8*inch, 0.9*inch, 2.0*inch])
+        
+        table_style_cmds = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 9),
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]
+        
+        # Add colored backgrounds for score column
+        for i in range(1, len(table_data)):
+            obj_sum = objective_summaries[i - 1]
+            score_hint_raw = _to_plain_text(obj_sum.get("score_hint", "")).strip()
+            score_value = _parse_score_hint(score_hint_raw)
+            score_colour = _score_to_colour(score_value)
+            table_style_cmds.append(("BACKGROUND", (2, i), (2, i), score_colour))
+            if score_value is not None and score_value >= 1.5:
+                table_style_cmds.append(("TEXTCOLOR", (2, i), (2, i), colors.white))
+        
+        obj_table.setStyle(TableStyle(table_style_cmds))
+        story.append(obj_table)
+        story.append(Spacer(1, 12))
+
+    # ─────────────────────────────────────────────────────────────────────
     # Strategic objectives – narrative
     # ─────────────────────────────────────────────────────────────────────
     if objective_summaries:
@@ -1106,6 +1185,83 @@ def build_overall_board_pdf(
             story.append(Paragraph(para, styles["ReportBody"]))
             if idx < len(parts) - 1:
                 story.append(Spacer(1, 6))
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Strategic Pillars Score Table
+    # ─────────────────────────────────────────────────────────────────────
+    pillar_summaries = ai_result.get("pillar_summaries", []) or []
+    if pillar_summaries:
+        story.append(Spacer(1, 12))
+        story.append(Paragraph("Strategic Pillars — Summary", styles["SectionHeading"]))
+        story.append(Spacer(1, 6))
+        
+        # Build table data
+        table_data = [
+            [
+                Paragraph("<b>Strategic Pillar</b>", styles["BodyText"]),
+                Paragraph("<b>Score</b>", styles["BodyText"]),
+                Paragraph("<b>Status</b>", styles["BodyText"]),
+            ]
+        ]
+        
+        for pillar_sum in pillar_summaries:
+            pillar_name = pillar_sum.get("strategic_pillar", "Pillar") or "Pillar"
+            score_hint_raw = _to_plain_text(pillar_sum.get("score_hint", "")).strip()
+            
+            # Parse score
+            score_value = _parse_score_hint(score_hint_raw)
+            score_str = _score_display(score_value)
+            score_colour = _score_to_colour(score_value)
+            
+            # Extract status label from score_hint
+            status_label = score_hint_raw
+            if "/" in score_hint_raw:
+                parts = score_hint_raw.split("/", 1)
+                if len(parts) > 1:
+                    after_slash = parts[1].strip()
+                    status_parts = after_slash.split(None, 1)
+                    if len(status_parts) > 1:
+                        status_label = status_parts[1]
+                    else:
+                        status_label = score_hint_raw
+            
+            # Create table row
+            pillar_cell = Paragraph(xml_escape(pillar_name), styles["BodyText"])
+            score_cell = Paragraph(f"<b>{score_str} / 3</b>", styles["BodyText"])
+            status_cell = Paragraph(xml_escape(status_label), styles["BodyText"])
+            
+            table_data.append([pillar_cell, score_cell, status_cell])
+        
+        # Create table with colored score cells
+        pillar_table = Table(table_data, colWidths=[3.5*inch, 0.9*inch, 2.5*inch])
+        
+        table_style_cmds = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 9),
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]
+        
+        # Add colored backgrounds for score column
+        for i in range(1, len(table_data)):
+            pillar_sum = pillar_summaries[i - 1]
+            score_hint_raw = _to_plain_text(pillar_sum.get("score_hint", "")).strip()
+            score_value = _parse_score_hint(score_hint_raw)
+            score_colour = _score_to_colour(score_value)
+            table_style_cmds.append(("BACKGROUND", (1, i), (1, i), score_colour))
+            if score_value is not None and score_value >= 1.5:
+                table_style_cmds.append(("TEXTCOLOR", (1, i), (1, i), colors.white))
+        
+        pillar_table.setStyle(TableStyle(table_style_cmds))
+        story.append(pillar_table)
+        story.append(Spacer(1, 12))
 
     # ─────────────────────────────────────────────────────────────────────
     # Strategic Pillar risks / concerns
