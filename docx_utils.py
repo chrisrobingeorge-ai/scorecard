@@ -13,6 +13,7 @@ import pandas as pd
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.section import WD_ORIENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
@@ -195,7 +196,6 @@ def _responses_table(doc: Document, questions: pd.DataFrame, responses: Dict[str
     """
     # Change section to landscape orientation for the responses table
     section = doc.sections[-1]
-    from docx.enum.section import WD_ORIENT
     new_width, new_height = section.page_height, section.page_width
     section.orientation = WD_ORIENT.LANDSCAPE
     section.page_width = new_width

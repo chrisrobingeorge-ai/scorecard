@@ -1515,9 +1515,13 @@ def main():
         return "\n".join(parts)
     
     def _parse_consolidated_summary(text):
-        """Parse the consolidated text back into the ai_result structure."""
+        """
+        Parse the consolidated text back into the ai_result structure.
+        This is a simplified parser that focuses on the main content sections.
+        """
         import re
         
+        # Split into major sections using the === markers
         sections = {}
         current_section = None
         current_content = []
@@ -1536,89 +1540,84 @@ def main():
         if current_section:
             sections[current_section] = '\n'.join(current_content).strip()
         
-        # Parse Executive Summary
+        # Parse Executive Summary - straightforward text replacement
         if 'EXECUTIVE SUMMARY' in sections:
             ai_result["overall_summary"] = sections['EXECUTIVE SUMMARY']
         
-        # Parse Strategic Objectives
+        # Parse Strategic Objectives - update summaries while preserving structure
         if 'STRATEGIC OBJECTIVES' in sections:
             obj_text = sections['STRATEGIC OBJECTIVES']
-            obj_blocks = re.split(r'\n---\s+', obj_text)
+            # Split by the --- markers for each objective
+            obj_blocks = []
+            current_obj = []
+            for line in obj_text.split('\n'):
+                if line.strip().startswith('---') and line.strip().endswith('---'):
+                    if current_obj:
+                        obj_blocks.append('\n'.join(current_obj).strip())
+                    current_obj = [line]
+                else:
+                    current_obj.append(line)
+            if current_obj:
+                obj_blocks.append('\n'.join(current_obj).strip())
+            
             objective_summaries = ai_result.get("objective_summaries", []) or ai_result.get("pillar_summaries", []) or []
             
             for i, block in enumerate(obj_blocks):
-                if not block.strip() or not block.startswith('---'):
-                    # First block might not have leading ---
-                    if i == 0 and block.strip():
-                        block = '--- ' + block
-                    else:
-                        continue
+                if not block.strip() or i >= len(objective_summaries):
+                    continue
                 
-                # Parse objective header: --- OBJ_ID: Title (score) ---
-                lines = block.split('\n')
+                # Split header from content
+                lines = block.split('\n', 1)
+                if len(lines) < 2:
+                    continue
+                    
                 header = lines[0].strip()
-                if header.startswith('---'):
-                    header = header[3:].strip()
-                if header.endswith('---'):
-                    header = header[:-3].strip()
+                summary_text = lines[1].strip() if len(lines) > 1 else ""
                 
-                # Extract components
-                summary_text = '\n'.join(lines[1:]).strip()
-                
-                # Try to match the header pattern
-                match = re.match(r'([\w]+):\s*(.+?)\s*\((.+?)\)', header)
-                if match and i < len(objective_summaries):
-                    obj_id, obj_title, score_hint = match.groups()
-                    objective_summaries[i]["objective_id"] = obj_id
-                    objective_summaries[i]["objective_title"] = obj_title
-                    objective_summaries[i]["score_hint"] = score_hint
-                    objective_summaries[i]["summary"] = summary_text
-                elif i < len(objective_summaries):
-                    # Fallback: just update summary
-                    objective_summaries[i]["summary"] = summary_text
+                # Just update the summary text, preserving other metadata
+                objective_summaries[i]["summary"] = summary_text
         
-        # Parse Production Summaries
+        # Parse Production Summaries - update while preserving structure
         if 'BY PRODUCTION / PROGRAMME' in sections:
             prod_text = sections['BY PRODUCTION / PROGRAMME']
-            prod_blocks = re.split(r'\n---\s+', prod_text)
+            # Split by --- markers
+            prod_blocks = []
+            current_prod = []
+            for line in prod_text.split('\n'):
+                if line.strip().startswith('---') and line.strip().endswith('---'):
+                    if current_prod:
+                        prod_blocks.append('\n'.join(current_prod).strip())
+                    current_prod = [line]
+                else:
+                    current_prod.append(line)
+            if current_prod:
+                prod_blocks.append('\n'.join(current_prod).strip())
+            
             prod_summaries = ai_result.get("production_summaries", []) or []
             
             for i, block in enumerate(prod_blocks):
-                if not block.strip():
-                    continue
-                if not block.startswith('---') and i == 0:
-                    block = '--- ' + block
-                elif not block.startswith('---'):
+                if not block.strip() or i >= len(prod_summaries):
                     continue
                     
-                lines = block.split('\n')
-                header = lines[0].strip()
-                if header.startswith('---'):
-                    header = header[3:].strip()
-                if header.endswith('---'):
-                    header = header[:-3].strip()
+                lines = block.split('\n', 1)
+                summary_text = lines[1].strip() if len(lines) > 1 else ""
                 
-                summary_text = '\n'.join(lines[1:]).strip()
-                
-                if i < len(prod_summaries):
-                    prod_summaries[i]["production"] = header
-                    # Update the combined summary in objectives
-                    objectives = prod_summaries[i].get("objectives") or prod_summaries[i].get("pillars") or []
-                    if objectives and len(objectives) > 0:
-                        # Put all the text in the first objective's summary
-                        objectives[0]["summary"] = summary_text
+                # Update the combined summary in the first objective
+                objectives = prod_summaries[i].get("objectives") or prod_summaries[i].get("pillars") or []
+                if objectives and len(objectives) > 0:
+                    objectives[0]["summary"] = summary_text
         
-        # Parse Risks
+        # Parse Risks - simple line-by-line
         if 'KEY RISKS / CONCERNS' in sections:
             risks_text = sections['KEY RISKS / CONCERNS']
             ai_result["risks"] = [line.strip() for line in risks_text.splitlines() if line.strip()]
         
-        # Parse Priorities
+        # Parse Priorities - simple line-by-line
         if 'PRIORITIES FOR NEXT PERIOD' in sections:
             priorities_text = sections['PRIORITIES FOR NEXT PERIOD']
             ai_result["priorities_next_month"] = [line.strip() for line in priorities_text.splitlines() if line.strip()]
         
-        # Parse Notes for Leadership
+        # Parse Notes for Leadership - straightforward text replacement
         if 'NOTES FOR LEADERSHIP' in sections:
             ai_result["notes_for_leadership"] = sections['NOTES FOR LEADERSHIP']
     
