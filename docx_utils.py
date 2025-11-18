@@ -674,15 +674,16 @@ def build_overall_board_docx(
         doc.add_paragraph()  # spacing
         doc.add_heading('Strategic Pillars — Summary', level=2)
         
-        # Create table
-        table = doc.add_table(rows=1, cols=3)
+        # Create table with 4 columns including Details
+        table = doc.add_table(rows=1, cols=4)
         table.style = 'Light Grid Accent 1'
         
         # Header row
         header_cells = table.rows[0].cells
-        header_cells[0].text = "Strategic Pillar"
-        header_cells[1].text = "Score"
-        header_cells[2].text = "Status"
+        header_cells[0].text = "Objective ID"
+        header_cells[1].text = "Objective"
+        header_cells[2].text = "Score"
+        header_cells[3].text = "Details"
         
         # Make header bold
         for cell in header_cells:
@@ -693,6 +694,8 @@ def build_overall_board_docx(
         
         # Data rows
         for pillar_sum in pillar_summaries:
+            # Use objective_id if available, otherwise leave blank
+            obj_id = pillar_sum.get("objective_id", "") or ""
             pillar_name = pillar_sum.get("strategic_pillar", "Pillar") or "Pillar"
             score_hint_raw = _to_plain_text(pillar_sum.get("score_hint", "")).strip()
             
@@ -701,26 +704,21 @@ def build_overall_board_docx(
             score_str = _score_display(score_value)
             score_colour = _score_to_color(score_value)
             
-            # Extract status label from score_hint
-            status_label = score_hint_raw
-            if "/" in score_hint_raw:
-                parts = score_hint_raw.split("/", 1)
-                if len(parts) > 1:
-                    after_slash = parts[1].strip()
-                    status_parts = after_slash.split(None, 1)
-                    if len(status_parts) > 1:
-                        status_label = status_parts[1]
-                    else:
-                        status_label = score_hint_raw
+            # Get the summary text for the Details column
+            summary_text_raw = _to_plain_text(pillar_sum.get("summary", "")).strip()
+            summary_text = _strip_objective_codes(summary_text_raw)
+            if not summary_text:
+                summary_text = "No narrative summary provided for this pillar."
             
             # Add row
             row_cells = table.add_row().cells
-            row_cells[0].text = pillar_name
-            row_cells[1].text = f"{score_str} / 3"
-            row_cells[2].text = status_label
+            row_cells[0].text = obj_id or "—"
+            row_cells[1].text = pillar_name
+            row_cells[2].text = f"{score_str} / 3"
+            row_cells[3].text = summary_text
             
             # Format score cell with color
-            score_cell = row_cells[1]
+            score_cell = row_cells[2]
             _set_cell_background(score_cell, score_colour)
             for paragraph in score_cell.paragraphs:
                 for run in paragraph.runs:
@@ -731,10 +729,15 @@ def build_overall_board_docx(
             
             # Format other cells
             for i, cell in enumerate(row_cells):
-                if i != 1:  # not score cell
+                if i != 2:  # not score cell
                     for paragraph in cell.paragraphs:
                         for run in paragraph.runs:
                             run.font.size = Pt(10)
+                            
+            # Set smaller font size for details cell
+            for paragraph in row_cells[3].paragraphs:
+                for run in paragraph.runs:
+                    run.font.size = Pt(9)
         
         doc.add_paragraph()  # spacing
 
