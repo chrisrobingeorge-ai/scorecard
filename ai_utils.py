@@ -370,6 +370,23 @@ def _build_prompt_objective_aware(
         You are given questions, their answers, and their mapping to strategic objectives
         from the 2025–2030 strategic plan.
 
+        COMPREHENSIVENESS MANDATE:
+        Your primary responsibility is to ensure that the information gathered through the scorecard
+        process is preserved and communicated effectively in your analysis. Many questions have been
+        answered by staff, and it is critical that these answers are reflected in your summaries,
+        not lost through over-aggressive abstraction. When in doubt, include more detail rather than
+        less, while still maintaining clear, professional prose suitable for Board review.
+        
+        Be particularly attentive to:
+        - Specific metrics, numbers, or data points provided in answers
+        - Follow-up questions (identified by "Detail:" lines) that provide important context
+        - Activities, partnerships, or initiatives mentioned in responses
+        - Challenges, barriers, or concerns explicitly stated by respondents
+        - Plans, intentions, or next steps described in the responses
+        
+        Your summaries should demonstrate that you have carefully reviewed ALL the answered questions
+        and incorporated their key content, not just sampled or cherry-picked a few.
+
         CRITICAL CONTEXT: This is a FIVE-YEAR strategic plan (2025–2030).
         Each monthly scorecard is one snapshot in a multi-year transformation journey.
         Strategic initiatives are expected to unfold gradually over multiple years.
@@ -416,7 +433,7 @@ def _build_prompt_objective_aware(
         - "notes_for_leadership" (string)
 
         1) "overall_summary":
-           A coherent narrative of 2–4 paragraphs, written in prose (no bullet points).
+           A coherent narrative of 3–5 paragraphs, written in prose (no bullet points).
            - Link explicitly to strategic objectives by ID and title where possible.
            - Diagnose what seems on track, developing, or lightly constrained, and why.
            - Frame progress in the context of a FIVE-YEAR strategic plan.
@@ -425,8 +442,11 @@ def _build_prompt_objective_aware(
            - Avoid urgent or alarmist language. Prefer terms like "developing," "building momentum,"
              "early stage," or "area to watch over time," rather than "at risk" or "needs immediate attention."
            - Focus your assessment primarily on HIGH-importance items (ai_weight=3), with MEDIUM items (ai_weight=2)
-             as supporting context. NEVER base strong negative conclusions primarily on LOW-importance items
-             (ai_weight=1), which are optional or seasonal signals meant only to add nuance.
+             as supporting context. Include relevant LOW-importance items (ai_weight=1) when they provide
+             valuable context or illustrate broader patterns, but do NOT base strong negative conclusions
+             primarily on LOW-importance items, which are optional or seasonal signals meant only to add nuance.
+           - Be comprehensive: incorporate key findings from all answered questions, ensuring that important
+             details are not lost in summarization. Each paragraph should be substantive (5-8 sentences).
 
         2) "objective_summaries":
            An array of objects, each with:
@@ -434,12 +454,15 @@ def _build_prompt_objective_aware(
              - "objective_title": the full strategic objective title
              - "score_hint": a string in the form "<n>/3 label", where n is 0, 1, 2, or 3.
                Examples: "3/3 Strong progress", "2/3 Steady development", "1/3 Early stage", "0/3 Inactive this period".
-             - "summary": a short paragraph (3–6 sentences).
+             - "summary": a comprehensive paragraph (5-10 sentences).
         
            For each strategic objective, explain:
              - what the answers suggest about progress over the long term toward this specific strategic goal,
              - how different productions/programmes contribute to this objective,
              - and any underlying causes or dependencies you can infer.
+             - Include specific details from the scorecard answers that illustrate progress or challenges.
+             - Reference concrete examples, metrics, or activities mentioned in the responses.
+             - Ensure that important answered questions are reflected in your narrative, not just high-level themes.
         
            Use the 0–3 scale with a multi-year perspective:
              - 3/3 only when evidence shows sustained, multi-dimensional progress toward long-term goals.
@@ -466,10 +489,15 @@ def _build_prompt_objective_aware(
                  - "objective_id": the strategic objective ID (e.g., "ART1", "ART2")
                  - "objective_title": the strategic objective title
                  - "score_hint": again in the form "<n>/3 label" using the same 0–3 scale.
-                 - "summary" (2–4 sentences).
+                 - "summary" (4–7 sentences with specific details).
            Focus on how each production/programme contributes to specific strategic objectives.
            When comparing productions or programmes, do not let a single metric completely dominate your judgment.
            Look across all available answers before calling a production clearly strong or weak for a given objective.
+           
+           IMPORTANT: Include specific findings from the scorecard responses for each production.
+           - Reference actual metrics, activities, achievements, or challenges mentioned in the answers.
+           - Don't just provide generic assessments - ground your summary in the concrete details provided.
+           - Ensure that answered questions are represented in the production narrative, not lost in abstraction.
 
            Some questions are marked as "DEPARTMENT-WIDE (not tied to a single production)".
            These describe the company or department overall and MUST NOT be treated as
@@ -489,12 +517,13 @@ def _build_prompt_objective_aware(
            Frame each priority as continuing momentum, building foundations, or advancing a strategic initiative.
 
         6) "notes_for_leadership":
-           A single narrative paragraph or two (4–8 sentences) in prose (no bullets),
+           Write 2–3 substantive paragraphs (6–12 sentences total) in prose (no bullets),
            written as if for the CEO and Board with a long-term strategic lens. Highlight:
              - the most important strategic signals from this month in the context of multi-year progress,
              - how this month's activities fit into the broader 5-year transformation journey,
              - any trade-offs or dependencies they should understand as strategic initiatives mature,
              - where sustained attention (not immediate crisis response) may support long-term success.
+             - Include specific examples or data points from the scorecard that warrant Board attention.
 
         Style guidelines:
         - Use clear, direct language suitable for a Board / senior leadership report.
@@ -806,17 +835,21 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
         DETAILED SPECIFICATIONS FOR EACH SECTION:
 
         1) "overall_summary" (string):
-           Write 3–5 rich, substantive paragraphs (minimum 400 words) that provide a Board-level
+           Write 4–6 rich, substantive paragraphs (minimum 500 words) that provide a Board-level
            interpretation of organisational performance this month.
            
            Structure:
            - Paragraph 1: Executive summary of overall organisational health and trajectory in the context
              of the 5-year plan. What's the big picture this month?
            - Paragraph 2-3: Cross-departmental themes, patterns, and interdependencies that are clearly
-             supported by the department summaries (avoid speculation).
+             supported by the department summaries (avoid speculation). Include specific examples and
+             data points from the department reports.
            - Paragraph 4: Notable achievements, momentum, or areas of strength worth celebrating or building on.
+             Reference concrete activities, metrics, or milestones from the department summaries.
            - Paragraph 5: Constructive challenges, capacity constraints, or areas requiring sustained Board
              attention, framed in terms of the long-term strategic journey.
+           - Paragraph 6 (optional): Additional insights or observations that emerge from the comprehensive
+             review of all departments.
 
            Quality standards:
            - Go beyond restating department summaries—provide genuine synthesis and interpretation.
@@ -824,13 +857,15 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
            - Identify patterns and strategic implications that are clearly grounded in the input data.
            - Frame everything in the context of multi-year strategic transformation.
            - Acknowledge complexity, trade-offs, and uncertainty where present, without dramatising.
+           - Be comprehensive: ensure that important information from department summaries is not lost in
+             the synthesis. Include specific details that warrant Board attention.
 
         2) "pillar_summaries" (array):
            For EACH major strategic pillar that emerges from the department data, create one object:
            
            {
              "strategic_pillar": "<pillar name>",
-             "summary": "<substantial paragraph, 6-10 sentences>"
+             "summary": "<substantial paragraph, 8-12 sentences with specific details>"
            }
            
            Common strategic pillars might include:
@@ -847,6 +882,9 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
            - Assess trajectory and momentum in the context of the 5-year plan.
            - Point out dependencies or resource trade-offs that are visibly supported by the inputs.
            - Be specific about what's working and what needs sustained attention.
+           - Include concrete examples, metrics, or activities from the department summaries that
+             illustrate this pillar's performance.
+           - Ensure comprehensive coverage: don't lose important departmental information in the synthesis.
 
         3) "risks" (array of strings):
            Identify 5–10 strategic considerations, constraints, or areas to monitor over time.
@@ -872,7 +910,7 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
            - Connected to the patterns and themes identified in your analysis.
 
         5) "notes_for_leadership" (string):
-           Write 2–4 paragraphs (minimum 300 words) directly addressing the CEO and Board.
+           Write 3–5 substantive paragraphs (minimum 400 words) directly addressing the CEO and Board.
 
            Focus on:
            - The most important strategic signals from this month.
@@ -880,6 +918,8 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
            - Any emerging patterns or early indicators to monitor.
            - What is going well that deserves continued support.
            - Where strategic choices or trade-offs may be approaching, based on the evidence provided.
+           - Include specific examples or data points from department reports that warrant leadership attention.
+           - Ensure that key insights from the department summaries are surfaced, not lost in abstraction.
 
         ────────────────────────────────────────────────────────
         DEPARTMENT SUMMARIES FOLLOW BELOW
