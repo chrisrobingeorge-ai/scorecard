@@ -756,20 +756,27 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
         YOUR TASK: DEEP, INTERPRETIVE BOARD-LEVEL ANALYSIS
         
         You will receive department-level scorecard summaries. Each department has already been analysed
-        in detail with its own strategic objectives, importance weightings, and production-specific context.
+        in detail with its own strategic objectives (from the 2025-2030 strategic plan), importance weightings, 
+        and production-specific context.
+        
+        CRITICAL: Each department summary includes a "Strategic Objectives (2025-2030 Plan)" section that lists
+        the specific strategic objectives (e.g., ART1, ART2, SCH1, COM1, CORP1) that department is working on,
+        along with scores and detailed summaries for each objective. Your analysis MUST be organized around
+        these strategic objectives, not generic organizational categories.
         
         Your role is to:
         
-        1. SYNTHESISE CROSS-DEPARTMENTAL PATTERNS
-           - Identify themes and opportunities that emerge when viewing the organisation as a whole.
-           - Look for interdependencies between departments (e.g., how Artistic decisions affect Community programs),
+        1. SYNTHESISE CROSS-DEPARTMENTAL PATTERNS BY STRATEGIC OBJECTIVE
+           - Group your analysis by strategic objectives (ART1, ART2, SCH1, etc.) as they appear in the data.
+           - Identify where multiple departments contribute to the same strategic objective.
+           - Look for interdependencies between departments working on related objectives,
              but only where these interdependencies are clearly indicated in the underlying summaries.
-           - Spot resource constraints or capacity issues that affect multiple areas, when supported by the data.
-           - Recognise where different departments are progressing at different rates and why that matters.
+           - Spot resource constraints or capacity issues that affect multiple objectives, when supported by the data.
+           - Recognise where different objectives are progressing at different rates and why that matters.
 
-        2. ASSESS STRATEGIC COHERENCE
-           - How well are the departments working in concert toward shared strategic goals, based on the evidence given?
-           - Where is the organisation building momentum across multiple fronts?
+        2. ASSESS STRATEGIC COHERENCE ACROSS OBJECTIVES
+           - How well are the departments working in concert toward shared strategic objectives, based on the evidence given?
+           - Where is the organisation building momentum across multiple objectives?
            - Where are there gaps or sequencing issues (e.g., foundations still being laid before later-phase work)?
            - Focus on trade-offs in priorities and capacity only when they are visibly grounded in the inputs.
 
@@ -816,7 +823,8 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
           "overall_summary": string,
           "pillar_summaries": [
             {
-              "strategic_pillar": string,
+              "strategic_pillar": string,    // Must be in format "OBJECTIVE_ID: Objective Title" (e.g., "ART1: Elevate the Art of Dance")
+              "score_hint": string,           // Must be in format "n/3 label" (e.g., "2/3 Steady development")
               "summary": string
             },
             ...
@@ -861,34 +869,35 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
              the synthesis. Include specific details that warrant Board attention.
 
         2) "pillar_summaries" (array):
-           For EACH major strategic pillar that emerges from the department data, create one object:
+           Analyze by STRATEGIC OBJECTIVES from the 2025-2030 strategic plan (e.g., ART1, ART2, SCH1, COM1, CORP1, etc.).
+           DO NOT use generic organizational categories like "Artistic Excellence" or "Community Engagement".
+           
+           For EACH strategic objective that appears in the department data, create one object:
            
            {
-             "strategic_pillar": "<pillar name>",
+             "strategic_pillar": "<objective_id: objective_title>",
              "score_hint": "<n>/3 label (e.g., '2.5/3 Strong progress', '2/3 Steady development', '1/3 Early stage')",
              "summary": "<substantial paragraph, 8-12 sentences with specific details>"
            }
            
-           Common strategic pillars might include:
-           - Artistic Excellence & Innovation
-           - Community Engagement & Impact
-           - Financial Sustainability & Growth
-           - Organisational Capacity & Talent Development
-           - Brand & External Relations
+           IMPORTANT: The department summaries include "Strategic Objectives (2025-2030 Plan)" sections that 
+           list the actual strategic objectives with their IDs (e.g., ART1, SCH1, COM1) and scores.
+           You MUST use these objective IDs as the basis for your pillar_summaries, not invented categories.
            
-           For each pillar:
-           - Synthesise performance across ALL relevant departments.
-           - Identify how different departments contribute to or shape this pillar, but only as far as
+           For each strategic objective:
+           - Use the exact objective_id and objective_title from the department data (e.g., "ART1: Elevate the Art of Dance").
+           - Synthesise performance across ALL departments working on this objective.
+           - Identify how different departments contribute to or shape this objective, but only as far as
              the summaries clearly show.
            - Assess trajectory and momentum in the context of the 5-year plan.
            - Point out dependencies or resource trade-offs that are visibly supported by the inputs.
            - Be specific about what's working and what needs sustained attention.
            - Include concrete examples, metrics, or activities from the department summaries that
-             illustrate this pillar's performance.
+             illustrate this objective's performance.
            - Ensure comprehensive coverage: don't lose important departmental information in the synthesis.
            
            Use the 0–3 scoring scale with an organisation-wide perspective:
-           - 3/3: Strong progress across multiple departments toward this strategic pillar
+           - 3/3: Strong progress across multiple departments toward this strategic objective
            - 2/3: Steady development with good momentum (this is positive for a 5-year plan)
            - 1/3: Early stages or foundation-building across the organisation
            - 0/3: Little to no activity (rare; only if departments clearly show inactivity)
@@ -949,8 +958,28 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
         month_label = ds.get("month_label") or ds.get("month") or "Reporting period not specified"
         overall_score = ds.get("overall_score")
         pillar_scores = ds.get("pillar_scores") or {}
+        objective_summaries = ds.get("objective_summaries") or []
         summary_text = (ds.get("summary_text") or "").strip()
 
+        # Build strategic objectives block (preferred)
+        if objective_summaries:
+            obj_lines = []
+            for obj_sum in objective_summaries:
+                obj_id = obj_sum.get("objective_id", "") or ""
+                obj_title = obj_sum.get("objective_title", "") or ""
+                score_hint = obj_sum.get("score_hint", "") or ""
+                summary = obj_sum.get("summary", "") or ""
+                
+                if obj_id and obj_title:
+                    obj_lines.append(f"- {obj_id} ({obj_title}): {score_hint}")
+                    if summary:
+                        obj_lines.append(f"  Summary: {summary}")
+            
+            objectives_block = "\n".join(obj_lines) if obj_lines else "(No objective summaries provided.)"
+        else:
+            objectives_block = "(No objective summaries provided.)"
+
+        # Keep pillar scores for backward compatibility
         if pillar_scores:
             pillar_lines = [
                 f"- {name}: {float(val):.2f} / 3"
@@ -966,7 +995,11 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
             === Department: {dept} ===
             Reporting period: {month_label}
             Overall score: {overall_score if overall_score is not None else 'N/A'} / 3
-            Pillar scores:
+            
+            Strategic Objectives (2025-2030 Plan):
+            {objectives_block}
+            
+            Legacy Pillar scores (for reference):
             {pillar_block}
 
             Department summary:

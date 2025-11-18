@@ -68,6 +68,9 @@ def extract_department_summary(
     pillar_scores = scores.get("pillar_scores") or {}
 
     summary_text = ai_interp.get("overall_summary") or ""
+    
+    # Extract objective summaries (strategic objectives like ART1, ART2, SCH1, etc.)
+    objective_summaries = ai_interp.get("objective_summaries") or []
 
     return {
         "source_file": source_name,
@@ -76,6 +79,7 @@ def extract_department_summary(
         "month_label": month_label,
         "overall_score": overall_score,
         "pillar_scores": pillar_scores,
+        "objective_summaries": objective_summaries,
         "production": production,
         "staff_name": staff_name,
         "role": role,
