@@ -1144,7 +1144,7 @@ def build_overall_board_pdf(
                 story.append(Spacer(1, 6))
 
     # ─────────────────────────────────────────────────────────────────────
-    # Strategic Pillars Score Table
+    # Strategic Pillars Score Table (with embedded details)
     # ─────────────────────────────────────────────────────────────────────
     pillar_summaries = ai_result.get("pillar_summaries", []) or []
     if pillar_summaries:
@@ -1152,16 +1152,19 @@ def build_overall_board_pdf(
         story.append(Paragraph("Strategic Pillars — Summary", styles["SectionHeading"]))
         story.append(Spacer(1, 6))
         
-        # Build table data
+        # Build table data with Details column (4 columns: Objective ID, Objective, Score, Details)
         table_data = [
             [
-                Paragraph("<b>Strategic Pillar</b>", styles["BodyText"]),
+                Paragraph("<b>Objective ID</b>", styles["BodyText"]),
+                Paragraph("<b>Objective</b>", styles["BodyText"]),
                 Paragraph("<b>Score</b>", styles["BodyText"]),
-                Paragraph("<b>Status</b>", styles["BodyText"]),
+                Paragraph("<b>Details</b>", styles["BodyText"]),
             ]
         ]
         
         for pillar_sum in pillar_summaries:
+            # Use objective_id if available, otherwise leave blank
+            obj_id = pillar_sum.get("objective_id", "") or ""
             pillar_name = pillar_sum.get("strategic_pillar", "Pillar") or "Pillar"
             score_hint_raw = _to_plain_text(pillar_sum.get("score_hint", "")).strip()
             
@@ -1170,27 +1173,31 @@ def build_overall_board_pdf(
             score_str = _score_display(score_value)
             score_colour = _score_to_colour(score_value)
             
-            # Extract status label from score_hint
-            status_label = score_hint_raw
-            if "/" in score_hint_raw:
-                parts = score_hint_raw.split("/", 1)
-                if len(parts) > 1:
-                    after_slash = parts[1].strip()
-                    status_parts = after_slash.split(None, 1)
-                    if len(status_parts) > 1:
-                        status_label = status_parts[1]
-                    else:
-                        status_label = score_hint_raw
+            # Get the summary text for the Details column
+            summary_text_raw = _to_plain_text(pillar_sum.get("summary", "")).strip()
+            summary_text = _strip_objective_codes(summary_text_raw)
+            if not summary_text:
+                summary_text = "No narrative summary provided for this pillar."
+            
+            # Use smaller font for details to fit better
+            details_style = ParagraphStyle(
+                name="DetailsCell",
+                parent=styles["BodyText"],
+                fontSize=8,
+                leading=10,
+            )
             
             # Create table row
+            obj_id_cell = Paragraph(xml_escape(obj_id or "—"), styles["BodyText"])
             pillar_cell = Paragraph(xml_escape(pillar_name), styles["BodyText"])
             score_cell = Paragraph(f"<b>{score_str} / 3</b>", styles["BodyText"])
-            status_cell = Paragraph(xml_escape(status_label), styles["BodyText"])
+            details_cell = Paragraph(xml_escape(summary_text), details_style)
             
-            table_data.append([pillar_cell, score_cell, status_cell])
+            table_data.append([obj_id_cell, pillar_cell, score_cell, details_cell])
         
-        # Create table with colored score cells
-        pillar_table = Table(table_data, colWidths=[3.5*inch, 0.9*inch, 2.5*inch])
+        # Create table with colored score cells - wider to match left margin (7.5" usable width)
+        # Adjusted widths: ID (0.7"), Objective (1.5"), Score (0.7"), Details (4.6")
+        pillar_table = Table(table_data, colWidths=[0.7*inch, 1.5*inch, 0.7*inch, 4.6*inch])
         
         table_style_cmds = [
             ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
@@ -1206,15 +1213,15 @@ def build_overall_board_pdf(
             ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ]
         
-        # Add colored backgrounds for score column
+        # Add colored backgrounds for score column (now column 2)
         for i in range(1, len(table_data)):
             pillar_sum = pillar_summaries[i - 1]
             score_hint_raw = _to_plain_text(pillar_sum.get("score_hint", "")).strip()
             score_value = _parse_score_hint(score_hint_raw)
             score_colour = _score_to_colour(score_value)
-            table_style_cmds.append(("BACKGROUND", (1, i), (1, i), score_colour))
+            table_style_cmds.append(("BACKGROUND", (2, i), (2, i), score_colour))
             if score_value is not None and score_value >= 1.5:
-                table_style_cmds.append(("TEXTCOLOR", (1, i), (1, i), colors.white))
+                table_style_cmds.append(("TEXTCOLOR", (2, i), (2, i), colors.white))
         
         pillar_table.setStyle(TableStyle(table_style_cmds))
         story.append(pillar_table)
