@@ -837,17 +837,19 @@ def build_scorecard_pdf(
             pname = _strip_objective_codes(pname_raw)
             story.append(Paragraph(xml_escape(pname), styles["SubHeading"]))
 
-            pillars = prod.get("pillars") or []
+            # Handle both old "pillars" and new "objectives" structure
+            objectives = prod.get("objectives") or prod.get("pillars") or []
             summaries: list[str] = []
-            for ps in pillars:
-                if not isinstance(ps, dict):
+            for obj in objectives:
+                if not isinstance(obj, dict):
                     continue
-                summary_text_raw = _to_plain_text(ps.get("summary", "")).strip()
+                summary_text_raw = _to_plain_text(obj.get("summary", "")).strip()
                 summary_text = _strip_objective_codes(summary_text_raw)
                 if summary_text:
                     summaries.append(summary_text)
 
-            combined = " ".join(summaries).strip()
+            # Join with paragraph breaks to preserve structure, then split properly
+            combined = "\n\n".join(summaries).strip()
             if combined:
                 combined_paras = _split_paragraphs(combined)
                 for p in combined_paras:
