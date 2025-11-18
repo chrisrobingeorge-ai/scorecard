@@ -13,6 +13,7 @@ import pandas as pd
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.section import WD_ORIENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
@@ -190,15 +191,24 @@ def _set_cell_background(cell, color: RGBColor):
 # ─────────────────────────────────────────────────────────────────────────────
 def _responses_table(doc: Document, questions: pd.DataFrame, responses: Dict[str, Any]):
     """
-    Build a 2-column table of metric vs response with wrapped text.
+    Build a 3-column table of context / question / response with wrapped text.
+    Uses landscape orientation for better fit.
     """
-    table = doc.add_table(rows=1, cols=2)
+    # Change section to landscape orientation for the responses table
+    section = doc.sections[-1]
+    new_width, new_height = section.page_height, section.page_width
+    section.orientation = WD_ORIENT.LANDSCAPE
+    section.page_width = new_width
+    section.page_height = new_height
+    
+    table = doc.add_table(rows=1, cols=3)
     table.style = 'Light Grid Accent 1'
     
     # Header row
     header_cells = table.rows[0].cells
     header_cells[0].text = "Pillar / Production / Metric"
-    header_cells[1].text = "Response"
+    header_cells[1].text = "Question"
+    header_cells[2].text = "Response"
     
     # Make header bold
     for cell in header_cells:
@@ -214,6 +224,10 @@ def _responses_table(doc: Document, questions: pd.DataFrame, responses: Dict[str
 
         prod_label = row.get("production_title", "") or row.get("production", "")
         label = f"{row.get('strategic_pillar', '')} / {prod_label} / {row.get('metric', '')}"
+        
+        # Get the question text
+        question_text = row.get("question_text", "") or row.get("metric", "") or ""
+        
         raw_val = responses.get(qid_str, responses.get(qid, ""))
 
         if isinstance(raw_val, dict):
@@ -228,7 +242,8 @@ def _responses_table(doc: Document, questions: pd.DataFrame, responses: Dict[str
 
         row_cells = table.add_row().cells
         row_cells[0].text = label
-        row_cells[1].text = value_str
+        row_cells[1].text = question_text
+        row_cells[2].text = value_str
         
         # Format cells
         for cell in row_cells:
@@ -524,10 +539,8 @@ def build_scorecard_docx(
     doc.add_heading('Raw Scorecard Responses', level=2)
     _responses_table(doc, questions, responses)
 
-    # ─────────────────────────────────────────────────────────────────────
-    # Appendix A — Strategic Objectives Index
-    # ─────────────────────────────────────────────────────────────────────
-    build_strategic_index_appendix(doc)
+    # Note: Strategic Objectives Index is only included in the overall summary,
+    # not in individual department scorecards
 
     # Save to BytesIO
     buffer = BytesIO()

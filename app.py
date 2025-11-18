@@ -1448,173 +1448,193 @@ def main():
     raw_overall = ai_result.get("overall_summary", "")
     default_overall = _normalise_overall(raw_overall)
 
-    st.markdown("### Executive Summary")
-
-    edited_overall = st.text_area(
-        "Executive summary (this version will appear in the PDF):",
-        value=default_overall,
-        height=260,
-        key="overall_summary_editor",
-    )
-    ai_result["overall_summary"] = edited_overall
-
-    # ── Objective summaries (editable) ──────────────────────────────
-    # Support both new objective_summaries and legacy pillar_summaries
-    objective_summaries = ai_result.get("objective_summaries", []) or ai_result.get("pillar_summaries", []) or []
-    st.markdown("### Strategic Summary by Objective")
-
-    if objective_summaries:
-        for i, obj_sum in enumerate(objective_summaries):
-            # Handle both old pillar structure and new objective structure
-            obj_id = obj_sum.get("objective_id", "") or ""
-            obj_title = obj_sum.get("objective_title", "") or obj_sum.get("strategic_pillar", "") or "Objective"
-            score_hint_val = str(obj_sum.get("score_hint", "") or "")
-            summary_val = str(obj_sum.get("summary", "") or "")
-
-            # Display with objective ID if available, otherwise use title
-            display_label = f"{obj_id}: {obj_title}" if obj_id else obj_title
-            st.markdown(f"#### Objective {i+1}: {display_label}")
-
-            new_obj_id = st.text_input(
-                f"Objective ID (Objective {i+1})",
-                value=obj_id,
-                key=f"objective_id_{i}",
-            ) if obj_id else ""
-            new_obj_title = st.text_input(
-                f"Objective title (Objective {i+1})",
-                value=obj_title,
-                key=f"objective_title_{i}",
-            )
-            new_score_hint = st.text_input(
-                f"Score hint (Objective {i+1})",
-                value=score_hint_val,
-                key=f"objective_score_{i}",
-            )
-            new_summary = st.text_area(
-                f"Objective narrative (Objective {i+1})",
-                value=summary_val,
-                height=140,
-                key=f"objective_summary_{i}",
-            )
-
-            # write back into ai_result with new structure, maintaining backward compatibility
-            if obj_id:
-                obj_sum["objective_id"] = new_obj_id
-            obj_sum["objective_title"] = new_obj_title
-            obj_sum["score_hint"] = new_score_hint
-            obj_sum["summary"] = new_summary
-            
-            # Maintain backward compatibility
-            if "strategic_pillar" in obj_sum:
-                obj_sum["strategic_pillar"] = new_obj_title
-
-    # ── By Production / Programme (editable text) ─────────────────
-    prod_summaries = ai_result.get("production_summaries", []) or []
-    if prod_summaries:
-        st.markdown("### By Production / Programme")
-
-        for pi, prod in enumerate(prod_summaries):
-            if not isinstance(prod, dict):
-                continue
-
-            pname = prod.get("production") or "General"
-            st.markdown(f"#### Production {pi+1}: {pname}")
-
-            # allow renaming the production label if desired
-            new_pname = st.text_input(
-                f"Production name (Production {pi+1})",
-                value=pname,
-                key=f"prod_name_{pi}",
-            )
-            prod["production"] = new_pname
-
-            # Handle both new "objectives" and legacy "pillars" structure
-            objectives = prod.get("objectives") or prod.get("pillars") or []
-            for pj, obj in enumerate(objectives):
-                # Handle both old pillar structure and new objective structure
-                obj_id = obj.get("objective_id", "") or ""
-                obj_title = obj.get("objective_title", "") or obj.get("pillar", "") or "Objective"
-                score_hint = str(obj.get("score_hint", "") or "")
-                summary = str(obj.get("summary", "") or "")
-
-                display_label = f"{obj_id}: {obj_title}" if obj_id else obj_title
-                st.markdown(f"- **Objective {pj+1}: {display_label}**")
-
-                new_obj_id = st.text_input(
-                    f"  Objective ID (Prod {pi+1}, Obj {pj+1})",
-                    value=obj_id,
-                    key=f"prod_{pi}_obj_id_{pj}",
-                ) if obj_id else ""
-                new_obj_title = st.text_input(
-                    f"  Objective title (Prod {pi+1}, Obj {pj+1})",
-                    value=obj_title,
-                    key=f"prod_{pi}_obj_title_{pj}",
-                )
-                new_obj_score = st.text_input(
-                    f"  Score hint (Prod {pi+1}, Obj {pj+1})",
-                    value=score_hint,
-                    key=f"prod_{pi}_obj_score_{pj}",
-                )
-                new_obj_summary = st.text_area(
-                    f"  Narrative (Prod {pi+1}, Obj {pj+1})",
-                    value=summary,
-                    height=120,
-                    key=f"prod_{pi}_obj_summary_{pj}",
-                )
-
-                # Write back with new structure, maintaining backward compatibility
-                if obj_id:
-                    obj["objective_id"] = new_obj_id
-                obj["objective_title"] = new_obj_title
-                obj["score_hint"] = new_obj_score
-                obj["summary"] = new_obj_summary
+    # ── Consolidated AI Summary Editor ──────────────────────────────
+    # Build a single consolidated text view of all AI content for easier editing
+    def _build_consolidated_summary():
+        """Build a single text representation of the entire AI summary."""
+        parts = []
+        
+        # Executive Summary
+        parts.append("=== EXECUTIVE SUMMARY ===")
+        parts.append(default_overall)
+        parts.append("")
+        
+        # Objective summaries
+        objective_summaries = ai_result.get("objective_summaries", []) or ai_result.get("pillar_summaries", []) or []
+        if objective_summaries:
+            parts.append("=== STRATEGIC OBJECTIVES ===")
+            for obj_sum in objective_summaries:
+                obj_id = obj_sum.get("objective_id", "") or ""
+                obj_title = obj_sum.get("objective_title", "") or obj_sum.get("strategic_pillar", "") or "Objective"
+                score_hint = str(obj_sum.get("score_hint", "") or "")
+                summary = str(obj_sum.get("summary", "") or "")
                 
-                # Maintain backward compatibility
-                if "pillar" in obj:
-                    obj["pillar"] = new_obj_title
-
-    # ── Risks (editable) ─────────────────────────────────────────
-    risks_raw = ai_result.get("risks", []) or []
-    risks_default = _normalise_list(risks_raw)
-
-    st.markdown("### Key Risks / Concerns")
-    risks_edited = st.text_area(
-        "One risk per line:",
-        value=risks_default,
-        height=140,
-        key="risks_editor",
+                parts.append(f"--- {obj_id}: {obj_title} ({score_hint}) ---" if obj_id else f"--- {obj_title} ({score_hint}) ---")
+                parts.append(summary)
+                parts.append("")
+        
+        # Production summaries
+        prod_summaries = ai_result.get("production_summaries", []) or []
+        if prod_summaries:
+            parts.append("=== BY PRODUCTION / PROGRAMME ===")
+            for prod in prod_summaries:
+                if not isinstance(prod, dict):
+                    continue
+                pname = prod.get("production") or "General"
+                parts.append(f"--- {pname} ---")
+                
+                objectives = prod.get("objectives") or prod.get("pillars") or []
+                prod_summaries_text = []
+                for obj in objectives:
+                    summary = str(obj.get("summary", "") or "")
+                    if summary:
+                        prod_summaries_text.append(summary)
+                
+                parts.append("\n\n".join(prod_summaries_text))
+                parts.append("")
+        
+        # Risks
+        parts.append("=== KEY RISKS / CONCERNS ===")
+        risks_raw = ai_result.get("risks", []) or []
+        risks_default = _normalise_list(risks_raw)
+        parts.append(risks_default)
+        parts.append("")
+        
+        # Priorities
+        parts.append("=== PRIORITIES FOR NEXT PERIOD ===")
+        priorities_raw = ai_result.get("priorities_next_month", []) or []
+        priorities_default = _normalise_list(priorities_raw)
+        parts.append(priorities_default)
+        parts.append("")
+        
+        # Notes for leadership
+        parts.append("=== NOTES FOR LEADERSHIP ===")
+        nfl_raw = ai_result.get("notes_for_leadership", "") or ""
+        parts.append(str(nfl_raw))
+        
+        return "\n".join(parts)
+    
+    def _parse_consolidated_summary(text):
+        """
+        Parse the consolidated text back into the ai_result structure.
+        This is a simplified parser that focuses on the main content sections.
+        """
+        import re
+        
+        # Split into major sections using the === markers
+        sections = {}
+        current_section = None
+        current_content = []
+        
+        for line in text.split('\n'):
+            # Check for main section headers
+            if line.strip().startswith('=== ') and line.strip().endswith(' ==='):
+                if current_section:
+                    sections[current_section] = '\n'.join(current_content).strip()
+                current_section = line.strip()[4:-4].strip()
+                current_content = []
+            else:
+                current_content.append(line)
+        
+        # Don't forget the last section
+        if current_section:
+            sections[current_section] = '\n'.join(current_content).strip()
+        
+        # Parse Executive Summary - straightforward text replacement
+        if 'EXECUTIVE SUMMARY' in sections:
+            ai_result["overall_summary"] = sections['EXECUTIVE SUMMARY']
+        
+        # Parse Strategic Objectives - update summaries while preserving structure
+        if 'STRATEGIC OBJECTIVES' in sections:
+            obj_text = sections['STRATEGIC OBJECTIVES']
+            # Split by the --- markers for each objective
+            obj_blocks = []
+            current_obj = []
+            for line in obj_text.split('\n'):
+                if line.strip().startswith('---') and line.strip().endswith('---'):
+                    if current_obj:
+                        obj_blocks.append('\n'.join(current_obj).strip())
+                    current_obj = [line]
+                else:
+                    current_obj.append(line)
+            if current_obj:
+                obj_blocks.append('\n'.join(current_obj).strip())
+            
+            objective_summaries = ai_result.get("objective_summaries", []) or ai_result.get("pillar_summaries", []) or []
+            
+            for i, block in enumerate(obj_blocks):
+                if not block.strip() or i >= len(objective_summaries):
+                    continue
+                
+                # Split header from content
+                lines = block.split('\n', 1)
+                if len(lines) < 2:
+                    continue
+                    
+                header = lines[0].strip()
+                summary_text = lines[1].strip() if len(lines) > 1 else ""
+                
+                # Just update the summary text, preserving other metadata
+                objective_summaries[i]["summary"] = summary_text
+        
+        # Parse Production Summaries - update while preserving structure
+        if 'BY PRODUCTION / PROGRAMME' in sections:
+            prod_text = sections['BY PRODUCTION / PROGRAMME']
+            # Split by --- markers
+            prod_blocks = []
+            current_prod = []
+            for line in prod_text.split('\n'):
+                if line.strip().startswith('---') and line.strip().endswith('---'):
+                    if current_prod:
+                        prod_blocks.append('\n'.join(current_prod).strip())
+                    current_prod = [line]
+                else:
+                    current_prod.append(line)
+            if current_prod:
+                prod_blocks.append('\n'.join(current_prod).strip())
+            
+            prod_summaries = ai_result.get("production_summaries", []) or []
+            
+            for i, block in enumerate(prod_blocks):
+                if not block.strip() or i >= len(prod_summaries):
+                    continue
+                    
+                lines = block.split('\n', 1)
+                summary_text = lines[1].strip() if len(lines) > 1 else ""
+                
+                # Update the combined summary in the first objective
+                objectives = prod_summaries[i].get("objectives") or prod_summaries[i].get("pillars") or []
+                if objectives and len(objectives) > 0:
+                    objectives[0]["summary"] = summary_text
+        
+        # Parse Risks - simple line-by-line
+        if 'KEY RISKS / CONCERNS' in sections:
+            risks_text = sections['KEY RISKS / CONCERNS']
+            ai_result["risks"] = [line.strip() for line in risks_text.splitlines() if line.strip()]
+        
+        # Parse Priorities - simple line-by-line
+        if 'PRIORITIES FOR NEXT PERIOD' in sections:
+            priorities_text = sections['PRIORITIES FOR NEXT PERIOD']
+            ai_result["priorities_next_month"] = [line.strip() for line in priorities_text.splitlines() if line.strip()]
+        
+        # Parse Notes for Leadership - straightforward text replacement
+        if 'NOTES FOR LEADERSHIP' in sections:
+            ai_result["notes_for_leadership"] = sections['NOTES FOR LEADERSHIP']
+    
+    st.markdown("### AI Summary - Consolidated Editor")
+    st.markdown("Edit the entire AI summary in one place. The content will be automatically parsed into the appropriate sections for the PDF/DOCX.")
+    
+    consolidated_text = _build_consolidated_summary()
+    
+    edited_consolidated = st.text_area(
+        "Complete AI Summary (edit as needed):",
+        value=consolidated_text,
+        height=800,
+        key="consolidated_summary_editor",
     )
-    ai_result["risks"] = [
-        line.strip() for line in risks_edited.splitlines() if line.strip()
-    ]
-
-    # ── Priorities (editable) ────────────────────────────────────
-    priorities_raw = ai_result.get("priorities_next_month", []) or []
-    priorities_default = _normalise_list(priorities_raw)
-
-    st.markdown("### Priorities for Next Period")
-    priorities_edited = st.text_area(
-        "One priority per line:",
-        value=priorities_default,
-        height=140,
-        key="priorities_editor",
-    )
-    ai_result["priorities_next_month"] = [
-        line.strip() for line in priorities_edited.splitlines() if line.strip()
-    ]
-
-    # ── Notes for Leadership (editable) ─────────────────────────
-    nfl_raw = ai_result.get("notes_for_leadership", "") or ""
-    nfl_default = str(nfl_raw)
-
-    st.markdown("### Notes for Leadership")
-    nfl_edited = st.text_area(
-        "Notes for Leadership:",
-        value=nfl_default,
-        height=160,
-        key="notes_for_leadership_editor",
-    )
-    ai_result["notes_for_leadership"] = nfl_edited
+    
+    # Parse the edited text back into the ai_result structure
+    _parse_consolidated_summary(edited_consolidated)
 
     # Ensure the updated AI result is cached back into session_state
     st.session_state["ai_result"] = ai_result
