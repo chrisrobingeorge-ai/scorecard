@@ -865,6 +865,7 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
            
            {
              "strategic_pillar": "<pillar name>",
+             "score_hint": "<n>/3 label (e.g., '2.5/3 Strong progress', '2/3 Steady development', '1/3 Early stage')",
              "summary": "<substantial paragraph, 8-12 sentences with specific details>"
            }
            
@@ -885,6 +886,12 @@ def _build_overall_prompt_for_board(dept_summaries: List[Dict[str, Any]]) -> str
            - Include concrete examples, metrics, or activities from the department summaries that
              illustrate this pillar's performance.
            - Ensure comprehensive coverage: don't lose important departmental information in the synthesis.
+           
+           Use the 0–3 scoring scale with an organisation-wide perspective:
+           - 3/3: Strong progress across multiple departments toward this strategic pillar
+           - 2/3: Steady development with good momentum (this is positive for a 5-year plan)
+           - 1/3: Early stages or foundation-building across the organisation
+           - 0/3: Little to no activity (rare; only if departments clearly show inactivity)
 
         3) "risks" (array of strings):
            Identify 5–10 strategic considerations, constraints, or areas to monitor over time.
