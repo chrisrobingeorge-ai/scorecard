@@ -182,7 +182,10 @@ def _score_display(score: float | None) -> str:
 def _set_cell_background(cell, color: RGBColor):
     """Set background color for a table cell."""
     shading_elm = OxmlElement('w:shd')
-    shading_elm.set(qn('w:fill'), f"{color.rgb:06X}")
+    # RGBColor is a namedtuple with (r, g, b) components, convert to hex
+    r, g, b = color
+    hex_color = f"{r:02X}{g:02X}{b:02X}"
+    shading_elm.set(qn('w:fill'), hex_color)
     cell._tc.get_or_add_tcPr().append(shading_elm)
 
 
@@ -415,13 +418,13 @@ def build_scorecard_docx(
         doc.add_paragraph()  # spacing
 
     # ─────────────────────────────────────────────────────────────────────
-    # Strategic Objectives Score Table
+    # Strategic Objectives Score Table (with integrated details)
     # ─────────────────────────────────────────────────────────────────────
     if objective_summaries:
         doc.add_heading('Strategic Objectives — Summary', level=2)
         
-        # Create table
-        table = doc.add_table(rows=1, cols=4)
+        # Create table with 5 columns including Details
+        table = doc.add_table(rows=1, cols=5)
         table.style = 'Light Grid Accent 1'
         
         # Header row
@@ -430,6 +433,7 @@ def build_scorecard_docx(
         header_cells[1].text = "Objective"
         header_cells[2].text = "Score"
         header_cells[3].text = "Status"
+        header_cells[4].text = "Details"
         
         # Make header bold
         for cell in header_cells:
@@ -461,12 +465,19 @@ def build_scorecard_docx(
                     else:
                         status_label = score_hint_raw
             
+            # Get the summary text for the Details column
+            summary_text_raw = _to_plain_text(obj_sum.get("summary", "")).strip()
+            summary_text = _strip_objective_codes(summary_text_raw)
+            if not summary_text:
+                summary_text = "No narrative summary provided for this objective."
+            
             # Add row
             row_cells = table.add_row().cells
             row_cells[0].text = obj_id or "—"
             row_cells[1].text = _strip_objective_codes(obj_title)
             row_cells[2].text = f"{score_str} / 3"
             row_cells[3].text = status_label
+            row_cells[4].text = summary_text
             
             # Format score cell with color
             score_cell = row_cells[2]
@@ -483,62 +494,11 @@ def build_scorecard_docx(
                 if i != 2:  # not score cell
                     for paragraph in cell.paragraphs:
                         for run in paragraph.runs:
-                            run.font.size = Pt(10)
+                            run.font.size = Pt(9 if i == 4 else 10)  # smaller font for details
         
         doc.add_paragraph()  # spacing
 
-    # ─────────────────────────────────────────────────────────────────────
-    # Strategic objectives – narrative
-    # ─────────────────────────────────────────────────────────────────────
-    if objective_summaries:
-        # For School, make the section heading explicitly about the three streams
-        dept_lower = str(department).lower()
-        if "school" in dept_lower:
-            section_label = (
-                "School Streams "
-                "(Classical Training / Attracting Students / Student Accessibility)"
-            )
-        else:
-            section_label = "Strategic Objectives"
-
-        doc.add_heading(section_label, level=2)
-
-        for obj_sum in objective_summaries:
-            # Handle both old pillar structure and new objective structure
-            obj_id = obj_sum.get("objective_id", "")
-            obj_title = obj_sum.get("objective_title", "") or obj_sum.get("strategic_pillar", "") or "Objective"
-            
-            # Create display name with ID if available
-            if obj_id:
-                objective_name_raw = f"{obj_id}: {obj_title}"
-            else:
-                objective_name_raw = obj_title
-            objective_name = _strip_objective_codes(_to_plain_text(objective_name_raw).strip())
-
-            score_hint_raw = _to_plain_text(obj_sum.get("score_hint", "")).strip()
-            score_hint_clean = _strip_objective_codes(score_hint_raw)
-
-            summary_text_raw = _to_plain_text(obj_sum.get("summary", "")).strip()
-            summary_text = _strip_objective_codes(summary_text_raw)
-
-            score_value = _parse_score_hint(score_hint_raw)
-            score_str = _score_display(score_value)
-            if score_str != "N/A":
-                heading_text = f"{objective_name} — {score_str} / 3"
-            else:
-                heading_text = objective_name
-
-            if score_hint_clean:
-                heading_text = f"{heading_text} ({score_hint_clean})"
-
-            doc.add_heading(heading_text, level=3)
-            if summary_text:
-                for p in _split_paragraphs(summary_text):
-                    doc.add_paragraph(p)
-            else:
-                doc.add_paragraph("No narrative summary provided for this objective.")
-
-        doc.add_paragraph()  # spacing
+    # Strategic objectives narrative is now integrated into the table above
 
     # ─────────────────────────────────────────────────────────────────────
     # By Production / Programme
