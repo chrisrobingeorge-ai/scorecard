@@ -263,7 +263,8 @@ def _score_display(score: float | None) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles) -> Table:
     """
-    Build a 2-column table of metric vs response with wrapped text.
+    Build a 3-column table of context / question / response with wrapped text.
+    Returns a table suitable for landscape orientation.
     """
     body_style = ParagraphStyle(
         name="TableBody",
@@ -276,6 +277,7 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles)
     data: list[list[Any]] = [
         [
             Paragraph("Pillar / Production / Metric", body_style),
+            Paragraph("Question", body_style),
             Paragraph("Response", body_style),
         ]
     ]
@@ -286,6 +288,10 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles)
 
         prod_label = row.get("production_title", "") or row.get("production", "")
         label = f"{row.get('strategic_pillar', '')} / {prod_label} / {row.get('metric', '')}"
+        
+        # Get the question text
+        question_text = row.get("question_text", "") or row.get("metric", "") or ""
+        
         raw_val = responses.get(qid_str, responses.get(qid, ""))
 
         if isinstance(raw_val, dict):
@@ -299,8 +305,9 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles)
             value_str = str(raw_val)
 
         label_p = Paragraph(xml_escape(label), body_style)
+        question_p = Paragraph(xml_escape(question_text), body_style)
         value_p = Paragraph(xml_escape(value_str), body_style)
-        data.append([label_p, value_p])
+        data.append([label_p, question_p, value_p])
 
     style_cmds = [
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
@@ -317,9 +324,10 @@ def _responses_table(questions: pd.DataFrame, responses: Dict[str, Any], styles)
         if i % 2 == 1:
             style_cmds.append(("BACKGROUND", (0, i), (-1, i), colors.whitesmoke))
 
+    # Use landscape-friendly column widths (10" width available in landscape)
     table = Table(
         data,
-        colWidths=[3.5 * inch, 3.5 * inch],
+        colWidths=[2.2 * inch, 3.3 * inch, 3.8 * inch],
         repeatRows=1,
         hAlign="LEFT",
     )
