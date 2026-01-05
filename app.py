@@ -312,11 +312,14 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
     display_cols = ["area", "category", "sub_category", "target", "actual"]
     display_df = working[display_cols].copy()
 
+    # Use unique key per area to avoid duplicate key errors when rendering multiple KPI sections
+    editor_key = f"financial_kpi_editor_{selected_area}" if selected_area else "financial_kpi_editor"
+    
     edited = st.data_editor(
         display_df,
         num_rows="fixed",
         use_container_width=True,
-        key="financial_kpi_editor",
+        key=editor_key,
         disabled=["area", "category", "sub_category", "target"],  # only 'actual' is editable
     )
 
