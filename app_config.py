@@ -137,13 +137,4 @@ DEPARTMENT_CONFIGS = {
         scope_label="Programme",
         allow_general_option=False,
     ),
-        "KPIs": DepartmentConfig(
-        # This won't actually be used once we special-case it in app.py,
-        # but we need *something* here so the normaliser is happy.
-        questions_csv="data/corporate_scorecard_questions.csv",
-        has_productions=False,
-        productions_csv=None,
-        scope_label="Area",
-        allow_general_option=True,
-    ),
 }

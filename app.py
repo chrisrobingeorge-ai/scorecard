@@ -1053,41 +1053,6 @@ def main():
     )
     dept_cfg = DEPARTMENT_CONFIGS[dept_label]
 
-    # 🔹 Special case: KPIs department uses KPI "areas" as its scope
-    if dept_label == "KPIs":
-        if FINANCIAL_KPI_TARGETS_DF.empty:
-            st.info("No financial KPI targets found. Check financial_kpi_targets.csv in the data folder.")
-            return
-
-        st.subheader("Scope of this report")
-
-        kpi_areas = sorted(
-            FINANCIAL_KPI_TARGETS_DF["area"]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-        # Remember last selection for convenience
-        default_area = st.session_state.get("kpi_area") or (kpi_areas[0] if kpi_areas else "")
-        selected_area = st.selectbox(
-            "Financial KPI area",
-            kpi_areas,
-            index=kpi_areas.index(default_area) if default_area in kpi_areas else 0,
-            key="kpi_area",
-        )
-
-        # Render the editor just for that area
-        render_financial_kpis(selected_area=selected_area, show_heading=True)
-
-        st.info(
-            "These KPIs are saved for this reporting period and can be used in "
-            "your consolidated AI/PDF summaries."
-        )
-        return
-
-
     # Reset production when dept changes, but DO NOT clobber a draft-applied selection
     if "last_dept_label" not in st.session_state or st.session_state["last_dept_label"] != dept_label:
         if not st.session_state.get("draft_applied", False):
@@ -1221,10 +1186,19 @@ def main():
             description=entry.get("description"),
         )
 
-    # 🔹 Financial KPIs only for Corporate
+    # 🔹 Financial KPIs for Corporate, School, and Community
     if dept_label == "Corporate":
         st.markdown("---")
-        render_financial_kpis()
+        render_financial_kpis(selected_area="DONATIONS", show_heading=True)
+        render_financial_kpis(selected_area="TICKET SALES", show_heading=True)
+        render_financial_kpis(selected_area="GRANTS", show_heading=True)
+        render_financial_kpis(selected_area="SPONSORSHIPS", show_heading=True)
+    elif dept_label == "School":
+        st.markdown("---")
+        render_financial_kpis(selected_area="SCHOOL", show_heading=True)
+    elif dept_label == "Community":
+        st.markdown("---")
+        render_financial_kpis(selected_area="COMMUNITY", show_heading=True)
 
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
