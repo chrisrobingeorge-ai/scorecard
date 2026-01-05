@@ -1186,7 +1186,7 @@ def main():
             description=entry.get("description"),
         )
 
-    # 🔹 Financial KPIs for Corporate, School, and Community
+    # 🔹 Financial KPIs for Corporate, School, Community, and Artistic
     if dept_label == "Corporate":
         st.markdown("---")
         render_financial_kpis(selected_area="DONATIONS", show_heading=True)
@@ -1199,6 +1199,9 @@ def main():
     elif dept_label == "Community":
         st.markdown("---")
         render_financial_kpis(selected_area="COMMUNITY", show_heading=True)
+    elif dept_label == "Artistic":
+        st.markdown("---")
+        render_financial_kpis(selected_area="TICKET SALES", show_heading=True)
 
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
