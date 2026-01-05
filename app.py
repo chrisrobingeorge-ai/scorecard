@@ -1193,7 +1193,6 @@ def main():
     if dept_label == "Corporate":
         st.markdown("---")
         render_financial_kpis(selected_area="DONATIONS", show_heading=True)
-        render_financial_kpis(selected_area="TICKET SALES", show_heading=True)
         render_financial_kpis(selected_area="GRANTS", show_heading=True)
         render_financial_kpis(selected_area="SPONSORSHIPS", show_heading=True)
     elif dept_label == "School":
