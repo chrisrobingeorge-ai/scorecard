@@ -202,6 +202,7 @@ def _build_prompt_objective_aware(
     meta: Dict[str, Any],
     questions_df: pd.DataFrame,
     responses: Dict[str, Dict[str, Any]],
+    kpi_data: pd.DataFrame | None = None,
 ) -> str:
     """
     Build a strategy-aware prompt by joining:
@@ -537,12 +538,51 @@ def _build_prompt_objective_aware(
         """
     ).strip()
 
+    # ── 5) Append KPI data if provided ────────────────────────────────
+    if kpi_data is not None and not kpi_data.empty:
+        kpi_lines = ["\n\n=== FINANCIAL KPIs ==="]
+        kpi_lines.append("The following financial targets and actuals are relevant to this department:")
+        kpi_lines.append("")
+        
+        for _, row in kpi_data.iterrows():
+            area = str(row.get("area", "") or "")
+            category = str(row.get("category", "") or "")
+            sub_category = str(row.get("sub_category", "") or "")
+            target = row.get("target", 0)
+            actual = row.get("actual", 0)
+            
+            # Format numbers
+            try:
+                target_val = float(target) if target else 0.0
+                actual_val = float(actual) if actual else 0.0
+                variance = target_val - actual_val
+                pct = (actual_val / target_val * 100) if target_val != 0 else 0
+                
+                kpi_lines.append(
+                    f"- {area} / {category} / {sub_category}: "
+                    f"Target=${target_val:,.0f}, Actual=${actual_val:,.0f}, "
+                    f"Variance=${variance:,.0f} ({pct:.1f}% to target)"
+                )
+            except (ValueError, TypeError):
+                # Skip malformed data
+                continue
+        
+        kpi_lines.append("")
+        kpi_lines.append(
+            "IMPORTANT: Integrate these financial KPIs into your analysis. "
+            "Reference specific KPI performance in your objective summaries and notes for leadership. "
+            "Financial performance is a key indicator of strategic progress."
+        )
+        
+        prompt += "\n" + "\n".join(kpi_lines)
+
     return prompt
 
 def interpret_scorecard(
     meta: Dict[str, Any],
     questions_df: pd.DataFrame,
     responses: Dict[str, Dict[str, Any]],
+    kpi_data: pd.DataFrame | None = None,
 ) -> Dict[str, Any]:
     """
     Call OpenAI to produce a structured interpretation of the scorecard.
@@ -550,10 +590,12 @@ def interpret_scorecard(
 
     For the Artistic department, we switch to an Artistic Director voice.
     For all other departments, we keep the neutral strategy-analyst voice.
+    
+    kpi_data: Optional DataFrame with financial KPI targets and actuals for this department.
     """
 
     # Build a strategy-aware prompt that joins questions + answers + objectives
-    prompt = _build_prompt_objective_aware(meta, questions_df, responses)
+    prompt = _build_prompt_objective_aware(meta, questions_df, responses, kpi_data)
 
     # Choose system voice based on department
     dept_name = str(meta.get("department") or "").lower()

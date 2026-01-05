@@ -34,7 +34,7 @@ except Exception:
 try:
     from ai_utils import interpret_scorecard
 except Exception:
-    def interpret_scorecard(meta, filtered_df, responses):
+    def interpret_scorecard(meta, filtered_df, responses, kpi_data=None):
         # Safe stub if ai_utils not available
         return {
             "overall_summary": "AI module not configured.",
@@ -1374,6 +1374,16 @@ def main():
     if "ai_result" not in st.session_state:
         st.session_state["ai_result"] = None
 
+    # Gather KPI data if available in session state
+    kpi_data_for_ai = st.session_state.get("financial_kpis")
+    if isinstance(kpi_data_for_ai, pd.DataFrame) and not kpi_data_for_ai.empty:
+        # Filter to only rows with actual values (non-zero)
+        kpi_data_for_ai = kpi_data_for_ai[
+            pd.to_numeric(kpi_data_for_ai.get("actual", 0), errors="coerce").fillna(0) != 0
+        ].copy()
+    else:
+        kpi_data_for_ai = None
+
     # Run AI once (first time after Generate button); reuse cached result on reruns
     if st.session_state["ai_result"] is None:
         try:
@@ -1382,6 +1392,7 @@ def main():
                     meta_for_ai,
                     questions_for_ai,
                     responses_for_ai,
+                    kpi_data=kpi_data_for_ai,
                 )
         except RuntimeError as e:
             st.error(f"AI configuration error: {e}")
