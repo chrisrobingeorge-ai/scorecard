@@ -824,7 +824,6 @@ def _apply_pending_draft_if_any():
                 if "actual" in kpi_df.columns:
                     # Create a full KPI DataFrame by merging with targets
                     try:
-                        from app_config import FINANCIAL_KPI_TARGETS_DF
                         if not FINANCIAL_KPI_TARGETS_DF.empty:
                             master = FINANCIAL_KPI_TARGETS_DF.copy()
                             prev = kpi_df[["area", "category", "sub_category", "actual"]].copy()
@@ -834,20 +833,20 @@ def _apply_pending_draft_if_any():
                                 on=["area", "category", "sub_category"],
                                 how="left",
                             )
-                            if "actual" not in master.columns:
-                                master["actual"] = 0.0
-                            else:
-                                master["actual"] = master["actual"].fillna(0.0)
+                            # Fill NaN actuals with 0 (rows that didn't match in the merge)
+                            master["actual"] = master["actual"].fillna(0.0)
                             st.session_state["financial_kpis"] = master
-                    except Exception:
-                        pass  # If merge fails, just use financial_kpis_actuals as fallback
+                    except (KeyError, ValueError, TypeError):
+                        # If merge fails due to column/type issues, just use financial_kpis_actuals as fallback
+                        pass
                 
                 # Clear any cached data_editor states to prevent old values from overwriting loaded ones
                 for key in list(st.session_state.keys()):
                     if key.startswith("financial_kpi_editor_"):
                         del st.session_state[key]
-            except Exception:
-                pass  # If KPI data is malformed, skip it
+            except (ValueError, TypeError, KeyError):
+                # If KPI data is malformed, skip it silently - this is non-critical data
+                pass
         
         # 🔹 NEW: restore KPI explanations if present
         if "kpi_explanations" in data and data["kpi_explanations"]:
@@ -1043,12 +1042,12 @@ def build_draft_from_state(
             required_cols = ["area", "category", "sub_category", "actual"]
             optional_cols = ["report_section", "report_order"]
             
-            # Check which columns exist
-            available_cols = [c for c in required_cols + optional_cols if c in full_kpis.columns]
-            
             if all(c in full_kpis.columns for c in required_cols):
+                # Include required columns plus any optional columns that exist
+                available_cols = required_cols + [c for c in optional_cols if c in full_kpis.columns]
                 kpi_actuals = full_kpis[available_cols].copy()
-        except Exception:
+        except (KeyError, TypeError):
+            # If column extraction fails, fall back to financial_kpis_actuals
             kpi_actuals = None
     
     # Fallback to financial_kpis_actuals if full version not available
