@@ -1011,10 +1011,14 @@ def build_draft_from_state(
     # First, try financial_kpis (the full version with all calculated fields)
     full_kpis = st.session_state.get("financial_kpis")
     if isinstance(full_kpis, pd.DataFrame) and not full_kpis.empty:
-        kpi_actuals = full_kpis[["area", "category", "sub_category", "report_section", "report_order", "actual"]].copy()
+        try:
+            kpi_actuals = full_kpis[["area", "category", "sub_category", "report_section", "report_order", "actual"]].copy()
+        except KeyError:
+            # If columns don't exist, try without report_section/report_order
+            kpi_actuals = None
     
     # Fallback to financial_kpis_actuals if full version not available
-    if kpi_actuals is None or kpi_actuals.empty:
+    if kpi_actuals is None or (isinstance(kpi_actuals, pd.DataFrame) and kpi_actuals.empty):
         kpi_actuals = st.session_state.get("financial_kpis_actuals")
     
     # Save to draft if we have any KPI data
@@ -1027,9 +1031,12 @@ def build_draft_from_state(
     # 🔹 NEW: include KPI explanations if present
     dept = meta.get("department") or ""
     kpi_explanation_key = f"kpi_explanations_{dept}"
-    kpi_explanation = st.session_state.get(kpi_explanation_key)
-    if kpi_explanation and str(kpi_explanation).strip():
-        draft["kpi_explanations"] = str(kpi_explanation)
+    kpi_explanation = st.session_state.get(kpi_explanation_key, "")
+    # Save even if empty string, as long as it exists
+    if kpi_explanation is not None:
+        kpi_explanation_str = str(kpi_explanation).strip()
+        if kpi_explanation_str:
+            draft["kpi_explanations"] = kpi_explanation_str
 
 
     # ---------- ALL departments/prods -> "per_show_answers" ----------
@@ -1347,6 +1354,20 @@ def main():
         mime="application/json",
         help="Downloads a snapshot of your current answers (this and other productions). Re-upload later to continue.",
     )
+    
+    # Show what's being saved
+    saved_items = []
+    if "answers" in draft_dict and draft_dict["answers"]:
+        saved_items.append(f"{len(draft_dict['answers'])} answers")
+    if "financial_kpis_actuals" in draft_dict:
+        kpi_count = len(draft_dict["financial_kpis_actuals"])
+        non_zero = sum(1 for kpi in draft_dict["financial_kpis_actuals"] if kpi.get("actual") not in (0, 0.0, None))
+        saved_items.append(f"{kpi_count} KPIs ({non_zero} non-zero)")
+    if "kpi_explanations" in draft_dict:
+        saved_items.append("KPI explanations")
+    if saved_items:
+        st.sidebar.caption(f"📦 Draft includes: {', '.join(saved_items)}")
+    
     st.sidebar.download_button(
         "⬇️ Download answers CSV",
         data=get_answers_df().to_csv(index=False),
