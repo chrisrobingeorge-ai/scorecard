@@ -282,30 +282,31 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
     else:
         # Priority 2: Fall back to financial_kpis_actuals
         prev = st.session_state.get("financial_kpis_actuals")
+        if isinstance(prev, pd.DataFrame) and not prev.empty and "actual" in prev.columns:
+            prev = prev[["area", "category", "sub_category", "actual"]].copy()
+        else:
+            prev = None
     
-    if isinstance(prev, pd.DataFrame) and not prev.empty:
+    if prev is not None and isinstance(prev, pd.DataFrame) and not prev.empty:
         try:
-            # Ensure the 'actual' column exists in prev and is numeric
-            if "actual" not in prev.columns:
+            # Clean the prev data
+            prev["actual"] = pd.to_numeric(prev["actual"], errors="coerce").fillna(0.0)
+            
+            # Merge with master
+            master = master.merge(
+                prev,
+                on=["area", "category", "sub_category"],
+                how="left",
+                suffixes=("_target", ""),
+            )
+            # If merge created actual_target column, drop it
+            if "actual_target" in master.columns:
+                master.drop(columns=["actual_target"], inplace=True)
+            # Fill any remaining NaN actuals with 0
+            if "actual" not in master.columns:
                 master["actual"] = 0.0
             else:
-                prev_subset = prev[["area", "category", "sub_category", "actual"]].copy()
-                prev_subset["actual"] = pd.to_numeric(prev_subset["actual"], errors="coerce").fillna(0.0)
-                
-                master = master.merge(
-                    prev_subset,
-                    on=["area", "category", "sub_category"],
-                    how="left",
-                    suffixes=("_target", ""),
-                )
-                # If merge created actual_target column, drop it
-                if "actual_target" in master.columns:
-                    master.drop(columns=["actual_target"], inplace=True)
-                # Fill any remaining NaN actuals with 0
-                if "actual" not in master.columns:
-                    master["actual"] = 0.0
-                else:
-                    master["actual"] = master["actual"].fillna(0.0)
+                master["actual"] = master["actual"].fillna(0.0)
         except Exception as e:
             # If merge fails, start fresh with zeros
             master["actual"] = 0.0
