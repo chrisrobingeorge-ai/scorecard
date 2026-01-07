@@ -278,16 +278,27 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
     prev = st.session_state.get("financial_kpis_actuals")
     if isinstance(prev, pd.DataFrame) and not prev.empty:
         try:
-            master = master.merge(
-                prev[["area", "category", "sub_category", "actual"]],
-                on=["area", "category", "sub_category"],
-                how="left",
-                suffixes=("", "_prev"),
-            )
-            # prefer previous actual where present
-            master["actual"] = master["actual_prev"]
-            master.drop(columns=["actual_prev"], inplace=True)
-        except Exception:
+            # Ensure the 'actual' column exists in prev and is numeric
+            if "actual" not in prev.columns:
+                master["actual"] = 0.0
+            else:
+                prev_subset = prev[["area", "category", "sub_category", "actual"]].copy()
+                prev_subset["actual"] = pd.to_numeric(prev_subset["actual"], errors="coerce").fillna(0.0)
+                
+                master = master.merge(
+                    prev_subset,
+                    on=["area", "category", "sub_category"],
+                    how="left",
+                    suffixes=("", "_prev"),
+                )
+                # Prefer previous actual where present
+                if "actual_prev" in master.columns:
+                    master["actual"] = master["actual_prev"]
+                    master.drop(columns=["actual_prev"], inplace=True)
+                elif "actual" not in master.columns:
+                    master["actual"] = 0.0
+        except Exception as e:
+            # If merge fails, start fresh with zeros
             master["actual"] = 0.0
     else:
         master["actual"] = 0.0
@@ -326,6 +337,12 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
     # ── Write edited Actuals back into the full master table ──
     # Start from current master, then patch the rows for the selected area
     updated_master = master.copy()
+
+    # Debug: show what we're actually receiving from the editor
+    if selected_area:
+        non_zero_actuals = edited[edited["actual"] != 0]
+        if not non_zero_actuals.empty:
+            st.info(f"📊 {selected_area}: Found {len(non_zero_actuals)} non-zero KPI values")
 
     for _, row in edited.iterrows():
         mask = (
