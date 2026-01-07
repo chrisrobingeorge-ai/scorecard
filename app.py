@@ -813,11 +813,34 @@ def _apply_pending_draft_if_any():
             # Ensure the AI section + download buttons are active without re-clicking
             st.session_state["scorecard_submitted"] = True
 
-        # 🔹 NEW: restore financial KPI actuals if present
+        # 🔹 Restore financial KPI actuals if present
         if "financial_kpis_actuals" in data and data["financial_kpis_actuals"]:
             try:
                 kpi_df = pd.DataFrame(data["financial_kpis_actuals"])
                 st.session_state["financial_kpis_actuals"] = kpi_df
+                
+                # Also set financial_kpis to ensure render_financial_kpis picks up the values
+                # (it checks financial_kpis first before falling back to financial_kpis_actuals)
+                if "actual" in kpi_df.columns:
+                    # Create a full KPI DataFrame by merging with targets
+                    try:
+                        from app_config import FINANCIAL_KPI_TARGETS_DF
+                        if not FINANCIAL_KPI_TARGETS_DF.empty:
+                            master = FINANCIAL_KPI_TARGETS_DF.copy()
+                            prev = kpi_df[["area", "category", "sub_category", "actual"]].copy()
+                            prev["actual"] = pd.to_numeric(prev["actual"], errors="coerce").fillna(0.0)
+                            master = master.merge(
+                                prev,
+                                on=["area", "category", "sub_category"],
+                                how="left",
+                            )
+                            if "actual" not in master.columns:
+                                master["actual"] = 0.0
+                            else:
+                                master["actual"] = master["actual"].fillna(0.0)
+                            st.session_state["financial_kpis"] = master
+                    except Exception:
+                        pass  # If merge fails, just use financial_kpis_actuals as fallback
                 
                 # Clear any cached data_editor states to prevent old values from overwriting loaded ones
                 for key in list(st.session_state.keys()):
@@ -1008,7 +1031,7 @@ def build_draft_from_state(
     if ai_result:
         draft["ai_result"] = ai_result
 
-    # 🔹 NEW: include the financial KPI actuals so they can be reloaded later
+    # 🔹 Include the financial KPI actuals so they can be reloaded later
     # Try multiple sources to ensure we capture the data
     kpi_actuals = None
     
@@ -1016,9 +1039,16 @@ def build_draft_from_state(
     full_kpis = st.session_state.get("financial_kpis")
     if isinstance(full_kpis, pd.DataFrame) and not full_kpis.empty:
         try:
-            kpi_actuals = full_kpis[["area", "category", "sub_category", "report_section", "report_order", "actual"]].copy()
-        except KeyError:
-            # If columns don't exist, try without report_section/report_order
+            # Ensure we have all required columns
+            required_cols = ["area", "category", "sub_category", "actual"]
+            optional_cols = ["report_section", "report_order"]
+            
+            # Check which columns exist
+            available_cols = [c for c in required_cols + optional_cols if c in full_kpis.columns]
+            
+            if all(c in full_kpis.columns for c in required_cols):
+                kpi_actuals = full_kpis[available_cols].copy()
+        except Exception:
             kpi_actuals = None
     
     # Fallback to financial_kpis_actuals if full version not available
@@ -1030,6 +1060,9 @@ def build_draft_from_state(
         # Replace NaN with None (null in JSON) before converting to dict
         kpi_clean = kpi_actuals.copy()
         kpi_clean = kpi_clean.where(pd.notna(kpi_clean), None)
+        # Ensure actual column is numeric and handle edge cases
+        if "actual" in kpi_clean.columns:
+            kpi_clean["actual"] = pd.to_numeric(kpi_clean["actual"], errors="coerce").fillna(0.0)
         draft["financial_kpis_actuals"] = kpi_clean.to_dict(orient="records")
     
     # 🔹 NEW: include KPI explanations if present
