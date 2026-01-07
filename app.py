@@ -339,27 +339,12 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
             st.markdown("### Financial KPIs (Year-to-Date)")
 
     display_cols = ["area", "category", "sub_category", "target", "actual"]
-    
-    # Use unique key per area to avoid duplicate key errors when rendering multiple KPI sections
-    editor_key = f"financial_kpi_editor_{selected_area}" if selected_area else "financial_kpi_editor"
-    
-    # If this data_editor was already rendered and has pending edits, use those as the starting point
-    # This prevents losing edits during the rerun cycle
-    if editor_key in st.session_state:
-        # Check if it's a dataframe (from a previous edit)
-        cached_df = st.session_state[editor_key]
-        if isinstance(cached_df, pd.DataFrame) and not cached_df.empty:
-            # Merge the cached edits back into working for just this area
-            for idx, row in cached_df.iterrows():
-                mask = (
-                    (working["area"] == row["area"]) &
-                    (working["category"] == row["category"]) &
-                    (working["sub_category"] == row["sub_category"])
-                )
-                if mask.any() and "actual" in row:
-                    working.loc[mask, "actual"] = pd.to_numeric(row["actual"], errors="coerce")
-    
     display_df = working[display_cols].copy()
+    
+    # The st.data_editor widget manages its own state via the key parameter.
+    # Use unique key per area to avoid duplicate key errors when rendering multiple KPI sections.
+    # When loading from JSON, the draft loading logic (lines 822-825) clears these cached states.
+    editor_key = f"financial_kpi_editor_{selected_area}" if selected_area else "financial_kpi_editor"
     
     edited = st.data_editor(
         display_df,
