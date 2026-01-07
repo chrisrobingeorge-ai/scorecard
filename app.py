@@ -365,12 +365,6 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
     # Start from current master, then patch the rows for the selected area
     updated_master = master.copy()
 
-    # Debug: show what we're actually receiving from the editor
-    if selected_area:
-        non_zero_actuals = edited[edited["actual"] != 0]
-        if not non_zero_actuals.empty:
-            st.info(f"📊 {selected_area}: Found {len(non_zero_actuals)} non-zero KPI values")
-
     for _, row in edited.iterrows():
         mask = (
             (updated_master["area"] == row["area"]) &
@@ -1304,31 +1298,6 @@ def main():
         mime="application/json",
         help="Downloads a snapshot of your current answers (this and other productions). Re-upload later to continue.",
     )
-    
-    # Debug: Show what's in session state for KPIs
-    with st.sidebar.expander("🔍 Debug: KPI Session State"):
-        kpi_full = st.session_state.get("financial_kpis")
-        kpi_actuals = st.session_state.get("financial_kpis_actuals")
-        
-        st.write("**financial_kpis:**")
-        if isinstance(kpi_full, pd.DataFrame):
-            st.write(f"Shape: {kpi_full.shape}")
-            st.dataframe(kpi_full.head())
-        else:
-            st.write(f"Type: {type(kpi_full)}, Value: {kpi_full}")
-        
-        st.write("**financial_kpis_actuals:**")
-        if isinstance(kpi_actuals, pd.DataFrame):
-            st.write(f"Shape: {kpi_actuals.shape}")
-            st.dataframe(kpi_actuals.head())
-        else:
-            st.write(f"Type: {type(kpi_actuals)}, Value: {kpi_actuals}")
-        
-        st.write("**In draft_dict:**")
-        st.write(f"Has financial_kpis_actuals key: {'financial_kpis_actuals' in draft_dict}")
-        if 'financial_kpis_actuals' in draft_dict:
-            st.write(f"Number of KPI records: {len(draft_dict['financial_kpis_actuals'])}")
-    
     st.sidebar.download_button(
         "⬇️ Download answers CSV",
         data=get_answers_df().to_csv(index=False),
