@@ -960,14 +960,19 @@ def build_draft_from_state(
         draft["ai_result"] = ai_result
 
     # 🔹 NEW: include the financial KPI actuals so they can be reloaded later
-    # Try both sources: financial_kpis_actuals (subset) and financial_kpis (full)
-    kpi_actuals = st.session_state.get("financial_kpis_actuals")
-    if kpi_actuals is None or (isinstance(kpi_actuals, pd.DataFrame) and kpi_actuals.empty):
-        # Fallback: try to get from full financial_kpis if actuals isn't populated yet
-        full_kpis = st.session_state.get("financial_kpis")
-        if isinstance(full_kpis, pd.DataFrame) and not full_kpis.empty:
-            kpi_actuals = full_kpis[["area", "category", "sub_category", "report_section", "report_order", "actual"]].copy()
+    # Try multiple sources to ensure we capture the data
+    kpi_actuals = None
     
+    # First, try financial_kpis (the full version with all calculated fields)
+    full_kpis = st.session_state.get("financial_kpis")
+    if isinstance(full_kpis, pd.DataFrame) and not full_kpis.empty:
+        kpi_actuals = full_kpis[["area", "category", "sub_category", "report_section", "report_order", "actual"]].copy()
+    
+    # Fallback to financial_kpis_actuals if full version not available
+    if kpi_actuals is None or kpi_actuals.empty:
+        kpi_actuals = st.session_state.get("financial_kpis_actuals")
+    
+    # Save to draft if we have any KPI data
     if isinstance(kpi_actuals, pd.DataFrame) and not kpi_actuals.empty:
         draft["financial_kpis_actuals"] = kpi_actuals.to_dict(orient="records")
 
@@ -1255,6 +1260,31 @@ def main():
         mime="application/json",
         help="Downloads a snapshot of your current answers (this and other productions). Re-upload later to continue.",
     )
+    
+    # Debug: Show what's in session state for KPIs
+    with st.sidebar.expander("🔍 Debug: KPI Session State"):
+        kpi_full = st.session_state.get("financial_kpis")
+        kpi_actuals = st.session_state.get("financial_kpis_actuals")
+        
+        st.write("**financial_kpis:**")
+        if isinstance(kpi_full, pd.DataFrame):
+            st.write(f"Shape: {kpi_full.shape}")
+            st.dataframe(kpi_full.head())
+        else:
+            st.write(f"Type: {type(kpi_full)}, Value: {kpi_full}")
+        
+        st.write("**financial_kpis_actuals:**")
+        if isinstance(kpi_actuals, pd.DataFrame):
+            st.write(f"Shape: {kpi_actuals.shape}")
+            st.dataframe(kpi_actuals.head())
+        else:
+            st.write(f"Type: {type(kpi_actuals)}, Value: {kpi_actuals}")
+        
+        st.write("**In draft_dict:**")
+        st.write(f"Has financial_kpis_actuals key: {'financial_kpis_actuals' in draft_dict}")
+        if 'financial_kpis_actuals' in draft_dict:
+            st.write(f"Number of KPI records: {len(draft_dict['financial_kpis_actuals'])}")
+    
     st.sidebar.download_button(
         "⬇️ Download answers CSV",
         data=get_answers_df().to_csv(index=False),
