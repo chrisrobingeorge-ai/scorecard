@@ -379,9 +379,14 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
 
     # Store full set (all areas) in session for AI/PDF or later use
     st.session_state["financial_kpis"] = updated_master
-    st.session_state["financial_kpis_actuals"] = updated_master[
+    
+    # Extract actuals and clean NaN values before storing
+    kpi_actuals_subset = updated_master[
         ["area", "category", "sub_category", "report_section", "report_order", "actual"]
-    ]
+    ].copy()
+    # Replace NaN with None immediately
+    kpi_actuals_subset = kpi_actuals_subset.where(pd.notna(kpi_actuals_subset), None)
+    st.session_state["financial_kpis_actuals"] = kpi_actuals_subset
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
