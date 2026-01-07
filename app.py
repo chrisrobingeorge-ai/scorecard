@@ -776,6 +776,14 @@ def _apply_pending_draft_if_any():
             # Ensure the AI section + download buttons are active without re-clicking
             st.session_state["scorecard_submitted"] = True
 
+        # 🔹 NEW: restore financial KPI actuals if present
+        if "financial_kpis_actuals" in data and data["financial_kpis_actuals"]:
+            try:
+                kpi_df = pd.DataFrame(data["financial_kpis_actuals"])
+                st.session_state["financial_kpis_actuals"] = kpi_df
+            except Exception:
+                pass  # If KPI data is malformed, skip it
+
         st.session_state["loaded_draft"] = data
         st.session_state["draft_hash"] = h
         st.session_state["draft_applied"] = True
@@ -950,6 +958,18 @@ def build_draft_from_state(
     ai_result = st.session_state.get("ai_result")
     if ai_result:
         draft["ai_result"] = ai_result
+
+    # 🔹 NEW: include the financial KPI actuals so they can be reloaded later
+    # Try both sources: financial_kpis_actuals (subset) and financial_kpis (full)
+    kpi_actuals = st.session_state.get("financial_kpis_actuals")
+    if kpi_actuals is None or (isinstance(kpi_actuals, pd.DataFrame) and kpi_actuals.empty):
+        # Fallback: try to get from full financial_kpis if actuals isn't populated yet
+        full_kpis = st.session_state.get("financial_kpis")
+        if isinstance(full_kpis, pd.DataFrame) and not full_kpis.empty:
+            kpi_actuals = full_kpis[["area", "category", "sub_category", "report_section", "report_order", "actual"]].copy()
+    
+    if isinstance(kpi_actuals, pd.DataFrame) and not kpi_actuals.empty:
+        draft["financial_kpis_actuals"] = kpi_actuals.to_dict(orient="records")
 
 
     # ---------- ALL departments/prods -> "per_show_answers" ----------
