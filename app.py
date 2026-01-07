@@ -1019,7 +1019,10 @@ def build_draft_from_state(
     
     # Save to draft if we have any KPI data
     if isinstance(kpi_actuals, pd.DataFrame) and not kpi_actuals.empty:
-        draft["financial_kpis_actuals"] = kpi_actuals.to_dict(orient="records")
+        # Replace NaN with None (null in JSON) before converting to dict
+        kpi_clean = kpi_actuals.copy()
+        kpi_clean = kpi_clean.where(pd.notna(kpi_clean), None)
+        draft["financial_kpis_actuals"] = kpi_clean.to_dict(orient="records")
     
     # 🔹 NEW: include KPI explanations if present
     dept = meta.get("department") or ""
