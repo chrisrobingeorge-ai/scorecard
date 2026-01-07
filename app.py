@@ -833,6 +833,11 @@ def _apply_pending_draft_if_any():
             try:
                 kpi_df = pd.DataFrame(data["financial_kpis_actuals"])
                 st.session_state["financial_kpis_actuals"] = kpi_df
+                
+                # Clear any cached data_editor states to prevent old values from overwriting loaded ones
+                for key in list(st.session_state.keys()):
+                    if key.startswith("financial_kpi_editor_"):
+                        del st.session_state[key]
             except Exception:
                 pass  # If KPI data is malformed, skip it
         
