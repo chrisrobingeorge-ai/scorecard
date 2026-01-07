@@ -343,7 +343,7 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
     
     # The st.data_editor widget manages its own state via the key parameter.
     # Use unique key per area to avoid duplicate key errors when rendering multiple KPI sections.
-    # When loading from JSON, the draft loading logic (lines 821-824) clears these cached states.
+    # When loading from JSON, the draft loading logic (lines 822-825) clears these cached states.
     editor_key = f"financial_kpi_editor_{selected_area}" if selected_area else "financial_kpi_editor"
     
     edited = st.data_editor(
