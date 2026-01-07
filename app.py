@@ -287,6 +287,13 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
         else:
             prev = None
     
+    # Debug: Show what we found
+    if prev is not None and selected_area:
+        prev_area = prev[prev["area"] == selected_area] if "area" in prev.columns else pd.DataFrame()
+        non_zero_in_prev = prev_area[prev_area["actual"] != 0] if not prev_area.empty else pd.DataFrame()
+        if not non_zero_in_prev.empty:
+            st.info(f"🔄 Loading {len(non_zero_in_prev)} non-zero KPI values for {selected_area}")
+    
     if prev is not None and isinstance(prev, pd.DataFrame) and not prev.empty:
         try:
             # Clean the prev data
@@ -309,6 +316,7 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
                 master["actual"] = master["actual"].fillna(0.0)
         except Exception as e:
             # If merge fails, start fresh with zeros
+            st.error(f"KPI merge failed: {e}")
             master["actual"] = 0.0
     else:
         master["actual"] = 0.0
