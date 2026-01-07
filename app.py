@@ -275,7 +275,14 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
     master = FINANCIAL_KPI_TARGETS_DF.copy()
 
     # Bring back previously-entered actuals for all areas, if we have them
-    prev = st.session_state.get("financial_kpis_actuals")
+    # Priority 1: Check the full financial_kpis first (most up-to-date with all calculations)
+    prev = st.session_state.get("financial_kpis")
+    if isinstance(prev, pd.DataFrame) and not prev.empty and "actual" in prev.columns:
+        prev = prev[["area", "category", "sub_category", "actual"]].copy()
+    else:
+        # Priority 2: Fall back to financial_kpis_actuals
+        prev = st.session_state.get("financial_kpis_actuals")
+    
     if isinstance(prev, pd.DataFrame) and not prev.empty:
         try:
             # Ensure the 'actual' column exists in prev and is numeric
@@ -289,14 +296,16 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
                     prev_subset,
                     on=["area", "category", "sub_category"],
                     how="left",
-                    suffixes=("", "_prev"),
+                    suffixes=("_target", ""),
                 )
-                # Prefer previous actual where present
-                if "actual_prev" in master.columns:
-                    master["actual"] = master["actual_prev"]
-                    master.drop(columns=["actual_prev"], inplace=True)
-                elif "actual" not in master.columns:
+                # If merge created actual_target column, drop it
+                if "actual_target" in master.columns:
+                    master.drop(columns=["actual_target"], inplace=True)
+                # Fill any remaining NaN actuals with 0
+                if "actual" not in master.columns:
                     master["actual"] = 0.0
+                else:
+                    master["actual"] = master["actual"].fillna(0.0)
         except Exception as e:
             # If merge fails, start fresh with zeros
             master["actual"] = 0.0
@@ -321,25 +330,10 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
             st.markdown("### Financial KPIs (Year-to-Date)")
 
     display_cols = ["area", "category", "sub_category", "target", "actual"]
-    
+    display_df = working[display_cols].copy()
+
     # Use unique key per area to avoid duplicate key errors when rendering multiple KPI sections
     editor_key = f"financial_kpi_editor_{selected_area}" if selected_area else "financial_kpi_editor"
-    
-    # Check if this data_editor already has state from a previous edit
-    # If so, use that instead of rebuilding from session state to avoid losing edits mid-input
-    if editor_key in st.session_state and isinstance(st.session_state[editor_key], dict):
-        # The widget state exists, use it as the base
-        widget_state = st.session_state[editor_key]
-        if "edited_rows" in widget_state and widget_state["edited_rows"]:
-            # Apply edits from widget state to our working dataframe
-            display_df = working[display_cols].copy()
-            for row_idx, edits in widget_state["edited_rows"].items():
-                if "actual" in edits:
-                    display_df.loc[row_idx, "actual"] = edits["actual"]
-        else:
-            display_df = working[display_cols].copy()
-    else:
-        display_df = working[display_cols].copy()
     
     edited = st.data_editor(
         display_df,
@@ -347,6 +341,7 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
         use_container_width=True,
         key=editor_key,
         disabled=["area", "category", "sub_category", "target"],  # only 'actual' is editable
+        hide_index=True,
     )
 
     # ── Write edited Actuals back into the full master table ──
