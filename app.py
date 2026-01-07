@@ -821,6 +821,13 @@ def _apply_pending_draft_if_any():
                 st.session_state["financial_kpis_actuals"] = kpi_df
             except Exception:
                 pass  # If KPI data is malformed, skip it
+        
+        # 🔹 NEW: restore KPI explanations if present
+        if "kpi_explanations" in data and data["kpi_explanations"]:
+            dept_val = meta.get("department", "")
+            if dept_val:
+                kpi_explanation_key = f"kpi_explanations_{dept_val}"
+                st.session_state[kpi_explanation_key] = data["kpi_explanations"]
 
         st.session_state["loaded_draft"] = data
         st.session_state["draft_hash"] = h
@@ -1013,6 +1020,13 @@ def build_draft_from_state(
     # Save to draft if we have any KPI data
     if isinstance(kpi_actuals, pd.DataFrame) and not kpi_actuals.empty:
         draft["financial_kpis_actuals"] = kpi_actuals.to_dict(orient="records")
+    
+    # 🔹 NEW: include KPI explanations if present
+    dept = meta.get("department") or ""
+    kpi_explanation_key = f"kpi_explanations_{dept}"
+    kpi_explanation = st.session_state.get(kpi_explanation_key)
+    if kpi_explanation and str(kpi_explanation).strip():
+        draft["kpi_explanations"] = str(kpi_explanation)
 
 
     # ---------- ALL departments/prods -> "per_show_answers" ----------
@@ -1258,15 +1272,47 @@ def main():
         render_financial_kpis(selected_area="DONATIONS", show_heading=True)
         render_financial_kpis(selected_area="GRANTS", show_heading=True)
         render_financial_kpis(selected_area="SPONSORSHIPS", show_heading=True)
+        st.markdown("### KPI Explanations")
+        kpi_explanation_key = f"kpi_explanations_{dept_label}"
+        st.text_area(
+            "Provide context or explanations for the KPI values above:",
+            key=kpi_explanation_key,
+            height=100,
+            placeholder="e.g., Donations exceeded target due to major gift campaign..."
+        )
     elif dept_label == "School":
         st.markdown("---")
         render_financial_kpis(selected_area="SCHOOL", show_heading=True)
+        st.markdown("### KPI Explanations")
+        kpi_explanation_key = f"kpi_explanations_{dept_label}"
+        st.text_area(
+            "Provide context or explanations for the KPI values above:",
+            key=kpi_explanation_key,
+            height=100,
+            placeholder="e.g., School enrollment below target due to..."
+        )
     elif dept_label == "Community":
         st.markdown("---")
         render_financial_kpis(selected_area="COMMUNITY", show_heading=True)
+        st.markdown("### KPI Explanations")
+        kpi_explanation_key = f"kpi_explanations_{dept_label}"
+        st.text_area(
+            "Provide context or explanations for the KPI values above:",
+            key=kpi_explanation_key,
+            height=100,
+            placeholder="e.g., Community engagement exceeded expectations..."
+        )
     elif dept_label == "Artistic":
         st.markdown("---")
         render_financial_kpis(selected_area="TICKET SALES", show_heading=True)
+        st.markdown("### KPI Explanations")
+        kpi_explanation_key = f"kpi_explanations_{dept_label}"
+        st.text_area(
+            "Provide context or explanations for the KPI values above:",
+            key=kpi_explanation_key,
+            height=100,
+            placeholder="e.g., Ticket sales strong for holiday performances..."
+        )
 
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
@@ -1446,13 +1492,22 @@ def main():
         ].copy()
     else:
         kpi_data_for_ai = None
+    
+    # Get KPI explanations
+    kpi_explanation_key = f"kpi_explanations_{dept_label}"
+    kpi_explanations = st.session_state.get(kpi_explanation_key, "")
 
     # Run AI once (first time after Generate button); reuse cached result on reruns
     if st.session_state["ai_result"] is None:
         try:
             with st.spinner("Asking AI to interpret this scorecard..."):
+                # Add KPI explanations to meta for AI context
+                meta_with_kpi = dict(meta_for_ai)
+                if kpi_explanations:
+                    meta_with_kpi["kpi_explanations"] = kpi_explanations
+                
                 ai_result = interpret_scorecard(
-                    meta_for_ai,
+                    meta_with_kpi,
                     questions_for_ai,
                     responses_for_ai,
                     kpi_data=kpi_data_for_ai,
@@ -1574,6 +1629,12 @@ def main():
         parts.append("=== NOTES FOR LEADERSHIP ===")
         nfl_raw = ai_result.get("notes_for_leadership", "") or ""
         parts.append(str(nfl_raw))
+        parts.append("")
+        
+        # KPI Explanations
+        if kpi_explanations and str(kpi_explanations).strip():
+            parts.append("=== KPI EXPLANATIONS ===")
+            parts.append(str(kpi_explanations))
         
         return "\n".join(parts)
     
@@ -1720,6 +1781,11 @@ def main():
         # Parse Notes for Leadership - straightforward text replacement
         if 'NOTES FOR LEADERSHIP' in sections:
             ai_result["notes_for_leadership"] = sections['NOTES FOR LEADERSHIP']
+        
+        # Parse KPI Explanations - save back to session state
+        if 'KPI EXPLANATIONS' in sections:
+            kpi_explanation_key = f"kpi_explanations_{dept_label}"
+            st.session_state[kpi_explanation_key] = sections['KPI EXPLANATIONS']
     
     st.markdown("### AI Summary - Consolidated Editor")
     st.markdown("Edit the entire AI summary in one place. The content will be automatically parsed into the appropriate sections for the PDF/DOCX.")
@@ -1771,6 +1837,7 @@ def main():
                 responses_for_ai,
                 ai_result,
                 logo_path="assets/alberta_ballet_logo.png",
+                kpi_explanations=kpi_explanations,
             )
             st.download_button(
                 label="📄 Download PDF report",
@@ -1790,6 +1857,7 @@ def main():
                 responses_for_ai,
                 ai_result,
                 logo_path="assets/alberta_ballet_logo.png",
+                kpi_explanations=kpi_explanations,
             )
             st.download_button(
                 label="📝 Download DOCX report",
