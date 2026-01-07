@@ -321,10 +321,25 @@ def render_financial_kpis(selected_area: Optional[str] = None, show_heading: boo
             st.markdown("### Financial KPIs (Year-to-Date)")
 
     display_cols = ["area", "category", "sub_category", "target", "actual"]
-    display_df = working[display_cols].copy()
-
+    
     # Use unique key per area to avoid duplicate key errors when rendering multiple KPI sections
     editor_key = f"financial_kpi_editor_{selected_area}" if selected_area else "financial_kpi_editor"
+    
+    # Check if this data_editor already has state from a previous edit
+    # If so, use that instead of rebuilding from session state to avoid losing edits mid-input
+    if editor_key in st.session_state and isinstance(st.session_state[editor_key], dict):
+        # The widget state exists, use it as the base
+        widget_state = st.session_state[editor_key]
+        if "edited_rows" in widget_state and widget_state["edited_rows"]:
+            # Apply edits from widget state to our working dataframe
+            display_df = working[display_cols].copy()
+            for row_idx, edits in widget_state["edited_rows"].items():
+                if "actual" in edits:
+                    display_df.loc[row_idx, "actual"] = edits["actual"]
+        else:
+            display_df = working[display_cols].copy()
+    else:
+        display_df = working[display_cols].copy()
     
     edited = st.data_editor(
         display_df,
