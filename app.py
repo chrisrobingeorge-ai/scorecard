@@ -1229,7 +1229,7 @@ def main():
             # Multiple files - merge them
             queued, msg = queue_multiple_draft_bytes([f.getvalue() for f in draft_files])
             if queued:
-                st.sidebar.success(f"Merged {len(draft_files)} drafts; applying…")
+                st.sidebar.success(msg)
                 safe_rerun()
             else:
                 st.sidebar.info(msg)
