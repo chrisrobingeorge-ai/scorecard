@@ -456,6 +456,7 @@ def build_scorecard_pdf(
     responses: Dict[str, Any],
     ai_result: Dict[str, Any],
     logo_path: str | None = None,
+    kpi_explanations: str | None = None,
 ) -> bytes:
     """
     Build and return the PDF as raw bytes.
