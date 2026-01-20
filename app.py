@@ -1099,11 +1099,6 @@ def build_draft_from_state(
         "answers": _normalise_answers_for_export(current_answers),
     }
 
-    # 🔹 NEW: include the current AI summary (if any) so it can be reloaded later
-    ai_result = st.session_state.get("ai_result")
-    if ai_result:
-        draft["ai_result"] = ai_result
-
     # 🔹 Include the financial KPI actuals so they can be reloaded later
     # Try multiple sources to ensure we capture the data
     kpi_actuals = None
