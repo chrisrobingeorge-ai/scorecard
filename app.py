@@ -686,6 +686,80 @@ def queue_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
     except Exception as e:
         return False, f"Could not queue draft: {e}"
 
+def queue_multiple_draft_bytes(draft_bytes_list: List[bytes]) -> Tuple[bool, str]:
+    """Queue multiple drafts for application, merging their contents."""
+    try:
+        merged_data: Dict[str, Any] = {
+            "meta": {},
+            "answers": {},
+            "per_show_answers": {},
+            "financial_kpis_actuals": [],
+        }
+        
+        for draft_bytes in draft_bytes_list:
+            try:
+                data = json.loads(draft_bytes.decode("utf-8"))
+                
+                # Merge meta - later files override earlier ones
+                if "meta" in data and data["meta"]:
+                    merged_data["meta"].update(data["meta"])
+                
+                # Merge answers - later files override earlier ones for the same question
+                if "answers" in data and data["answers"]:
+                    merged_data["answers"].update(data["answers"])
+                
+                # Merge per_show_answers - merge at show level
+                if "per_show_answers" in data and data["per_show_answers"]:
+                    for show_key, show_answers in data["per_show_answers"].items():
+                        if show_key not in merged_data["per_show_answers"]:
+                            merged_data["per_show_answers"][show_key] = {}
+                        merged_data["per_show_answers"][show_key].update(show_answers)
+                
+                # Merge financial_kpis_actuals - combine and deduplicate
+                if "financial_kpis_actuals" in data and data["financial_kpis_actuals"]:
+                    for kpi in data["financial_kpis_actuals"]:
+                        # Check if this KPI already exists (by area, category, sub_category)
+                        key = (kpi.get("area"), kpi.get("category"), kpi.get("sub_category"))
+                        existing_idx = None
+                        for i, existing in enumerate(merged_data["financial_kpis_actuals"]):
+                            existing_key = (existing.get("area"), existing.get("category"), existing.get("sub_category"))
+                            if existing_key == key:
+                                existing_idx = i
+                                break
+                        if existing_idx is not None:
+                            # Update existing - later files override
+                            merged_data["financial_kpis_actuals"][existing_idx] = kpi
+                        else:
+                            merged_data["financial_kpis_actuals"].append(kpi)
+                
+                # Merge ai_result - later files override
+                if "ai_result" in data and data["ai_result"]:
+                    merged_data["ai_result"] = data["ai_result"]
+                
+                # Merge kpi_explanations - concatenate with newlines
+                if "kpi_explanations" in data and data["kpi_explanations"]:
+                    if "kpi_explanations" not in merged_data or not merged_data["kpi_explanations"]:
+                        merged_data["kpi_explanations"] = data["kpi_explanations"]
+                    else:
+                        merged_data["kpi_explanations"] += "\n\n" + data["kpi_explanations"]
+                        
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                return False, f"Could not parse one of the JSON files: {e}"
+        
+        # Convert merged data back to bytes
+        merged_bytes = json.dumps(merged_data).encode("utf-8")
+        h = _hash_bytes(merged_bytes)
+        
+        if st.session_state.get("draft_hash") == h:
+            return False, "These drafts are already applied."
+        
+        st.session_state["pending_draft_bytes"] = merged_bytes
+        st.session_state["pending_draft_hash"] = h
+        return True, f"Merged {len(draft_bytes_list)} drafts; applying…"
+        
+    except Exception as e:
+        return False, f"Could not merge drafts: {e}"
+
 def _apply_pending_draft_if_any():
     """Apply a pending draft BEFORE widgets are created."""
     b = st.session_state.get("pending_draft_bytes")
@@ -1135,18 +1209,30 @@ def main():
 
     # Sidebar: Draft controls
     st.sidebar.subheader("Drafts")
-    draft_file = st.sidebar.file_uploader(
-        "Load saved draft (JSON)",
+    draft_files = st.sidebar.file_uploader(
+        "Load saved draft(s) (JSON)",
         type="json",
-        help="Upload a JSON draft you previously downloaded.",
+        accept_multiple_files=True,
+        help="Upload one or more JSON drafts you previously downloaded. Multiple files will be merged.",
     )
-    if draft_file is not None:
-        queued, msg = queue_draft_bytes(draft_file.getvalue())
-        if queued:
-            st.sidebar.success(msg)
-            safe_rerun()
+    if draft_files:
+        # Process multiple files - merge them into a single draft
+        if len(draft_files) == 1:
+            # Single file - use existing logic
+            queued, msg = queue_draft_bytes(draft_files[0].getvalue())
+            if queued:
+                st.sidebar.success(msg)
+                safe_rerun()
+            else:
+                st.sidebar.info(msg)
         else:
-            st.sidebar.info(msg)
+            # Multiple files - merge them
+            queued, msg = queue_multiple_draft_bytes([f.getvalue() for f in draft_files])
+            if queued:
+                st.sidebar.success(f"Merged {len(draft_files)} drafts; applying…")
+                safe_rerun()
+            else:
+                st.sidebar.info(msg)
 
     if "pending_draft_error" in st.session_state:
         st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
