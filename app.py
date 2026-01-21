@@ -686,16 +686,31 @@ def build_form_for_questions(
         elif rtype == "scale_1_5":
             default_val = 3
             try:
-                if isinstance(prev_primary, (int, float)) and 1 <= int(prev_primary) <= 5:
-                    default_val = int(prev_primary)
-            except Exception:
+                # Handle both numeric types and string representations
+                if isinstance(prev_primary, (int, float)):
+                    val = int(prev_primary)
+                    if 1 <= val <= 5:
+                        default_val = val
+                elif isinstance(prev_primary, str):
+                    val = int(float(prev_primary))  # Handle "3.0" or "3"
+                    if 1 <= val <= 5:
+                        default_val = val
+            except (ValueError, TypeError):
                 pass
             entry["primary"] = int(
                 st.slider(label_display, min_value=1, max_value=5, key=widget_key, value=default_val)
             )
 
         elif rtype == "number":
-            default_val = float(prev_primary) if isinstance(prev_primary, (int, float)) else 0.0
+            # Try to parse number from prev_primary (might be string after merge)
+            default_val = 0.0
+            if isinstance(prev_primary, (int, float)):
+                default_val = float(prev_primary)
+            elif isinstance(prev_primary, str):
+                try:
+                    default_val = float(prev_primary)
+                except (ValueError, TypeError):
+                    default_val = 0.0
             entry["primary"] = st.number_input(label_display, step=1.0, key=widget_key, value=default_val)
 
         elif rtype in ("dropdown", "select") and options:
