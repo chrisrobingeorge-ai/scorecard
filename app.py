@@ -816,25 +816,42 @@ def _apply_pending_draft_if_any():
             normalized: Dict[str, object] = {}
             val = entry.get("primary") if isinstance(entry, dict) else None
 
+            # Lenient validation: accept values even if they don't perfectly match
+            # This is essential for merge conflict resolution where values from 
+            # different sources may have slight formatting differences
             if rtype == "yes_no":
                 if val in YES_NO_OPTIONS:
                     normalized["primary"] = val
-            elif rtype in ("select", "dropdown"):
+                elif val is not None:
+                    # Accept the value anyway (for merge compatibility)
+                    normalized["primary"] = str(val)
+            elif rtype in ("select", "dropdown", "select_yes_no"):
                 if val in options:
                     normalized["primary"] = val
+                elif val is not None:
+                    # Accept the value anyway (for merge compatibility)
+                    normalized["primary"] = str(val)
             elif rtype == "scale_1_5":
                 try:
                     ival = int(val)
                     if 1 <= ival <= 5:
                         normalized["primary"] = ival
+                    else:
+                        # Accept out-of-range values as strings
+                        normalized["primary"] = ival
                 except Exception:
-                    pass
+                    # Accept as-is if not parseable as int
+                    if val is not None:
+                        normalized["primary"] = str(val)
             elif rtype == "number":
                 try:
                     normalized["primary"] = float(val)
                 except Exception:
-                    pass
+                    # Accept as-is if not parseable as number
+                    if val is not None:
+                        normalized["primary"] = str(val)
             else:
+                # For text type or unknown type, always accept the value
                 if val is not None:
                     normalized["primary"] = str(val)
 
