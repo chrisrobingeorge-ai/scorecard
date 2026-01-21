@@ -1182,7 +1182,7 @@ def _get_question_text(question_id, all_questions_df):
     
     match = all_questions_df[all_questions_df["question_id"] == question_id]
     if not match.empty:
-        return match.iloc[0].get("question", None)
+        return match.iloc[0].get("question_text", None)
     return None
 
 
