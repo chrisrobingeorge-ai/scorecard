@@ -1421,12 +1421,25 @@ def main():
                 
                 with col1:
                     if st.button("✅ Apply Merge with Selected Values", type="primary", use_container_width=True):
+                        # Debug: Show resolution choices
+                        st.write(f"DEBUG: Applying {len(resolutions)} resolutions for {len(conflicts)} conflicts")
+                        for conflict_idx, value_idx in resolutions.items():
+                            if conflict_idx < len(conflicts):
+                                conflict = conflicts[conflict_idx]
+                                chosen_value = conflict.values[value_idx] if value_idx < len(conflict.values) else None
+                                st.write(f"  Conflict {conflict_idx}: {conflict.section}.{conflict.key} → {chosen_value}")
+                        
                         # Apply resolutions
                         resolved_data = apply_conflict_resolutions(
                             merge_result.merged_data,
                             conflicts,
                             resolutions
                         )
+                        
+                        # Debug: Show a sample of resolved data
+                        st.write("DEBUG: Resolved data keys:", list(resolved_data.keys()))
+                        if "per_show_answers" in resolved_data:
+                            st.write("DEBUG: per_show_answers keys:", list(resolved_data["per_show_answers"].keys()))
                         
                         # Convert to bytes and queue for application
                         merged_bytes = json.dumps(resolved_data).encode("utf-8")
@@ -1435,11 +1448,15 @@ def main():
                         st.session_state["pending_draft_bytes"] = merged_bytes
                         st.session_state["pending_draft_hash"] = h
                         
+                        st.write(f"DEBUG: Stored {len(merged_bytes)} bytes in pending_draft_bytes")
+                        st.write(f"DEBUG: Hash: {h[:16]}...")
+                        
                         # Clear conflict state
                         st.session_state.pop("merge_conflicts", None)
                         st.session_state.pop("pending_merge_result", None)
                         
                         st.success("Conflicts resolved! Applying merge...")
+                        st.write("DEBUG: About to rerun...")
                         safe_rerun()
                 
                 with col2:
