@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document describes the bug fix for the multi-user JSON merge functionality in the Scorecard app, implemented on January 21, 2026.
+This document describes the bug fix and interactive conflict resolution for the multi-user JSON merge functionality in the Scorecard app, implemented on January 21, 2026.
+
+**✨ NEW: Interactive Conflict Resolution** - When conflicts are detected, the app pauses and lets you choose which value to keep for each conflict before applying the merge.
 
 ## Problem Statement
 
@@ -169,26 +171,52 @@ merge_result = merge_scorecards(
 
 ### UI Changes
 
-When conflicts are detected after merging multiple files, the app now displays:
+When conflicts are detected after merging multiple files, the app now displays:### UI Changes
+
+#### Automatic Merge (No Conflicts)
+
+When uploading multiple files without conflicts, the merge proceeds automatically:
+
+```
+✅ Merged 2 files; 5 KPI lines. Applying…
+```
+
+#### Interactive Conflict Resolution (With Conflicts)
+
+When conflicts are detected, the app pauses and displays an interactive UI:
 
 ```
 ⚠️ Merge Conflicts Detected
 
-Multiple files provided different values for the same fields.
-The merge used non-default values where possible. Review conflicts below:
+Please choose which value to keep for each conflict:
 
-1. financial_kpis_actuals / DONATIONS/General/–:
-   - file_1: 100000.0
-   - file_2: 150000.0
+Conflict 1: financial_kpis_actuals / DONATIONS/General/–
+○ user1: 100,000.00
+○ user2: 150,000.00
 
-[Clear Conflicts Notice]
+───────────────────────────────────────
+
+Conflict 2: answers / ATI01
+○ file_1: 3 - Moderate
+○ file_2: 4 - High
+
+───────────────────────────────────────
+
+[✅ Apply Merge with Selected Values]  [❌ Cancel Merge]
 ```
 
-Users can review conflicts and understand what data was merged. The current implementation uses the last non-default value as the result, but conflict information is preserved for review.
+**How it works:**
+1. Upload multiple JSON files with conflicting values
+2. App detects conflicts and pauses the merge
+3. For each conflict, radio buttons let you choose which value to keep
+4. Click "Apply Merge with Selected Values" to complete the merge
+5. Merge proceeds with your chosen values
+
+Users can also click "Cancel Merge" to abandon the operation and start over.
 
 ### Merge Statistics
 
-After successful merge, users see:
+After successful merge (no conflicts), users see:
 
 ```
 ✅ Merged 2 files; 5 KPI lines; ⚠️ 0 conflicts detected. Applying…
@@ -293,25 +321,19 @@ To improve merge quality, consider adding these fields to the JSON export:
 
 **Benefit:** Better conflict resolution and provenance tracking
 
-### Interactive Conflict Resolution (Future)
+### Interactive Conflict Resolution ✅ IMPLEMENTED
 
-Current: Conflicts are detected and reported, but merge proceeds with "last non-default wins"
+**Status:** Now available in the app!
 
-Future: Add UI for manual conflict resolution:
+When conflicts are detected during merge:
+1. App displays each conflict with radio buttons
+2. User chooses which value to keep
+3. Click "Apply Merge with Selected Values"
+4. Merge completes with user's choices
 
-```python
-if merge_result.has_conflicts:
-    st.markdown("### Resolve Conflicts")
-    for conflict in merge_result.conflicts:
-        st.markdown(f"**{conflict.section} / {conflict.key}**")
-        choice = st.radio(
-            f"Choose value for {conflict.key}:",
-            [f"{val} (from {src})" for val, src in conflict.values]
-        )
-        # Apply user's choice to merged_data
-```
+See the UI Changes section above for details.
 
-### Policy Configuration UI
+### Policy Configuration UI (Future Enhancement)
 
 Add a sidebar setting:
 

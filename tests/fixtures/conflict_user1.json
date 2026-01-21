@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "staff_name": "Alice",
+    "role": "Finance Manager",
+    "department": "Artistic",
+    "month": "2026-01",
+    "production": "General"
+  },
+  "answers": {
+    "ATI01": {
+      "primary": "3 - Moderate"
+    },
+    "ATI02": {
+      "primary": "Significant artistic innovation"
+    }
+  },
+  "per_show_answers": {},
+  "financial_kpis_actuals": [
+    {
+      "area": "DONATIONS",
+      "category": "General",
+      "sub_category": "–",
+      "actual": 100000.0,
+      "report_section": "DONATIONS",
+      "report_order": 1
+    },
+    {
+      "area": "GRANTS",
+      "category": "Government",
+      "sub_category": "AFA",
+      "actual": 50000.0,
+      "report_section": "GRANTS",
+      "report_order": 1
+    }
+  ]
+}

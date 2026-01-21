@@ -706,30 +706,39 @@ def queue_multiple_draft_bytes(draft_bytes_list: List[bytes]) -> Tuple[bool, str
             policy=MergePolicy.NON_DEFAULT_WINS
         )
         
-        # Store conflicts in session state for UI display
+        # If there are conflicts, store for interactive resolution
         if merge_result.has_conflicts:
+            st.session_state["pending_merge_result"] = merge_result
             st.session_state["merge_conflicts"] = merge_result.conflicts
+            
+            # Build message
+            msg_parts = [f"Merged {len(draft_bytes_list)} files"]
+            if merge_result.stats.get("kpis_merged"):
+                msg_parts.append(f"{merge_result.stats['kpis_merged']} KPI lines")
+            msg_parts.append(f"⚠️ {len(merge_result.conflicts)} conflicts need resolution")
+            
+            return True, "; ".join(msg_parts) + ". Please resolve conflicts below."
         else:
+            # No conflicts, proceed with normal merge
             st.session_state.pop("merge_conflicts", None)
-        
-        # Convert merged data back to bytes
-        merged_bytes = json.dumps(merge_result.merged_data).encode("utf-8")
-        h = _hash_bytes(merged_bytes)
-        
-        if st.session_state.get("draft_hash") == h:
-            return False, "These drafts are already applied."
-        
-        st.session_state["pending_draft_bytes"] = merged_bytes
-        st.session_state["pending_draft_hash"] = h
-        
-        # Build success message with stats
-        msg_parts = [f"Merged {len(draft_bytes_list)} files"]
-        if merge_result.stats.get("kpis_merged"):
-            msg_parts.append(f"{merge_result.stats['kpis_merged']} KPI lines")
-        if merge_result.has_conflicts:
-            msg_parts.append(f"⚠️ {len(merge_result.conflicts)} conflicts detected")
-        
-        return True, "; ".join(msg_parts) + ". Applying…"
+            st.session_state.pop("pending_merge_result", None)
+            
+            # Convert merged data back to bytes
+            merged_bytes = json.dumps(merge_result.merged_data).encode("utf-8")
+            h = _hash_bytes(merged_bytes)
+            
+            if st.session_state.get("draft_hash") == h:
+                return False, "These drafts are already applied."
+            
+            st.session_state["pending_draft_bytes"] = merged_bytes
+            st.session_state["pending_draft_hash"] = h
+            
+            # Build success message with stats
+            msg_parts = [f"Merged {len(draft_bytes_list)} files"]
+            if merge_result.stats.get("kpis_merged"):
+                msg_parts.append(f"{merge_result.stats['kpis_merged']} KPI lines")
+            
+            return True, "; ".join(msg_parts) + ". Applying…"
         
     except Exception as e:
         return False, f"Could not merge drafts: {e}"
@@ -1206,22 +1215,89 @@ def main():
     if "pending_draft_error" in st.session_state:
         st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
     
-    # Display merge conflicts if any
+    # Display merge conflicts if any - with interactive resolution
     if "merge_conflicts" in st.session_state and st.session_state["merge_conflicts"]:
-        from merge_scorecards import format_conflicts_for_display
+        from merge_scorecards import format_conflicts_for_display, apply_conflict_resolutions
         
         st.warning("### ⚠️ Merge Conflicts Detected")
         st.markdown(
             "Multiple files provided different values for the same fields. "
-            "The merge used non-default values where possible. Review conflicts below:"
+            "**Please choose which value to keep for each conflict:**"
         )
         
-        conflicts_text = format_conflicts_for_display(st.session_state["merge_conflicts"])
-        st.markdown(conflicts_text)
+        conflicts = st.session_state["merge_conflicts"]
+        merge_result = st.session_state.get("pending_merge_result")
         
-        if st.button("Clear Conflicts Notice"):
-            st.session_state.pop("merge_conflicts", None)
-            safe_rerun()
+        if merge_result:
+            # Interactive conflict resolution
+            resolutions = {}
+            
+            for i, conflict in enumerate(conflicts):
+                st.markdown(f"**Conflict {i+1}: {conflict.section} / {conflict.key}**")
+                
+                # Create radio button options
+                options = []
+                for j, (value, source) in enumerate(conflict.values):
+                    # Format the value for display
+                    if isinstance(value, float):
+                        display_value = f"{value:,.2f}" if value else "0"
+                    else:
+                        display_value = str(value)
+                    options.append(f"{source}: {display_value}")
+                
+                # Let user choose
+                choice = st.radio(
+                    f"Choose value for {conflict.key}:",
+                    range(len(options)),
+                    format_func=lambda x: options[x],
+                    key=f"conflict_resolution_{i}"
+                )
+                
+                resolutions[i] = choice
+                st.markdown("---")
+            
+            # Buttons to apply or cancel
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("✅ Apply Merge with Selected Values", type="primary"):
+                    # Apply resolutions
+                    resolved_data = apply_conflict_resolutions(
+                        merge_result.merged_data,
+                        conflicts,
+                        resolutions
+                    )
+                    
+                    # Convert to bytes and queue for application
+                    merged_bytes = json.dumps(resolved_data).encode("utf-8")
+                    h = _hash_bytes(merged_bytes)
+                    
+                    st.session_state["pending_draft_bytes"] = merged_bytes
+                    st.session_state["pending_draft_hash"] = h
+                    
+                    # Clear conflict state
+                    st.session_state.pop("merge_conflicts", None)
+                    st.session_state.pop("pending_merge_result", None)
+                    
+                    st.success("Conflicts resolved! Applying merge...")
+                    safe_rerun()
+            
+            with col2:
+                if st.button("❌ Cancel Merge"):
+                    # Clear everything
+                    st.session_state.pop("merge_conflicts", None)
+                    st.session_state.pop("pending_merge_result", None)
+                    st.info("Merge cancelled.")
+                    safe_rerun()
+        else:
+            # Fallback: just display conflicts (shouldn't happen with new code)
+            conflicts_text = format_conflicts_for_display(conflicts)
+            st.markdown(conflicts_text)
+            
+            if st.button("Clear Conflicts Notice"):
+                st.session_state.pop("merge_conflicts", None)
+                safe_rerun()
+
 
     # Main UI
     st.title("Monthly Scorecard with AI Summary")

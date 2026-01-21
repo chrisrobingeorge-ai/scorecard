@@ -383,3 +383,90 @@ def format_conflicts_for_display(conflicts: List[Conflict]) -> str:
         lines.append("")
     
     return "\n".join(lines)
+
+
+def apply_conflict_resolutions(
+    merged_data: Dict[str, Any],
+    conflicts: List[Conflict],
+    resolutions: Dict[int, int]
+) -> Dict[str, Any]:
+    """
+    Apply user's conflict resolution choices to the merged data.
+    
+    Args:
+        merged_data: The merged data with conflicts
+        conflicts: List of conflicts
+        resolutions: Dict mapping conflict index to chosen value index
+                     e.g., {0: 1, 1: 0} means conflict 0 uses value 1, conflict 1 uses value 0
+    
+    Returns:
+        Updated merged data with conflicts resolved
+    """
+    result = copy.deepcopy(merged_data)
+    
+    for conflict_idx, value_idx in resolutions.items():
+        if conflict_idx >= len(conflicts):
+            continue
+            
+        conflict = conflicts[conflict_idx]
+        if value_idx >= len(conflict.values):
+            continue
+        
+        chosen_value, _ = conflict.values[value_idx]
+        
+        # Apply the resolution based on section type
+        if conflict.section == "financial_kpis_actuals":
+            # Parse the KPI key
+            key_parts = conflict.key.split("/")
+            if len(key_parts) == 3:
+                area, category, sub_category = key_parts
+                
+                # Find and update the KPI entry
+                for kpi in result.get("financial_kpis_actuals", []):
+                    if (kpi.get("area") == area and 
+                        kpi.get("category") == category and 
+                        kpi.get("sub_category") == sub_category):
+                        kpi["actual"] = chosen_value
+                        break
+        
+        elif conflict.section.startswith("answers"):
+            # Handle nested answer keys like "answers.Q1.primary"
+            keys = conflict.section.split(".")[1:] + [conflict.key]
+            
+            # Navigate to the nested location
+            current = result.get("answers", {})
+            for key in keys[:-1]:
+                if key not in current:
+                    current[key] = {}
+                current = current[key]
+            
+            # Set the chosen value
+            if keys:
+                current[keys[-1]] = chosen_value
+        
+        elif conflict.section.startswith("per_show_answers"):
+            # Handle per-show answers like "per_show_answers.Show1.Q1"
+            parts = conflict.section.split(".", 2)
+            if len(parts) >= 2:
+                show_key = parts[1] if len(parts) > 1 else ""
+                
+                if show_key in result.get("per_show_answers", {}):
+                    # Navigate through nested structure
+                    remaining_keys = parts[2:] if len(parts) > 2 else []
+                    remaining_keys.append(conflict.key)
+                    
+                    current = result["per_show_answers"][show_key]
+                    for key in remaining_keys[:-1]:
+                        if key not in current:
+                            current[key] = {}
+                        current = current[key]
+                    
+                    if remaining_keys:
+                        current[remaining_keys[-1]] = chosen_value
+        
+        else:
+            # Generic handling for other sections
+            if conflict.key in result.get(conflict.section, {}):
+                result[conflict.section][conflict.key] = chosen_value
+    
+    return result
