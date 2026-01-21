@@ -718,12 +718,16 @@ def merge_scorecards(
     )
 
 
-def format_conflicts_for_display(conflicts: List[Conflict]) -> str:
+def format_conflicts_for_display(
+    conflicts: List[Conflict],
+    registry: Optional[QuestionRegistry] = None
+) -> str:
     """
     Format conflicts into a human-readable string for UI display.
     
     Args:
         conflicts: List of conflicts
+        registry: Optional QuestionRegistry for resolving question_text
     
     Returns:
         Formatted string describing all conflicts
@@ -734,7 +738,11 @@ def format_conflicts_for_display(conflicts: List[Conflict]) -> str:
     lines = [f"⚠️  {len(conflicts)} conflict(s) detected:\n"]
     
     for i, conflict in enumerate(conflicts, 1):
-        lines.append(f"{i}. **{conflict.section}** / `{conflict.key}`:")
+        # Resolve human-readable label for this conflict
+        label = resolve_conflict_label(conflict, registry)
+        lines.append(f"{i}. **{label.section_label}**: {label.question_label}")
+        if label.field_label:
+            lines.append(f"   Field: {label.field_label}")
         for value, source in conflict.values:
             lines.append(f"   - {source}: `{value}`")
         lines.append("")
