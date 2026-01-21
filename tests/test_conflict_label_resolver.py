@@ -199,7 +199,7 @@ class TestGetKpiDescription:
     
     def test_three_part_key(self):
         """Test KPI key with three parts."""
-        assert _get_kpi_description("GRANTS/Government/AFA") == "Grants > Government > AFA"
+        assert _get_kpi_description("GRANTS/Government/AFA") == "Grants > Government > Afa"
     
     def test_dash_subcategory(self):
         """Test that dash subcategory is ignored."""
@@ -207,7 +207,7 @@ class TestGetKpiDescription:
     
     def test_underscore_handling(self):
         """Test underscore to space conversion in KPI keys."""
-        assert _get_kpi_description("TICKET_SALES/Subscriptions") == "Ticket Sales > Subscriptions"
+        assert _get_kpi_description("TICKET_SALES/subscriptions") == "Ticket Sales > Subscriptions"
 
 
 class TestResolveConflictLabel:

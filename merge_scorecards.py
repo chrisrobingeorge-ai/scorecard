@@ -89,8 +89,8 @@ class QuestionRegistry:
                         'General'
                     )
                     self._sections[qid] = section
-        except Exception:
-            pass  # Gracefully handle invalid CSV
+        except (UnicodeDecodeError, csv.Error, KeyError, ValueError):
+            pass  # Gracefully handle invalid CSV format or encoding issues
     
     def load_from_csv_file(self, file_path: Union[str, Path]) -> None:
         """Load questions from a CSV file path."""
@@ -113,8 +113,8 @@ class QuestionRegistry:
                         'General'
                     )
                     self._sections[qid] = section
-        except Exception:
-            pass  # Gracefully handle issues
+        except (AttributeError, TypeError, KeyError):
+            pass  # Gracefully handle DataFrame access issues
     
     def get_question(self, question_id: str) -> Optional[Dict[str, Any]]:
         """Get question metadata by ID."""
@@ -215,9 +215,9 @@ def _get_kpi_description(kpi_key: str) -> str:
     parts = kpi_key.split('/')
     if len(parts) >= 2:
         area = parts[0].replace('_', ' ').title()
-        category = parts[1].replace('_', ' ')
+        category = parts[1].replace('_', ' ').title()
         if len(parts) >= 3 and parts[2] and parts[2] != '–':
-            sub_cat = parts[2].replace('_', ' ')
+            sub_cat = parts[2].replace('_', ' ').title()
             return f"{area} > {category} > {sub_cat}"
         return f"{area} > {category}"
     return kpi_key.replace('_', ' ').title()
