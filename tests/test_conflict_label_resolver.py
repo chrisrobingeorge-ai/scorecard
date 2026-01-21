@@ -276,9 +276,9 @@ COMM_REC_Q2a,"If yes, how many NEW recreational students registered this period?
         
         label = resolve_conflict_label(conflict, None)
         
-        # Should extract question ID and derive section from it
-        # ATI01 is an Artistic question, so section comes from question ID prefix
-        assert label.section_label == "Artistic & Technical Innovation"
+        # Should extract show name from path for per_show_answers
+        # Production/show name is preferred over question ID prefix
+        assert label.section_label == "Nutcracker"
         assert label.field_label == "Primary answer"
         # Debug key should contain full path including show name
         assert "Nutcracker" in label.debug_key
@@ -367,6 +367,61 @@ class TestIntegrationWithRealData:
                 assert label.section_label
                 assert label.question_label
                 assert len(label.question_label) > 10  # Should be meaningful text
+    
+    def test_per_show_answers_with_registry(self, real_registry):
+        """Test per_show_answers path with registry lookup.
+        
+        This is the exact scenario from the bug report:
+        - Section: per_show_answers.Community::Recreational Classes.COMM_REC_Q2a
+        - Key: primary
+        
+        Should show full question text, not "Comm Rec Q2A"
+        """
+        conflict = Conflict(
+            section="per_show_answers.Community::Recreational Classes.COMM_REC_Q2a",
+            key="primary",
+            values=[("100", "user1"), ("150", "user2")]
+        )
+        
+        label = resolve_conflict_label(conflict, real_registry)
+        
+        # Should use full question text from registry
+        assert "NEW recreational students" in label.question_label
+        assert "registered this period" in label.question_label
+        # Should NOT be the humanized key
+        assert label.question_label != "Comm Rec Q2A"
+        
+        # Section should be from the show name part of path (not CSV strategic_pillar)
+        assert label.section_label == "Recreational Classes"
+        
+        # Field should be properly labeled
+        assert label.field_label == "Primary answer"
+        
+        # Debug key should contain full path
+        assert "Community::Recreational Classes" in label.debug_key
+        assert "COMM_REC_Q2a" in label.debug_key
+    
+    def test_per_show_answers_without_registry(self):
+        """Test per_show_answers path WITHOUT registry (graceful fallback)."""
+        conflict = Conflict(
+            section="per_show_answers.Community::Recreational Classes.COMM_REC_Q2a",
+            key="primary",
+            values=[("100", "user1"), ("150", "user2")]
+        )
+        
+        label = resolve_conflict_label(conflict, None)
+        
+        # Without registry, should still extract show name from path
+        assert label.section_label == "Recreational Classes"
+        
+        # Question label will be humanized (fallback behavior)
+        assert label.question_label == "Comm Rec Q2A"
+        
+        # Field should still be properly labeled
+        assert label.field_label == "Primary answer"
+        
+        # Should not crash and should have a debug key
+        assert "COMM_REC_Q2a" in label.debug_key
 
 
 if __name__ == "__main__":

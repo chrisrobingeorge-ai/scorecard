@@ -273,6 +273,15 @@ def resolve_conflict_label(
     # Try to extract question ID
     question_id = _extract_question_id_from_path(section, key)
     
+    # For per_show_answers paths, extract the production/show name for section label
+    show_name_from_path = None
+    if section.startswith("per_show_answers"):
+        parts = section.split('.')
+        if len(parts) >= 2:
+            show_part = parts[1]
+            if '::' in show_part:
+                show_name_from_path = show_part.split('::')[-1]
+    
     if question_id and registry:
         # Look up in registry
         question_text = registry.get_question_text(question_id)
@@ -284,7 +293,10 @@ def resolve_conflict_label(
             # Fallback: humanize the question ID
             question_label = _humanize_key(question_id)
         
-        if registry_section:
+        # Prefer show name from path for per_show_answers, otherwise use registry section
+        if show_name_from_path:
+            section_label = show_name_from_path
+        elif registry_section:
             section_label = registry_section
         else:
             # Try to derive section from question ID prefix
@@ -300,7 +312,12 @@ def resolve_conflict_label(
     elif question_id:
         # No registry, but we found a question ID - do best effort
         question_label = _humanize_key(question_id)
-        section_label = _derive_section_from_qid(question_id)
+        
+        # Prefer show name from path for per_show_answers, otherwise derive from question ID
+        if show_name_from_path:
+            section_label = show_name_from_path
+        else:
+            section_label = _derive_section_from_qid(question_id)
         
         if key.lower() in FIELD_LABEL_MAP:
             field_label = FIELD_LABEL_MAP[key.lower()]
