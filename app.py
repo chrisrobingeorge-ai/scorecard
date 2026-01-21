@@ -256,6 +256,17 @@ def get_answer_value(dept: str, production: str, qid: str) -> Tuple[Optional[obj
         (df["production"] == production) &
         (df["question_id"] == qid)
     )
+    
+    # Temporary debug for first few calls
+    if qid in ['ACSI01', 'ATI01', 'COMM_ACCESS_Q1'] and not hasattr(get_answer_value, '_debug_shown'):
+        st.write(f"🔍 **Looking for answer:** dept=`{dept}`, production=`{production}`, qid=`{qid}`")
+        if not df.empty:
+            matches = df[mask]
+            st.write(f"   - Found {len(matches)} matches in answers_df")
+            if matches.empty:
+                st.write(f"   - Available in df: {df[df['question_id'] == qid][['department', 'production', 'question_id']].to_dict('records')}")
+        get_answer_value._debug_shown = True
+    
     if not mask.any():
         return None, None
     row = df[mask].iloc[0]
@@ -917,6 +928,8 @@ def _apply_pending_draft_if_any():
                 st.success(f"✅ Loaded {len(df)} answers into answers_df")
                 non_null = df[df['primary'].notna()]
                 st.write(f"   - {len(non_null)} with non-null primary values")
+                st.write(f"   - Departments: {df['department'].unique().tolist()}")
+                st.write(f"   - Productions: {df['production'].unique().tolist()}")
                 st.write(f"   - Question IDs: {sorted(df['question_id'].unique().tolist())}")
         else:
             st.session_state.pop("answers_df", None)
