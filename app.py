@@ -1309,9 +1309,9 @@ def main():
             # Use expander for large number of conflicts
             if len(conflicts) > 5:
                 with st.expander(f"📋 View and Resolve {len(conflicts)} Conflicts", expanded=True):
-                    resolutions = _render_conflict_resolution_ui(conflicts, questions_all_df)
+                    resolutions = _render_conflict_resolution_ui(conflicts, None)
             else:
-                resolutions = _render_conflict_resolution_ui(conflicts, questions_all_df)
+                resolutions = _render_conflict_resolution_ui(conflicts, None)
             
             # Buttons to apply or cancel
             col1, col2, col3 = st.columns([2, 2, 1])
