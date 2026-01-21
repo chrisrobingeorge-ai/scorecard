@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from pathlib import Path
 import json
 from dataclasses import dataclass
@@ -81,20 +82,29 @@ try:
     )
     _MERGE_AVAILABLE = True
 except ImportError as e:
-    import warnings
     warnings.warn(f"merge_scorecards module not available: {e}")
     _MERGE_AVAILABLE = False
-    # Stubs for when module is not available
-    MergePolicy = None
-    QuestionRegistry = None
-    resolve_conflict_label = None
-    Conflict = None
-    def _merge_scorecards_fn(*args, **kwargs):
+    # Stub classes/functions for when module is not available
+    # These provide consistent interfaces to avoid downstream errors
+    MergePolicy = type("MergePolicy", (), {"NON_DEFAULT_WINS": "non_default_wins"})
+    QuestionRegistry = type("QuestionRegistry", (), {"__init__": lambda self: None})
+    Conflict = type("Conflict", (), {})
+    
+    def resolve_conflict_label(*args, **kwargs):
+        """Stub: returns None when merge module not available."""
         return None
+    
+    def _merge_scorecards_fn(*args, **kwargs):
+        """Stub: returns None when merge module not available."""
+        return None
+    
     def format_conflicts_for_display(*args, **kwargs):
+        """Stub: returns error message when merge module not available."""
         return "Merge functionality not available."
-    def apply_conflict_resolutions(*args, **kwargs):
-        return {}
+    
+    def apply_conflict_resolutions(merged_data, *args, **kwargs):
+        """Stub: returns input data unchanged when merge module not available."""
+        return merged_data if merged_data else {}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Streamlit cache guard (supports older Streamlit)
@@ -1219,7 +1229,7 @@ def _get_question_text(question_id, all_questions_df):
 
 def _build_question_registry(all_questions_df):
     """Build a QuestionRegistry from a DataFrame."""
-    if QuestionRegistry is None:
+    if not _MERGE_AVAILABLE:
         return None
     
     registry = QuestionRegistry()
@@ -1230,7 +1240,7 @@ def _build_question_registry(all_questions_df):
 
 def _render_conflict_resolution_ui(conflicts, all_questions_df=None):
     """Render conflict resolution UI and return user choices."""
-    if resolve_conflict_label is None:
+    if not _MERGE_AVAILABLE:
         st.error("Conflict resolution functionality is not available.")
         return {}
     
