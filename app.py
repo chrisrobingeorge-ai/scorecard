@@ -1291,73 +1291,6 @@ def main():
 
     if "pending_draft_error" in st.session_state:
         st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
-    
-    # Display merge conflicts if any - with interactive resolution
-    if "merge_conflicts" in st.session_state and st.session_state["merge_conflicts"]:
-        from merge_scorecards import format_conflicts_for_display, apply_conflict_resolutions
-        
-        conflicts = st.session_state["merge_conflicts"]
-        merge_result = st.session_state.get("pending_merge_result")
-        
-        if merge_result:
-            st.warning(f"### ⚠️ {len(conflicts)} Merge Conflict{'s' if len(conflicts) > 1 else ''} Detected")
-            st.markdown(
-                "Multiple files provided different values for the same fields. "
-                "**Choose which value to keep for each conflict below:**"
-            )
-            
-            # Use expander for large number of conflicts
-            if len(conflicts) > 5:
-                with st.expander(f"📋 View and Resolve {len(conflicts)} Conflicts", expanded=True):
-                    resolutions = _render_conflict_resolution_ui(conflicts, None)
-            else:
-                resolutions = _render_conflict_resolution_ui(conflicts, None)
-            
-            # Buttons to apply or cancel
-            col1, col2, col3 = st.columns([2, 2, 1])
-            
-            with col1:
-                if st.button("✅ Apply Merge with Selected Values", type="primary", use_container_width=True):
-                    # Apply resolutions
-                    resolved_data = apply_conflict_resolutions(
-                        merge_result.merged_data,
-                        conflicts,
-                        resolutions
-                    )
-                    
-                    # Convert to bytes and queue for application
-                    merged_bytes = json.dumps(resolved_data).encode("utf-8")
-                    h = _hash_bytes(merged_bytes)
-                    
-                    st.session_state["pending_draft_bytes"] = merged_bytes
-                    st.session_state["pending_draft_hash"] = h
-                    
-                    # Clear conflict state
-                    st.session_state.pop("merge_conflicts", None)
-                    st.session_state.pop("pending_merge_result", None)
-                    
-                    st.success("Conflicts resolved! Applying merge...")
-                    safe_rerun()
-            
-            with col2:
-                if st.button("❌ Cancel Merge", use_container_width=True):
-                    # Clear everything
-                    st.session_state.pop("merge_conflicts", None)
-                    st.session_state.pop("pending_merge_result", None)
-                    st.info("Merge cancelled.")
-                    safe_rerun()
-                    st.session_state.pop("pending_merge_result", None)
-                    st.info("Merge cancelled.")
-                    safe_rerun()
-        else:
-            # Fallback: just display conflicts (shouldn't happen with new code)
-            conflicts_text = format_conflicts_for_display(conflicts)
-            st.markdown(conflicts_text)
-            
-            if st.button("Clear Conflicts Notice"):
-                st.session_state.pop("merge_conflicts", None)
-                safe_rerun()
-
 
     # Main UI
     st.title("Monthly Scorecard with AI Summary")
@@ -1421,6 +1354,69 @@ def main():
             st.stop()
 
     all_question_ids = questions_all_df["question_id"].astype(str).tolist()
+
+    # Display merge conflicts if any - with interactive resolution
+    if "merge_conflicts" in st.session_state and st.session_state["merge_conflicts"]:
+        from merge_scorecards import format_conflicts_for_display, apply_conflict_resolutions
+        
+        conflicts = st.session_state["merge_conflicts"]
+        merge_result = st.session_state.get("pending_merge_result")
+        
+        if merge_result:
+            st.warning(f"### ⚠️ {len(conflicts)} Merge Conflict{'s' if len(conflicts) > 1 else ''} Detected")
+            st.markdown(
+                "Multiple files provided different values for the same fields. "
+                "**Choose which value to keep for each conflict below:**"
+            )
+            
+            # Use expander for large number of conflicts
+            if len(conflicts) > 5:
+                with st.expander(f"📋 View and Resolve {len(conflicts)} Conflicts", expanded=True):
+                    resolutions = _render_conflict_resolution_ui(conflicts, questions_all_df)
+            else:
+                resolutions = _render_conflict_resolution_ui(conflicts, questions_all_df)
+            
+            # Buttons to apply or cancel
+            col1, col2, col3 = st.columns([2, 2, 1])
+            
+            with col1:
+                if st.button("✅ Apply Merge with Selected Values", type="primary", use_container_width=True):
+                    # Apply resolutions
+                    resolved_data = apply_conflict_resolutions(
+                        merge_result.merged_data,
+                        conflicts,
+                        resolutions
+                    )
+                    
+                    # Convert to bytes and queue for application
+                    merged_bytes = json.dumps(resolved_data).encode("utf-8")
+                    h = _hash_bytes(merged_bytes)
+                    
+                    st.session_state["pending_draft_bytes"] = merged_bytes
+                    st.session_state["pending_draft_hash"] = h
+                    
+                    # Clear conflict state
+                    st.session_state.pop("merge_conflicts", None)
+                    st.session_state.pop("pending_merge_result", None)
+                    
+                    st.success("Conflicts resolved! Applying merge...")
+                    safe_rerun()
+            
+            with col2:
+                if st.button("❌ Cancel Merge", use_container_width=True):
+                    # Clear everything
+                    st.session_state.pop("merge_conflicts", None)
+                    st.session_state.pop("pending_merge_result", None)
+                    st.info("Merge cancelled.")
+                    safe_rerun()
+        else:
+            # Fallback: just display conflicts (shouldn't happen with new code)
+            conflicts_text = format_conflicts_for_display(conflicts)
+            st.markdown(conflicts_text)
+            
+            if st.button("Clear Conflicts Notice"):
+                st.session_state.pop("merge_conflicts", None)
+                safe_rerun()
 
     # ── 3) Scope selector (production / programme / general)
     st.subheader("Scope of this report")
