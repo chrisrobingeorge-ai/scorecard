@@ -257,15 +257,22 @@ def get_answer_value(dept: str, production: str, qid: str) -> Tuple[Optional[obj
         (df["question_id"] == qid)
     )
     
-    # Temporary debug for first few calls
-    if qid in ['ACSI01', 'ATI01', 'COMM_ACCESS_Q1'] and not hasattr(get_answer_value, '_debug_shown'):
-        st.write(f"🔍 **Looking for answer:** dept=`{dept}`, production=`{production}`, qid=`{qid}`")
-        if not df.empty:
-            matches = df[mask]
-            st.write(f"   - Found {len(matches)} matches in answers_df")
-            if matches.empty:
-                st.write(f"   - Available in df: {df[df['question_id'] == qid][['department', 'production', 'question_id']].to_dict('records')}")
-        get_answer_value._debug_shown = True
+    # Debug: Show what we're looking for and what's available
+    if not hasattr(get_answer_value, '_debug_count'):
+        get_answer_value._debug_count = 0
+    
+    if get_answer_value._debug_count < 5:  # Show first 5 lookups
+        get_answer_value._debug_count += 1
+        st.write(f"🔍 **Lookup #{get_answer_value._debug_count}:** dept=`{dept}`, production=`{production}`, qid=`{qid}`")
+        matches = df[mask]
+        st.write(f"   - Found {len(matches)} exact matches")
+        if matches.empty and not df.empty:
+            # Show what's available for this question ID
+            qid_rows = df[df['question_id'] == qid]
+            if not qid_rows.empty:
+                st.write(f"   - ⚠️ This question exists but with different dept/prod:")
+                for _, row in qid_rows.head(3).iterrows():
+                    st.write(f"     • dept=`{row['department']}`, prod=`{row['production']}`")
     
     if not mask.any():
         return None, None
