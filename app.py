@@ -1308,25 +1308,39 @@ def main():
         help="Upload one or more JSON drafts you previously downloaded. Multiple files will be merged.",
     )
     if draft_files:
-        # Process multiple files - merge them into a single draft
-        if len(draft_files) == 1:
-            # Single file - use existing logic
-            queued, msg = queue_draft_bytes(draft_files[0].getvalue())
-            if queued:
-                st.sidebar.success(msg)
-                safe_rerun()
-            else:
-                st.sidebar.info(msg)
+        # Calculate hash of uploaded files to detect if they've changed
+        file_contents = [f.getvalue() for f in draft_files]
+        uploaded_files_hash = _hash_bytes(b"".join(file_contents))
+        
+        # Skip processing if these exact files were already processed
+        # (prevents re-triggering merge after conflict resolution)
+        if st.session_state.get("_processed_upload_hash") == uploaded_files_hash:
+            pass  # Files already processed, don't reprocess
         else:
-            # Multiple files - merge them
-            queued, msg = queue_multiple_draft_bytes([f.getvalue() for f in draft_files])
-            if queued:
-                st.sidebar.success(msg)
-                # Only rerun if no conflicts detected (conflicts need manual resolution first)
-                if "merge_conflicts" not in st.session_state:
+            # Process multiple files - merge them into a single draft
+            if len(draft_files) == 1:
+                # Single file - use existing logic
+                queued, msg = queue_draft_bytes(file_contents[0])
+                if queued:
+                    st.session_state["_processed_upload_hash"] = uploaded_files_hash
+                    st.sidebar.success(msg)
                     safe_rerun()
+                else:
+                    st.sidebar.info(msg)
             else:
-                st.sidebar.info(msg)
+                # Multiple files - merge them
+                queued, msg = queue_multiple_draft_bytes(file_contents)
+                if queued:
+                    st.session_state["_processed_upload_hash"] = uploaded_files_hash
+                    st.sidebar.success(msg)
+                    # Only rerun if no conflicts detected (conflicts need manual resolution first)
+                    if "merge_conflicts" not in st.session_state:
+                        safe_rerun()
+                else:
+                    st.sidebar.info(msg)
+    else:
+        # Clear the processed hash when files are removed from uploader
+        st.session_state.pop("_processed_upload_hash", None)
 
     if "pending_draft_error" in st.session_state:
         st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
@@ -1421,25 +1435,12 @@ def main():
                 
                 with col1:
                     if st.button("✅ Apply Merge with Selected Values", type="primary", use_container_width=True):
-                        # Debug: Show resolution choices
-                        st.write(f"DEBUG: Applying {len(resolutions)} resolutions for {len(conflicts)} conflicts")
-                        for conflict_idx, value_idx in resolutions.items():
-                            if conflict_idx < len(conflicts):
-                                conflict = conflicts[conflict_idx]
-                                chosen_value = conflict.values[value_idx] if value_idx < len(conflict.values) else None
-                                st.write(f"  Conflict {conflict_idx}: {conflict.section}.{conflict.key} → {chosen_value}")
-                        
                         # Apply resolutions
                         resolved_data = apply_conflict_resolutions(
                             merge_result.merged_data,
                             conflicts,
                             resolutions
                         )
-                        
-                        # Debug: Show a sample of resolved data
-                        st.write("DEBUG: Resolved data keys:", list(resolved_data.keys()))
-                        if "per_show_answers" in resolved_data:
-                            st.write("DEBUG: per_show_answers keys:", list(resolved_data["per_show_answers"].keys()))
                         
                         # Convert to bytes and queue for application
                         merged_bytes = json.dumps(resolved_data).encode("utf-8")
@@ -1448,15 +1449,11 @@ def main():
                         st.session_state["pending_draft_bytes"] = merged_bytes
                         st.session_state["pending_draft_hash"] = h
                         
-                        st.write(f"DEBUG: Stored {len(merged_bytes)} bytes in pending_draft_bytes")
-                        st.write(f"DEBUG: Hash: {h[:16]}...")
-                        
                         # Clear conflict state
                         st.session_state.pop("merge_conflicts", None)
                         st.session_state.pop("pending_merge_result", None)
                         
                         st.success("Conflicts resolved! Applying merge...")
-                        st.write("DEBUG: About to rerun...")
                         safe_rerun()
                 
                 with col2:
