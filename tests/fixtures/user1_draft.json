@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "staff_name": "Alice",
+    "role": "Finance Manager",
+    "department": "Artistic",
+    "month": "2026-01",
+    "production": "General"
+  },
+  "answers": {
+    "ATI01": {
+      "primary": "3 - Moderate"
+    },
+    "ATI02": {
+      "primary": "Some artistic innovation"
+    }
+  },
+  "per_show_answers": {},
+  "financial_kpis_actuals": [
+    {
+      "area": "DONATIONS",
+      "category": "General",
+      "sub_category": "–",
+      "actual": 100000.0,
+      "report_section": "DONATIONS",
+      "report_order": 1
+    },
+    {
+      "area": "DONATIONS",
+      "category": "Campaigns",
+      "sub_category": "Costume Campaign",
+      "actual": 50000.0,
+      "report_section": "DONATIONS",
+      "report_order": 2
+    },
+    {
+      "area": "TICKET SALES",
+      "category": "Subscriptions",
+      "sub_category": "Subs - YYC",
+      "actual": 250000.0,
+      "report_section": "TICKET SALES",
+      "report_order": 1
+    }
+  ]
+}

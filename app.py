@@ -687,67 +687,33 @@ def queue_draft_bytes(draft_bytes: bytes) -> Tuple[bool, str]:
         return False, f"Could not queue draft: {e}"
 
 def queue_multiple_draft_bytes(draft_bytes_list: List[bytes]) -> Tuple[bool, str]:
-    """Queue multiple drafts for application, merging their contents."""
+    """Queue multiple drafts for application, merging their contents using smart merge logic."""
     try:
-        merged_data: Dict[str, Any] = {
-            "meta": {},
-            "answers": {},
-            "per_show_answers": {},
-            "financial_kpis_actuals": [],
-        }
+        from merge_scorecards import merge_scorecards, MergePolicy, format_conflicts_for_display
         
-        for draft_bytes in draft_bytes_list:
+        # Parse all JSON files
+        scorecards = []
+        for i, draft_bytes in enumerate(draft_bytes_list):
             try:
                 data = json.loads(draft_bytes.decode("utf-8"))
-                
-                # Merge meta - later files override earlier ones
-                if "meta" in data and data["meta"]:
-                    merged_data["meta"].update(data["meta"])
-                
-                # Merge answers - later files override earlier ones for the same question
-                if "answers" in data and data["answers"]:
-                    merged_data["answers"].update(data["answers"])
-                
-                # Merge per_show_answers - merge at show level
-                if "per_show_answers" in data and data["per_show_answers"]:
-                    for show_key, show_answers in data["per_show_answers"].items():
-                        if show_key not in merged_data["per_show_answers"]:
-                            merged_data["per_show_answers"][show_key] = {}
-                        merged_data["per_show_answers"][show_key].update(show_answers)
-                
-                # Merge financial_kpis_actuals - combine and deduplicate
-                if "financial_kpis_actuals" in data and data["financial_kpis_actuals"]:
-                    for kpi in data["financial_kpis_actuals"]:
-                        # Check if this KPI already exists (by area, category, sub_category)
-                        key = (kpi.get("area"), kpi.get("category"), kpi.get("sub_category"))
-                        existing_idx = None
-                        for i, existing in enumerate(merged_data["financial_kpis_actuals"]):
-                            existing_key = (existing.get("area"), existing.get("category"), existing.get("sub_category"))
-                            if existing_key == key:
-                                existing_idx = i
-                                break
-                        if existing_idx is not None:
-                            # Update existing - later files override
-                            merged_data["financial_kpis_actuals"][existing_idx] = kpi
-                        else:
-                            merged_data["financial_kpis_actuals"].append(kpi)
-                
-                # Merge ai_result - later files override
-                if "ai_result" in data and data["ai_result"]:
-                    merged_data["ai_result"] = data["ai_result"]
-                
-                # Merge kpi_explanations - concatenate with newlines
-                if "kpi_explanations" in data and data["kpi_explanations"]:
-                    if "kpi_explanations" not in merged_data or not merged_data["kpi_explanations"]:
-                        merged_data["kpi_explanations"] = data["kpi_explanations"]
-                    else:
-                        merged_data["kpi_explanations"] += "\n\n" + data["kpi_explanations"]
-                        
+                scorecards.append((data, f"file_{i+1}"))
             except (json.JSONDecodeError, UnicodeDecodeError) as e:
-                return False, f"Could not parse one of the JSON files: {e}"
+                return False, f"Could not parse JSON file {i+1}: {e}"
+        
+        # Perform intelligent merge
+        merge_result = merge_scorecards(
+            scorecards,
+            policy=MergePolicy.NON_DEFAULT_WINS
+        )
+        
+        # Store conflicts in session state for UI display
+        if merge_result.has_conflicts:
+            st.session_state["merge_conflicts"] = merge_result.conflicts
+        else:
+            st.session_state.pop("merge_conflicts", None)
         
         # Convert merged data back to bytes
-        merged_bytes = json.dumps(merged_data).encode("utf-8")
+        merged_bytes = json.dumps(merge_result.merged_data).encode("utf-8")
         h = _hash_bytes(merged_bytes)
         
         if st.session_state.get("draft_hash") == h:
@@ -755,7 +721,15 @@ def queue_multiple_draft_bytes(draft_bytes_list: List[bytes]) -> Tuple[bool, str
         
         st.session_state["pending_draft_bytes"] = merged_bytes
         st.session_state["pending_draft_hash"] = h
-        return True, f"Merged {len(draft_bytes_list)} drafts; applying…"
+        
+        # Build success message with stats
+        msg_parts = [f"Merged {len(draft_bytes_list)} files"]
+        if merge_result.stats.get("kpis_merged"):
+            msg_parts.append(f"{merge_result.stats['kpis_merged']} KPI lines")
+        if merge_result.has_conflicts:
+            msg_parts.append(f"⚠️ {len(merge_result.conflicts)} conflicts detected")
+        
+        return True, "; ".join(msg_parts) + ". Applying…"
         
     except Exception as e:
         return False, f"Could not merge drafts: {e}"
@@ -1231,6 +1205,23 @@ def main():
 
     if "pending_draft_error" in st.session_state:
         st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
+    
+    # Display merge conflicts if any
+    if "merge_conflicts" in st.session_state and st.session_state["merge_conflicts"]:
+        from merge_scorecards import format_conflicts_for_display
+        
+        st.warning("### ⚠️ Merge Conflicts Detected")
+        st.markdown(
+            "Multiple files provided different values for the same fields. "
+            "The merge used non-default values where possible. Review conflicts below:"
+        )
+        
+        conflicts_text = format_conflicts_for_display(st.session_state["merge_conflicts"])
+        st.markdown(conflicts_text)
+        
+        if st.button("Clear Conflicts Notice"):
+            st.session_state.pop("merge_conflicts", None)
+            safe_rerun()
 
     # Main UI
     st.title("Monthly Scorecard with AI Summary")
