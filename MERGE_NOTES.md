@@ -150,28 +150,66 @@ merge_result = merge_scorecards(
 
 ### Files Changed
 
-1. **`merge_scorecards.py`** (new file)
+1. **`merge_scorecards.py`** (new file, extended)
    - Core merge logic
    - Conflict detection
    - Provenance tracking
-   - ~400 lines of documented code
+   - **NEW: `QuestionRegistry` class** for loading question metadata from CSV
+   - **NEW: `resolve_conflict_label()` function** for human-readable labels
+   - **NEW: `ConflictLabel` dataclass** for structured label data
+   - ~600 lines of documented code
 
 2. **`app.py`** (modified)
    - Updated `queue_multiple_draft_bytes()` to use new merge module
-   - Added conflict display UI
-   - Lines changed: ~40 lines
+   - **NEW: `_build_question_registry()` helper** to create registry from DataFrame
+   - Updated `_render_conflict_resolution_ui()` to use resolved labels
+   - Lines changed: ~60 lines
 
 3. **`tests/test_merge_scorecards.py`** (new file)
    - 21 unit tests covering all merge scenarios
    - 100% test pass rate
 
-4. **`tests/fixtures/`** (new directory)
+4. **`tests/test_conflict_label_resolver.py`** (new file)
+   - **NEW: 32 unit tests** for conflict label resolution
+   - Tests for question registry, label resolution, fallback behavior
+   - Integration tests with real CSV data
+
+5. **`tests/fixtures/`** (new directory)
    - `user1_draft.json`: Sample JSON with KPI values
    - `user2_draft.json`: Sample JSON demonstrating bug scenario
 
+### Question Text Mapping
+
+The question text mapping system uses the **CSV question registry** files in `data/`:
+
+```
+data/
+├── community_scorecard_questions.csv
+├── corporate_scorecard_questions.csv
+├── artistic_scorecard_questions.csv
+└── school_scorecard_questions.csv
+```
+
+Each CSV contains columns:
+- `question_id`: Unique identifier (e.g., "COMM_REC_Q2a")
+- `question_text`: Full question text displayed to users
+- `section` or `strategic_pillar`: Category/section name
+- `department`: Department (Community, Corporate, etc.)
+
+**How to add/modify question text:**
+
+1. Edit the appropriate `*_scorecard_questions.csv` file in `data/`
+2. Ensure `question_id` is unique and follows the naming convention
+3. The `resolve_conflict_label()` function will automatically use the new text
+
+**Fallback behavior** when registry doesn't have a question:
+- Question ID prefixes are mapped to sections (e.g., "COMM_REC_" → "Recreational Classes")
+- Keys are humanized (underscores to spaces, title-cased)
+- Debug key is always included for reference
+
 ### UI Changes
 
-When conflicts are detected after merging multiple files, the app now displays:### UI Changes
+When conflicts are detected after merging multiple files, the app now displays human-readable conflict labels with full context.
 
 #### Automatic Merge (No Conflicts)
 
@@ -183,27 +221,37 @@ When uploading multiple files without conflicts, the merge proceeds automaticall
 
 #### Interactive Conflict Resolution (With Conflicts)
 
-When conflicts are detected, the app pauses and displays an interactive UI:
+When conflicts are detected, the app pauses and displays an interactive UI with **human-readable labels**:
 
 ```
 ⚠️ Merge Conflicts Detected
 
 Please choose which value to keep for each conflict:
 
-Conflict 1: financial_kpis_actuals / DONATIONS/General/–
-○ user1: 100,000.00
-○ user2: 150,000.00
+1. Financial KPIs
+   _Donations > General_
+   Actual value (debug: financial_kpis_actuals › DONATIONS/General/–)
+   ○ user1: 100,000.00
+   ○ user2: 150,000.00
 
 ───────────────────────────────────────
 
-Conflict 2: answers / ATI01
-○ file_1: 3 - Moderate
-○ file_2: 4 - High
+2. Recreational Classes
+   _If yes, how many NEW recreational students registered this period?_
+   Primary answer (debug: answers.COMM_REC_Q2a › primary)
+   ○ file_1: 100
+   ○ file_2: 150
 
 ───────────────────────────────────────
 
 [✅ Apply Merge with Selected Values]  [❌ Cancel Merge]
 ```
+
+**Key improvements in conflict display:**
+- **Section label**: Shows the human-readable category (e.g., "Recreational Classes" instead of "COMM_REC")
+- **Question text**: Displays the full question text from the CSV registry
+- **Field label**: Shows what type of field it is (e.g., "Primary answer", "Actual value")
+- **Debug key**: Always included for technical reference
 
 **How it works:**
 1. Upload multiple JSON files with conflicting values
