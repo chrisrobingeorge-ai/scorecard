@@ -1186,40 +1186,35 @@ def _get_question_text(question_id, all_questions_df):
     return None
 
 
+def _build_question_registry(all_questions_df):
+    """Build a QuestionRegistry from a DataFrame."""
+    from merge_scorecards import QuestionRegistry
+    
+    registry = QuestionRegistry()
+    if all_questions_df is not None and not all_questions_df.empty:
+        registry.load_from_dataframe(all_questions_df)
+    return registry
+
+
 def _render_conflict_resolution_ui(conflicts, all_questions_df=None):
     """Render conflict resolution UI and return user choices."""
+    from merge_scorecards import resolve_conflict_label
+    
     resolutions = {}
     
+    # Build question registry for label resolution
+    registry = _build_question_registry(all_questions_df)
+    
     for i, conflict in enumerate(conflicts):
-        # Build a descriptive header
-        section_short = conflict.section.split('.')[-1] if '.' in conflict.section else conflict.section
+        # Resolve human-readable label for this conflict
+        label = resolve_conflict_label(conflict, registry)
         
-        # For question answers, try to get the full question text
-        question_id = None
-        if section_short in ('answers', 'per_show_answers') or conflict.section.startswith('answers'):
-            # Extract question ID from section or key
-            if '.' in conflict.section:
-                parts = conflict.section.split('.')
-                # Look for question ID in section parts
-                for part in parts:
-                    if part and (part.startswith(('ATI', 'COMM', 'CORP', 'SCH', 'FIN')) or '_' in part):
-                        question_id = part
-                        break
-            
-            if question_id and all_questions_df is not None:
-                question_text = _get_question_text(question_id, all_questions_df)
-                if question_text:
-                    # Display question ID and full text
-                    st.markdown(f"**{i+1}. Question: {question_id}**")
-                    st.caption(f"_{question_text}_")
-                    st.caption(f"Field: {conflict.key}")
-                else:
-                    st.markdown(f"**{i+1}. {question_id} › {conflict.key}**")
-            else:
-                st.markdown(f"**{i+1}. {section_short} › {conflict.key}**")
-        else:
-            # For KPIs and other fields, show section and key
-            st.markdown(f"**{i+1}. {section_short} › {conflict.key}**")
+        # Display header with section and question text
+        st.markdown(f"**{i+1}. {label.section_label}**")
+        st.markdown(f"_{label.question_label}_")
+        
+        # Display field label and debug key
+        st.caption(label.display_subheader())
         
         # Pre-format options (avoids lambda closure issues)
         options_display = []

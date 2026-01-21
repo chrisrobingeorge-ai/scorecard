@@ -8,13 +8,18 @@ This module provides intelligent merging that:
 - Detects and reports conflicts
 - Prefers non-default values over defaults
 - Tracks data provenance (which file contributed which data)
+- Resolves human-readable labels for conflict display
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from enum import Enum
 import copy
+import csv
+import io
+import re
+from pathlib import Path
 
 
 class MergePolicy(Enum):
@@ -34,6 +39,341 @@ class Conflict:
     
     def __repr__(self):
         return f"Conflict({self.section}/{self.key}: {self.values})"
+
+
+@dataclass
+class ConflictLabel:
+    """Human-readable label components for a conflict."""
+    section_label: str      # e.g., "Community & Reconciliation" or "Financial KPIs"
+    question_label: str     # Full question text or KPI description
+    field_label: str        # e.g., "Primary value", "Notes", "Actual" (optional)
+    debug_key: str          # Original internal key path for debugging
+    
+    def display_header(self) -> str:
+        """Return the main display header: 'Section: Question Text'"""
+        return f"{self.section_label}: {self.question_label}"
+    
+    def display_subheader(self) -> str:
+        """Return subheader with field label and debug key."""
+        if self.field_label:
+            return f"{self.field_label} (debug: {self.debug_key})"
+        return f"(debug: {self.debug_key})"
+
+
+class QuestionRegistry:
+    """
+    Registry for looking up question metadata from CSV files.
+    
+    Loads question data from CSV files and provides lookup by question_id.
+    Used to resolve human-readable labels for conflicts.
+    """
+    
+    def __init__(self):
+        self._questions: Dict[str, Dict[str, Any]] = {}
+        self._sections: Dict[str, str] = {}  # question_id -> section display name
+    
+    def load_from_csv_bytes(self, csv_bytes: bytes) -> None:
+        """Load questions from CSV bytes."""
+        try:
+            content = csv_bytes.decode('utf-8')
+            reader = csv.DictReader(io.StringIO(content))
+            for row in reader:
+                qid = row.get('question_id', '').strip()
+                if qid:
+                    self._questions[qid] = row
+                    # Determine section label from available columns
+                    section = (
+                        row.get('section', '').strip() or
+                        row.get('strategic_pillar', '').strip() or
+                        row.get('department', '').strip() or
+                        'General'
+                    )
+                    self._sections[qid] = section
+        except (UnicodeDecodeError, csv.Error, KeyError, ValueError):
+            pass  # Gracefully handle invalid CSV format or encoding issues
+    
+    def load_from_csv_file(self, file_path: Union[str, Path]) -> None:
+        """Load questions from a CSV file path."""
+        path = Path(file_path)
+        if path.exists():
+            with open(path, 'rb') as f:
+                self.load_from_csv_bytes(f.read())
+    
+    def load_from_dataframe(self, df: Any) -> None:
+        """Load questions from a pandas DataFrame."""
+        try:
+            for _, row in df.iterrows():
+                qid = str(row.get('question_id', '')).strip()
+                if qid:
+                    self._questions[qid] = row.to_dict()
+                    section = (
+                        str(row.get('section', '')).strip() or
+                        str(row.get('strategic_pillar', '')).strip() or
+                        str(row.get('department', '')).strip() or
+                        'General'
+                    )
+                    self._sections[qid] = section
+        except (AttributeError, TypeError, KeyError):
+            pass  # Gracefully handle DataFrame access issues
+    
+    def get_question(self, question_id: str) -> Optional[Dict[str, Any]]:
+        """Get question metadata by ID."""
+        return self._questions.get(question_id)
+    
+    def get_question_text(self, question_id: str) -> Optional[str]:
+        """Get the full question text for a question ID."""
+        q = self._questions.get(question_id)
+        if q:
+            text = q.get('question_text', '')
+            if isinstance(text, str) and text.strip():
+                return text.strip()
+        return None
+    
+    def get_section_label(self, question_id: str) -> Optional[str]:
+        """Get the section/category display name for a question ID."""
+        return self._sections.get(question_id)
+    
+    def has_question(self, question_id: str) -> bool:
+        """Check if a question ID is in the registry."""
+        return question_id in self._questions
+
+
+# Field label mappings for common subfields
+FIELD_LABEL_MAP: Dict[str, str] = {
+    'primary': 'Primary answer',
+    'description': 'Description/Notes',
+    'notes': 'Notes',
+    'actual': 'Actual value',
+    'target': 'Target value',
+    'secondary': 'Secondary answer',
+    'comment': 'Comment',
+    'explanation': 'Explanation',
+}
+
+
+def _humanize_key(key: str) -> str:
+    """Convert an internal key to a human-readable form (fallback)."""
+    # Replace underscores with spaces and title-case
+    result = key.replace('_', ' ').replace('-', ' ')
+    # Handle camelCase
+    result = re.sub(r'([a-z])([A-Z])', r'\1 \2', result)
+    return result.title()
+
+
+def _extract_question_id_from_path(section: str, key: str) -> Optional[str]:
+    """
+    Extract question ID from conflict section/key.
+    
+    Examples:
+        - section="answers.COMM_REC_Q2a", key="primary" -> "COMM_REC_Q2a"
+        - section="answers", key="COMM_REC_Q2a" -> "COMM_REC_Q2a"
+        - section="per_show_answers.Show1.ATI01", key="primary" -> "ATI01"
+    """
+    # Common question ID prefixes
+    qid_patterns = [
+        r'\b(ATI\d+\w*)\b',
+        r'\b(ACSI\d+\w*)\b',
+        r'\b(CR\d+\w*)\b',
+        r'\b(RA\d+\w*)\b',
+        r'\b(FE\d+\w*)\b',
+        r'\b(FM\d+\w*)\b',
+        r'\b(COMM_\w+_Q\d+\w*)\b',
+        r'\b(CORP_\w+_?Q?\d*\w*)\b',
+        r'\b(SCH_\w+_Q\d+\w*)\b',
+    ]
+    
+    # Try to find question ID in section path
+    for pattern in qid_patterns:
+        match = re.search(pattern, section, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    
+    # Try in key
+    for pattern in qid_patterns:
+        match = re.search(pattern, key, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    
+    # Check if key itself looks like a question ID (e.g., starts with known prefixes)
+    known_prefixes = ('ATI', 'ACSI', 'CR', 'RA', 'FE', 'FM', 'COMM_', 'CORP_', 'SCH_')
+    if any(key.upper().startswith(p) for p in known_prefixes):
+        return key
+    
+    return None
+
+
+def _get_kpi_description(kpi_key: str) -> str:
+    """
+    Generate a human-readable description for a KPI key.
+    
+    Args:
+        kpi_key: Key in format "area/category/sub_category"
+    
+    Returns:
+        Human-readable description like "DONATIONS > General"
+    """
+    parts = kpi_key.split('/')
+    if len(parts) >= 2:
+        area = parts[0].replace('_', ' ').title()
+        category = parts[1].replace('_', ' ').title()
+        if len(parts) >= 3 and parts[2] and parts[2] != '–':
+            sub_cat = parts[2].replace('_', ' ').title()
+            return f"{area} > {category} > {sub_cat}"
+        return f"{area} > {category}"
+    return kpi_key.replace('_', ' ').title()
+
+
+def resolve_conflict_label(
+    conflict: Conflict,
+    registry: Optional[QuestionRegistry] = None
+) -> ConflictLabel:
+    """
+    Resolve a human-readable label for a conflict.
+    
+    This function translates internal conflict paths into user-friendly labels
+    using the question registry when available, with graceful fallbacks.
+    
+    Args:
+        conflict: The Conflict object to resolve
+        registry: Optional QuestionRegistry for looking up question text
+    
+    Returns:
+        ConflictLabel with human-readable components
+    
+    Examples:
+        >>> conflict = Conflict(section="answers.COMM_REC_Q2a", key="primary", values=[])
+        >>> label = resolve_conflict_label(conflict, registry)
+        >>> label.section_label  # "Boost Enrollment & Engagement in AB Classes"
+        >>> label.question_label  # "If yes, how many NEW recreational students..."
+        >>> label.field_label    # "Primary answer"
+    """
+    section = conflict.section
+    key = conflict.key
+    
+    # Build the debug key
+    debug_key = f"{section} › {key}" if section != key else key
+    
+    # Default fallback values
+    section_label = "Answers"
+    question_label = _humanize_key(key)
+    field_label = FIELD_LABEL_MAP.get(key.lower(), "")
+    
+    # Handle KPI conflicts
+    if section == "financial_kpis_actuals" or "kpi" in section.lower():
+        section_label = "Financial KPIs"
+        question_label = _get_kpi_description(key)
+        field_label = "Actual value"
+        return ConflictLabel(
+            section_label=section_label,
+            question_label=question_label,
+            field_label=field_label,
+            debug_key=debug_key
+        )
+    
+    # Try to extract question ID
+    question_id = _extract_question_id_from_path(section, key)
+    
+    if question_id and registry:
+        # Look up in registry
+        question_text = registry.get_question_text(question_id)
+        registry_section = registry.get_section_label(question_id)
+        
+        if question_text:
+            question_label = question_text
+        else:
+            # Fallback: humanize the question ID
+            question_label = _humanize_key(question_id)
+        
+        if registry_section:
+            section_label = registry_section
+        else:
+            # Try to derive section from question ID prefix
+            section_label = _derive_section_from_qid(question_id)
+        
+        # Determine field label from key if it's a subfield
+        if key.lower() in FIELD_LABEL_MAP:
+            field_label = FIELD_LABEL_MAP[key.lower()]
+        elif key != question_id:
+            # Key is something other than the question ID
+            field_label = FIELD_LABEL_MAP.get(key.lower(), _humanize_key(key))
+    
+    elif question_id:
+        # No registry, but we found a question ID - do best effort
+        question_label = _humanize_key(question_id)
+        section_label = _derive_section_from_qid(question_id)
+        
+        if key.lower() in FIELD_LABEL_MAP:
+            field_label = FIELD_LABEL_MAP[key.lower()]
+    
+    else:
+        # No question ID found - handle as generic path
+        if section.startswith("per_show_answers"):
+            section_label = "Per-Show Answers"
+            # Try to extract show name
+            parts = section.split('.')
+            if len(parts) >= 2:
+                show_part = parts[1]
+                if '::' in show_part:
+                    show_name = show_part.split('::')[-1]
+                    section_label = f"Per-Show: {show_name}"
+        elif section.startswith("answers"):
+            section_label = "Answers"
+        
+        # Key might be the field name
+        if key.lower() in FIELD_LABEL_MAP:
+            field_label = FIELD_LABEL_MAP[key.lower()]
+        else:
+            question_label = _humanize_key(key)
+    
+    return ConflictLabel(
+        section_label=section_label,
+        question_label=question_label,
+        field_label=field_label,
+        debug_key=debug_key
+    )
+
+
+def _derive_section_from_qid(question_id: str) -> str:
+    """
+    Derive a section label from a question ID prefix.
+    
+    This is a fallback when the registry doesn't have section info.
+    """
+    qid_upper = question_id.upper()
+    
+    # Map prefixes to human-readable section names
+    prefix_map = {
+        'COMM_ACCESS_': 'Community Access Programs',
+        'COMM_REC_': 'Recreational Classes',
+        'COMM_': 'Community',
+        'CORP_GP_': 'Global Presence',
+        'CORP_SU_': 'Subscriptions & Sales',
+        'CORP_CM_': 'Company Marketing',
+        'CORP_SM_': 'School Marketing',
+        'CORP_CU_': 'Community Marketing',
+        'CORP_LS_': 'Leadership & Culture',
+        'CORP_TB_': 'Team Building',
+        'CORP_PL_': 'Policies',
+        'CORP_WC_': 'Workplace Culture',
+        'CORP_BM_': 'Board Management',
+        'CORP_': 'Corporate',
+        'SCH_CT_': 'Classical Training',
+        'SCH_AS_': 'Attracting Students',
+        'SCH_SA_': 'Student Accessibility',
+        'SCH_': 'School',
+        'ATI': 'Artistic & Technical Innovation',
+        'ACSI': 'Artistic Contributions & Social Impact',
+        'CR': 'Collaborations & Residencies',
+        'RA': 'Recruitment & Auditions',
+        'FE': 'Festivals & Events',
+        'FM': 'Financials & Marketing',
+    }
+    
+    for prefix, label in prefix_map.items():
+        if qid_upper.startswith(prefix):
+            return label
+    
+    return 'General'
 
 
 @dataclass
