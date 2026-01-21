@@ -791,11 +791,20 @@ def _apply_pending_draft_if_any():
     if not b:
         return
 
+    # Temporary debug flag
+    debug_loading = True  # Set to False after debugging
+    
+    if debug_loading:
+        st.info(f"🔄 Loading pending draft: {len(b)} bytes")
+
     try:
         data = json.loads(b.decode("utf-8"))
         answers = data.get("answers", {}) or {}
         meta = data.get("meta", {}) or {}
         per_show_answers = data.get("per_show_answers", {}) or {}
+        
+        if debug_loading:
+            st.write(f"📊 **Draft contents:** {len(answers)} answers, {len(per_show_answers)} per-show sections")
 
         dept_meta = meta.get("department")
         if dept_meta and dept_meta in DEPARTMENT_CONFIGS:
@@ -803,6 +812,8 @@ def _apply_pending_draft_if_any():
             qinfo = {str(row["question_id"]): row for _, row in questions_df.iterrows()}
         else:
             qinfo = {}
+            if debug_loading:
+                st.warning(f"⚠️ No question metadata found for department: {dept_meta}")
 
         def _normalise_loaded_entry(qid_str: str, raw_entry):
             entry = _normalise_show_entry(raw_entry)
@@ -901,8 +912,16 @@ def _apply_pending_draft_if_any():
             st.session_state["answers_df"] = df[
                 ["department", "production", "question_id", "primary", "description"]
             ]
+            
+            if debug_loading:
+                st.success(f"✅ Loaded {len(df)} answers into answers_df")
+                non_null = df[df['primary'].notna()]
+                st.write(f"   - {len(non_null)} with non-null primary values")
+                st.write(f"   - Question IDs: {sorted(df['question_id'].unique().tolist())}")
         else:
             st.session_state.pop("answers_df", None)
+            if debug_loading:
+                st.warning("⚠️ No rows created - answers_df cleared")
 
         # Apply meta to bound UI keys
         if "staff_name" in meta:
@@ -1452,12 +1471,33 @@ def main():
                 
                 with col1:
                     if st.button("✅ Apply Merge with Selected Values", type="primary", use_container_width=True):
+                        # Debug: Show what resolutions were selected
+                        with st.expander("🔍 Debug: Resolution Details", expanded=False):
+                            st.write(f"**Applying {len(resolutions)} resolutions for {len(conflicts)} conflicts**")
+                            for conflict_idx, value_idx in resolutions.items():
+                                if conflict_idx < len(conflicts):
+                                    conflict = conflicts[conflict_idx]
+                                    chosen_value = conflict.values[value_idx] if value_idx < len(conflict.values) else None
+                                    st.write(f"- Conflict {conflict_idx}: `{conflict.section}.{conflict.key}` → `{chosen_value}`")
+                        
                         # Apply resolutions
                         resolved_data = apply_conflict_resolutions(
                             merge_result.merged_data,
                             conflicts,
                             resolutions
                         )
+                        
+                        # Debug: Show what's in the resolved data
+                        with st.expander("🔍 Debug: Resolved Data", expanded=False):
+                            st.write("**Data structure:**")
+                            st.write(f"- answers: {len(resolved_data.get('answers', {}))} questions")
+                            st.write(f"- per_show_answers: {len(resolved_data.get('per_show_answers', {}))} shows")
+                            st.write(f"- financial_kpis_actuals: {len(resolved_data.get('financial_kpis_actuals', []))} KPIs")
+                            
+                            if resolved_data.get('answers'):
+                                st.write("**Sample answers:**")
+                                for qid, qdata in list(resolved_data['answers'].items())[:3]:
+                                    st.write(f"  - {qid}: {qdata}")
                         
                         # Convert to bytes and queue for application
                         merged_bytes = json.dumps(resolved_data).encode("utf-8")
@@ -1470,7 +1510,8 @@ def main():
                         st.session_state.pop("merge_conflicts", None)
                         st.session_state.pop("pending_merge_result", None)
                         
-                        st.success("Conflicts resolved! Applying merge...")
+                        st.success(f"✅ Conflicts resolved! Applying merge with {len(merged_bytes)} bytes of data...")
+                        st.info("🔄 Reloading page to apply changes...")
                         safe_rerun()
                 
                 with col2:
