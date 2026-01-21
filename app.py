@@ -266,6 +266,11 @@ def get_answer_value(dept: str, production: str, qid: str) -> Tuple[Optional[obj
         st.write(f"🔍 **Lookup #{get_answer_value._debug_count}:** dept=`{dept}`, production=`{production}`, qid=`{qid}`")
         matches = df[mask]
         st.write(f"   - Found {len(matches)} exact matches")
+        if not matches.empty:
+            # Show what value is actually stored
+            actual_value = matches.iloc[0]['primary']
+            st.write(f"   - 🎯 **Stored value:** `{actual_value}` (type: {type(actual_value).__name__})")
+            st.write(f"   - Full row: {matches.iloc[0].to_dict()}")
         if matches.empty and not df.empty:
             # Show what's available for this question ID
             qid_rows = df[df['question_id'] == qid]
@@ -1508,7 +1513,7 @@ def main():
                         )
                         
                         # Debug: Show what's in the resolved data
-                        with st.expander("🔍 Debug: Resolved Data", expanded=False):
+                        with st.expander("🔍 Debug: Resolved Data", expanded=True):
                             st.write("**Data structure:**")
                             st.write(f"- answers: {len(resolved_data.get('answers', {}))} questions")
                             st.write(f"- per_show_answers: {len(resolved_data.get('per_show_answers', {}))} shows")
@@ -1518,6 +1523,13 @@ def main():
                                 st.write("**Sample answers:**")
                                 for qid, qdata in list(resolved_data['answers'].items())[:3]:
                                     st.write(f"  - {qid}: {qdata}")
+                            
+                            if resolved_data.get('per_show_answers'):
+                                st.write("**Sample per_show_answers:**")
+                                for show_key, show_data in list(resolved_data['per_show_answers'].items())[:2]:
+                                    st.write(f"  - Show: `{show_key}`")
+                                    for qid, qdata in list(show_data.items())[:2]:
+                                        st.write(f"    • {qid}: {qdata}")
                         
                         # Convert to bytes and queue for application
                         merged_bytes = json.dumps(resolved_data).encode("utf-8")
