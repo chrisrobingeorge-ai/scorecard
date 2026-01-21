@@ -1173,6 +1173,44 @@ label, .stTextInput, .stNumberInput, .stSelectbox, .stRadio, .stDateInput, .stTe
 """
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Conflict Resolution Helper
+# ─────────────────────────────────────────────────────────────────────────────
+def _render_conflict_resolution_ui(conflicts):
+    """Render conflict resolution UI and return user choices."""
+    resolutions = {}
+    
+    for i, conflict in enumerate(conflicts):
+        # Shorter header for better readability
+        section_short = conflict.section.split('.')[-1] if '.' in conflict.section else conflict.section
+        st.markdown(f"**{i+1}. {section_short} › {conflict.key}**")
+        
+        # Pre-format options (avoids lambda closure issues)
+        options_display = []
+        for value, source in conflict.values:
+            if isinstance(value, float):
+                display_value = f"{value:,.2f}" if value else "0"
+            else:
+                display_value = str(value)[:100]  # Limit length
+            options_display.append(f"{source}: {display_value}")
+        
+        # Radio button with pre-formatted options
+        choice = st.radio(
+            "Select:",
+            range(len(options_display)),
+            format_func=lambda x, opts=options_display: opts[x],  # Capture opts properly
+            key=f"conflict_res_{i}",
+            label_visibility="collapsed"
+        )
+        
+        resolutions[i] = choice
+        
+        # Only add separator if not last item
+        if i < len(conflicts) - 1:
+            st.divider()
+    
+    return resolutions
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
@@ -1208,7 +1246,9 @@ def main():
             queued, msg = queue_multiple_draft_bytes([f.getvalue() for f in draft_files])
             if queued:
                 st.sidebar.success(msg)
-                safe_rerun()
+                # Only rerun if no conflicts detected (conflicts need manual resolution first)
+                if "merge_conflicts" not in st.session_state:
+                    safe_rerun()
             else:
                 st.sidebar.info(msg)
 
@@ -1219,48 +1259,28 @@ def main():
     if "merge_conflicts" in st.session_state and st.session_state["merge_conflicts"]:
         from merge_scorecards import format_conflicts_for_display, apply_conflict_resolutions
         
-        st.warning("### ⚠️ Merge Conflicts Detected")
-        st.markdown(
-            "Multiple files provided different values for the same fields. "
-            "**Please choose which value to keep for each conflict:**"
-        )
-        
         conflicts = st.session_state["merge_conflicts"]
         merge_result = st.session_state.get("pending_merge_result")
         
         if merge_result:
-            # Interactive conflict resolution
-            resolutions = {}
+            st.warning(f"### ⚠️ {len(conflicts)} Merge Conflict{'s' if len(conflicts) > 1 else ''} Detected")
+            st.markdown(
+                "Multiple files provided different values for the same fields. "
+                "**Choose which value to keep for each conflict below:**"
+            )
             
-            for i, conflict in enumerate(conflicts):
-                st.markdown(f"**Conflict {i+1}: {conflict.section} / {conflict.key}**")
-                
-                # Create radio button options
-                options = []
-                for j, (value, source) in enumerate(conflict.values):
-                    # Format the value for display
-                    if isinstance(value, float):
-                        display_value = f"{value:,.2f}" if value else "0"
-                    else:
-                        display_value = str(value)
-                    options.append(f"{source}: {display_value}")
-                
-                # Let user choose
-                choice = st.radio(
-                    f"Choose value for {conflict.key}:",
-                    range(len(options)),
-                    format_func=lambda x: options[x],
-                    key=f"conflict_resolution_{i}"
-                )
-                
-                resolutions[i] = choice
-                st.markdown("---")
+            # Use expander for large number of conflicts
+            if len(conflicts) > 5:
+                with st.expander(f"📋 View and Resolve {len(conflicts)} Conflicts", expanded=True):
+                    resolutions = _render_conflict_resolution_ui(conflicts)
+            else:
+                resolutions = _render_conflict_resolution_ui(conflicts)
             
             # Buttons to apply or cancel
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns([2, 2, 1])
             
             with col1:
-                if st.button("✅ Apply Merge with Selected Values", type="primary"):
+                if st.button("✅ Apply Merge with Selected Values", type="primary", use_container_width=True):
                     # Apply resolutions
                     resolved_data = apply_conflict_resolutions(
                         merge_result.merged_data,
@@ -1283,9 +1303,12 @@ def main():
                     safe_rerun()
             
             with col2:
-                if st.button("❌ Cancel Merge"):
+                if st.button("❌ Cancel Merge", use_container_width=True):
                     # Clear everything
                     st.session_state.pop("merge_conflicts", None)
+                    st.session_state.pop("pending_merge_result", None)
+                    st.info("Merge cancelled.")
+                    safe_rerun()
                     st.session_state.pop("pending_merge_result", None)
                     st.info("Merge cancelled.")
                     safe_rerun()
