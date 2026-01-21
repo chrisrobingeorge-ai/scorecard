@@ -1923,10 +1923,9 @@ def main():
         if 'NOTES FOR LEADERSHIP' in sections:
             ai_result["notes_for_leadership"] = sections['NOTES FOR LEADERSHIP']
         
-        # Parse KPI Explanations - save back to session state
-        if 'KPI EXPLANATIONS' in sections:
-            kpi_explanation_key = f"kpi_explanations_{dept_label}"
-            st.session_state[kpi_explanation_key] = sections['KPI EXPLANATIONS']
+        # Note: KPI Explanations are managed by a text_area widget, so we cannot
+        # modify them directly via session state. Users should edit KPI explanations
+        # in the dedicated text_area widget above, not in the consolidated editor.
     
     st.markdown("### AI Summary - Consolidated Editor")
     st.markdown("Edit the entire AI summary in one place. The content will be automatically parsed into the appropriate sections for the PDF/DOCX.")
