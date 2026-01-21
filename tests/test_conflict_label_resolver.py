@@ -455,7 +455,6 @@ class TestFormatConflictsForDisplay:
     def test_format_with_registry(self):
         """Test formatting conflicts with registry (includes question_text)."""
         from merge_scorecards import format_conflicts_for_display
-        import io
         
         # Create a test registry
         csv_content = b"""question_id,question_text,section
