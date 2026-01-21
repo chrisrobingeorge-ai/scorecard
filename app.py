@@ -1175,14 +1175,51 @@ label, .stTextInput, .stNumberInput, .stSelectbox, .stRadio, .stDateInput, .stTe
 # ─────────────────────────────────────────────────────────────────────────────
 # Conflict Resolution Helper
 # ─────────────────────────────────────────────────────────────────────────────
-def _render_conflict_resolution_ui(conflicts):
+def _get_question_text(question_id, all_questions_df):
+    """Get the full question text for a question ID."""
+    if all_questions_df is None or all_questions_df.empty:
+        return None
+    
+    match = all_questions_df[all_questions_df["question_id"] == question_id]
+    if not match.empty:
+        return match.iloc[0].get("question", None)
+    return None
+
+
+def _render_conflict_resolution_ui(conflicts, all_questions_df=None):
     """Render conflict resolution UI and return user choices."""
     resolutions = {}
     
     for i, conflict in enumerate(conflicts):
-        # Shorter header for better readability
+        # Build a descriptive header
         section_short = conflict.section.split('.')[-1] if '.' in conflict.section else conflict.section
-        st.markdown(f"**{i+1}. {section_short} › {conflict.key}**")
+        
+        # For question answers, try to get the full question text
+        question_id = None
+        if section_short in ('answers', 'per_show_answers') or conflict.section.startswith('answers'):
+            # Extract question ID from section or key
+            if '.' in conflict.section:
+                parts = conflict.section.split('.')
+                # Look for question ID in section parts
+                for part in parts:
+                    if part and (part.startswith(('ATI', 'COMM', 'CORP', 'SCH', 'FIN')) or '_' in part):
+                        question_id = part
+                        break
+            
+            if question_id and all_questions_df is not None:
+                question_text = _get_question_text(question_id, all_questions_df)
+                if question_text:
+                    # Display question ID and full text
+                    st.markdown(f"**{i+1}. Question: {question_id}**")
+                    st.caption(f"_{question_text}_")
+                    st.caption(f"Field: {conflict.key}")
+                else:
+                    st.markdown(f"**{i+1}. {question_id} › {conflict.key}**")
+            else:
+                st.markdown(f"**{i+1}. {section_short} › {conflict.key}**")
+        else:
+            # For KPIs and other fields, show section and key
+            st.markdown(f"**{i+1}. {section_short} › {conflict.key}**")
         
         # Pre-format options (avoids lambda closure issues)
         options_display = []
@@ -1272,9 +1309,9 @@ def main():
             # Use expander for large number of conflicts
             if len(conflicts) > 5:
                 with st.expander(f"📋 View and Resolve {len(conflicts)} Conflicts", expanded=True):
-                    resolutions = _render_conflict_resolution_ui(conflicts)
+                    resolutions = _render_conflict_resolution_ui(conflicts, questions_all_df)
             else:
-                resolutions = _render_conflict_resolution_ui(conflicts)
+                resolutions = _render_conflict_resolution_ui(conflicts, questions_all_df)
             
             # Buttons to apply or cancel
             col1, col2, col3 = st.columns([2, 2, 1])
