@@ -424,5 +424,102 @@ class TestIntegrationWithRealData:
         assert "COMM_REC_Q2a" in label.debug_key
 
 
+class TestFormatConflictsForDisplay:
+    """Tests for format_conflicts_for_display function."""
+    
+    def test_format_without_registry(self):
+        """Test formatting conflicts without registry (fallback to humanized labels)."""
+        from merge_scorecards import format_conflicts_for_display
+        
+        conflicts = [
+            Conflict(
+                section="answers.ATI01",
+                key="primary",
+                values=[("value1", "user1"), ("value2", "user2")]
+            )
+        ]
+        
+        result = format_conflicts_for_display(conflicts)
+        
+        # Should contain conflict marker
+        assert "⚠️" in result
+        assert "1 conflict" in result
+        # Should contain section label (humanized)
+        assert "Artistic & Technical Innovation" in result
+        # Should contain the values
+        assert "value1" in result
+        assert "value2" in result
+        assert "user1" in result
+        assert "user2" in result
+    
+    def test_format_with_registry(self):
+        """Test formatting conflicts with registry (includes question_text)."""
+        from merge_scorecards import format_conflicts_for_display
+        import io
+        
+        # Create a test registry
+        csv_content = b"""question_id,question_text,section
+COMM_REC_Q2a,How many NEW recreational students registered this period?,Recreational Classes
+"""
+        registry = QuestionRegistry()
+        registry.load_from_csv_bytes(csv_content)
+        
+        conflicts = [
+            Conflict(
+                section="answers.COMM_REC_Q2a",
+                key="primary",
+                values=[("100", "user1"), ("150", "user2")]
+            )
+        ]
+        
+        result = format_conflicts_for_display(conflicts, registry)
+        
+        # Should contain the full question text (not just question_id)
+        assert "How many NEW recreational students registered this period?" in result
+        # Should contain section
+        assert "Recreational Classes" in result
+        # Should contain field label
+        assert "Field:" in result
+        assert "Primary answer" in result
+        # Should contain the values
+        assert "100" in result
+        assert "150" in result
+    
+    def test_format_no_conflicts(self):
+        """Test formatting empty conflict list."""
+        from merge_scorecards import format_conflicts_for_display
+        
+        result = format_conflicts_for_display([])
+        
+        assert "No conflicts detected" in result
+    
+    def test_format_multiple_conflicts(self):
+        """Test formatting multiple conflicts."""
+        from merge_scorecards import format_conflicts_for_display
+        
+        conflicts = [
+            Conflict(
+                section="answers.ATI01",
+                key="primary",
+                values=[("a", "file1"), ("b", "file2")]
+            ),
+            Conflict(
+                section="financial_kpis_actuals",
+                key="DONATIONS/General/–",
+                values=[(100000, "file1"), (200000, "file2")]
+            )
+        ]
+        
+        result = format_conflicts_for_display(conflicts)
+        
+        # Should contain both conflicts
+        assert "2 conflict(s)" in result
+        # Should number them
+        assert "1." in result
+        assert "2." in result
+        # Should contain KPI description
+        assert "Financial KPIs" in result
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

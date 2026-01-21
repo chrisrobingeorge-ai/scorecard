@@ -1465,7 +1465,8 @@ def main():
                         safe_rerun()
             else:
                 # Fallback: just display conflicts (shouldn't happen with new code)
-                conflicts_text = format_conflicts_for_display(conflicts)
+                registry = _build_question_registry(questions_all_df)
+                conflicts_text = format_conflicts_for_display(conflicts, registry)
                 st.markdown(conflicts_text)
                 
                 if st.button("Clear Conflicts Notice"):
