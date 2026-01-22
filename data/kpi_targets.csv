@@ -1,0 +1,13 @@
+scope_name,department,kpi_area,budget,target_seats,target_revenue,target_ticket_price,target_enrollment,target_participants,target_donations,target_grants,target_sponsorships,notes
+Nijinsky,Artistic,TICKET SALES,400000,5000,450000,90,,,,,,Holiday season flagship production
+Once Upon a Time,Artistic,TICKET SALES,250000,3200,280000,87.50,,,,,,Family programming
+Nutcracker,Artistic,TICKET SALES,600000,8000,720000,90,,,,,,Annual tradition - largest production
+Romeo and Juliet,Artistic,TICKET SALES,350000,4200,378000,90,,,,,,Classic repertoire
+Swan Lake,Artistic,TICKET SALES,500000,6500,585000,90,,,,,,Major classical production
+Auditions,Artistic,TICKET SALES,15000,,,,,,,,,"Recruitment activity, no ticket revenue"
+Festivals,Artistic,TICKET SALES,75000,,,,,,,,,"External events, variable revenue model"
+General,School,SCHOOL,,,,,250,,,,,Target enrollment for full year programs
+General,Community,COMMUNITY,,,,,600,,,,,Target participants across all community programs
+General,Corporate,DONATIONS,,,,,,350000,,,Fundraising target for individual and corporate donations
+General,Corporate,GRANTS,,,,,,,,200000,,Government and foundation grants target
+General,Corporate,SPONSORSHIPS,,,,,,,,100000,Corporate sponsorship revenue target
