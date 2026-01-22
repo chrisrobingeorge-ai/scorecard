@@ -1,0 +1,8 @@
+production_name,department,budget,target_seats,target_revenue,target_ticket_price,notes
+Nijinsky,Artistic,400000,5000,450000,90,Holiday season flagship production
+Once Upon a Time,Artistic,250000,3200,280000,87.50,Family programming
+Nutcracker,Artistic,600000,8000,720000,90,Annual tradition - largest production
+Romeo and Juliet,Artistic,350000,4200,378000,90,Classic repertoire
+Swan Lake,Artistic,500000,6500,585000,90,Major classical production
+Auditions,Artistic,15000,,,,"Recruitment activity, no ticket revenue"
+Festivals,Artistic,75000,,,,"External events, variable revenue model"

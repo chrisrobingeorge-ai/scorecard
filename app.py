@@ -478,6 +478,83 @@ def load_questions(file_path: str) -> pd.DataFrame:
     # This call IS cached, keyed on csv_bytes
     return load_questions_from_bytes(csv_bytes)
 
+@cache_data
+def load_production_targets(csv_path: str = "data/production_targets.csv") -> pd.DataFrame:
+    """
+    Load production-specific targets (budget, seats, revenue, etc.).
+    Returns empty DataFrame if file not found.
+    """
+    resolved = _resolve_path(csv_path)
+    if not resolved:
+        return pd.DataFrame()
+    
+    try:
+        df = pd.read_csv(resolved)
+        # Normalize column names
+        for col in ['production_name', 'department', 'notes']:
+            if col in df.columns:
+                df[col] = df[col].fillna("")
+        
+        # Ensure numeric columns
+        for col in ['budget', 'target_seats', 'target_revenue', 'target_ticket_price']:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        return df
+    except Exception as e:
+        warnings.warn(f"Could not load production targets: {e}")
+        return pd.DataFrame()
+
+def get_production_target(targets_df: pd.DataFrame, production: str, department: str) -> Optional[dict]:
+    """
+    Get target data for a specific production.
+    Returns None if not found or if targets_df is empty.
+    """
+    if targets_df.empty or not production:
+        return None
+    
+    mask = (
+        (targets_df["production_name"].str.strip().str.casefold() == production.casefold()) &
+        (targets_df["department"].str.strip() == department)
+    )
+    
+    if not mask.any():
+        return None
+    
+    return targets_df[mask].iloc[0].to_dict()
+
+def display_production_context(production: str, dept: str, targets_df: pd.DataFrame):
+    """
+    Display production-specific targets as an info box before questions.
+    """
+    if targets_df.empty or not production:
+        return
+    
+    target = get_production_target(targets_df, production, dept)
+    
+    if not target:
+        return
+    
+    # Build context message
+    context_parts = [f"**{production} — Performance Targets:**"]
+    
+    if pd.notna(target.get('budget')):
+        context_parts.append(f"- Budget: ${target['budget']:,.0f}")
+    
+    if pd.notna(target.get('target_seats')):
+        context_parts.append(f"- Target Seats: {target['target_seats']:,.0f}")
+    
+    if pd.notna(target.get('target_revenue')):
+        context_parts.append(f"- Target Revenue: ${target['target_revenue']:,.0f}")
+    
+    if pd.notna(target.get('target_ticket_price')):
+        context_parts.append(f"- Target Avg Ticket Price: ${target['target_ticket_price']:.2f}")
+    
+    if target.get('notes') and str(target['notes']).strip():
+        context_parts.append(f"\n*{target['notes']}*")
+    
+    st.info("\n".join(context_parts))
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Visibility rules (CSV-driven)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1568,6 +1645,11 @@ def main():
     # ✅ Normalised production key for storage
     current_production = "" if sel_prod == GENERAL_PROD_LABEL else sel_prod
     
+    # ── Display production-specific targets (if applicable)
+    if current_production:  # Not General
+        targets_df = load_production_targets()
+        display_production_context(current_production, dept_label, targets_df)
+    
     # ── 4) Filter questions for display (CURRENT PRODUCTION ONLY)
     filtered = filter_questions_for_scope(questions_all_df, current_production)
     
@@ -1852,10 +1934,20 @@ def main():
     if st.session_state["ai_result"] is None:
         try:
             with st.spinner("Asking AI to interpret this scorecard..."):
-                # Add KPI explanations to meta for AI context
+                # Add KPI explanations and production targets to meta for AI context
                 meta_with_kpi = dict(meta_for_ai)
                 if kpi_explanations:
                     meta_with_kpi["kpi_explanations"] = kpi_explanations
+                
+                # Add production targets if applicable
+                if current_production and dept_label == "Artistic":
+                    targets_df = load_production_targets()
+                    target_data = get_production_target(targets_df, current_production, dept_label)
+                    if target_data:
+                        meta_with_kpi["production_targets"] = {
+                            k: v for k, v in target_data.items() 
+                            if pd.notna(v) and k not in ['production_name', 'department']
+                        }
                 
                 ai_result = interpret_scorecard(
                     meta_with_kpi,
