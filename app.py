@@ -1729,42 +1729,6 @@ def main():
             description=entry.get("description"),
         )
 
-    # 🔹 Financial KPIs for Corporate, School, Community, and Artistic
-    if dept_label == "Corporate":
-        st.markdown("---")
-        render_financial_kpis(selected_area="DONATIONS", show_heading=True)
-        render_financial_kpis(selected_area="GRANTS", show_heading=True)
-        render_financial_kpis(selected_area="SPONSORSHIPS", show_heading=True)
-        st.markdown("### KPI Explanations")
-        kpi_explanation_key = f"kpi_explanations_{dept_label}"
-        st.text_area(
-            "Provide context or explanations for the KPI values above:",
-            key=kpi_explanation_key,
-            height=100,
-            placeholder="e.g., Donations exceeded target due to major gift campaign..."
-        )
-    elif dept_label == "School":
-        st.markdown("---")
-        render_financial_kpis(selected_area="SCHOOL", show_heading=True)
-        st.markdown("### KPI Explanations")
-        kpi_explanation_key = f"kpi_explanations_{dept_label}"
-        st.text_area(
-            "Provide context or explanations for the KPI values above:",
-            key=kpi_explanation_key,
-            height=100,
-            placeholder="e.g., School enrollment below target due to..."
-        )
-    elif dept_label == "Community":
-        st.markdown("---")
-        render_financial_kpis(selected_area="COMMUNITY", show_heading=True)
-        st.markdown("### KPI Explanations")
-        kpi_explanation_key = f"kpi_explanations_{dept_label}"
-        st.text_area(
-            "Provide context or explanations for the KPI values above:",
-            key=kpi_explanation_key,
-            height=100,
-            placeholder="e.g., Community engagement exceeded expectations..."
-        )
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
 
