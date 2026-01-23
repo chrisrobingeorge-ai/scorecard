@@ -1765,18 +1765,6 @@ def main():
             height=100,
             placeholder="e.g., Community engagement exceeded expectations..."
         )
-    elif dept_label == "Artistic":
-        st.markdown("---")
-        render_financial_kpis(selected_area="TICKET SALES", show_heading=True)
-        st.markdown("### KPI Explanations")
-        kpi_explanation_key = f"kpi_explanations_{dept_label}"
-        st.text_area(
-            "Provide context or explanations for the KPI values above:",
-            key=kpi_explanation_key,
-            height=100,
-            placeholder="e.g., Ticket sales strong for holiday performances..."
-        )
-
     submitted = st.button("Generate AI Summary & PDF", type="primary")
 
 
