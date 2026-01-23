@@ -90,47 +90,59 @@ Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM54,Did we
 Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM55,How much money have we secured for Live Music YTD?,number,,FALSE,291,Financial Performance,3,FM54,ART1
 Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM56,What is the donation variance ($) versus budget for Live Music this year?,number,,FALSE,292,Financial Performance,3,FM54,ART1
 Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM57,What is the donation variance (%) versus budget for Live Music this year?,number,,FALSE,293,Financial Performance,3,FM54,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM58,Did we secure donations for New Works this year?,select_yes_no,"Yes,No",FALSE,294,Financial Performance,3,,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM59,How much money have we secured for New Works YTD?,number,,FALSE,295,Financial Performance,3,FM58,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM60,What is the donation variance ($) versus budget for New Works this year?,number,,FALSE,296,Financial Performance,3,FM58,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM61,What is the donation variance (%) versus budget for New Works this year?,number,,FALSE,297,Financial Performance,3,FM58,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM62,Did we secure donations for Costume Campaign this year?,select_yes_no,"Yes,No",FALSE,298,Financial Performance,3,,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM63,How much money have we secured for the Costume Campaign YTD?,number,,FALSE,299,Financial Performance,3,FM62,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM64,What is the donation variance ($) versus budget for the Costume Campaign this year?,number,,FALSE,300,Financial Performance,3,FM62,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM65,What is the donation variance (%) versus budget for Costume Campaign this year?,number,,FALSE,301,Financial Performance,3,FM62,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM66,Did we secure donations for Provincial Touring this year?,select_yes_no,"Yes,No",FALSE,302,Financial Performance,3,,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM67,How much money have we secured for Provincial Touring YTD?,number,,FALSE,303,Financial Performance,3,FM67,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM68,What is the donation variance ($) versus budget for Provincial Touring this year?,number,,FALSE,304,Financial Performance,3,FM67,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM69,What is the donation variance (%) versus budget for Provincial Touring this year?,number,,FALSE,305,Financial Performance,3,FM67,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM70,Did we secure donations for Dance Circle this year?,select_yes_no,"Yes,No",FALSE,306,Financial Performance,3,,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM71,How much money have we secured for Dance Circle YTD?,number,,FALSE,307,Financial Performance,3,FM70,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM72,What is the donation variance ($) versus budget for Dance Circle this year?,number,,FALSE,308,Financial Performance,3,FM70,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM73,What is the donation variance (%) versus budget for Dance Circle this year?,number,,FALSE,309,Financial Performance,3,FM70,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Sponsorship,FM74,Did we secure Sponships this year?,select_yes_no,"Yes,No",FALSE,310,Financial Performance,3,,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Sponsorship,FM75,How much money have we secured for Sponsorship YTD (excludes sponsor-paid tickets)?,number,,FALSE,311,Financial Performance,3,FM74,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Sponsorship,FM76,What is the donation variance ($) versus budget for Sponsorship this year?,number,,FALSE,312,Financial Performance,3,FM74,ART1
-Financials & Marketing,Fundraising,Fundraising,Fundraising,Sponsorship,FM77,What is the donation variance (%) versus budget for Sponsorhip this year?,number,,FALSE,313,Financial Performance,3,FM74,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM78,Did we secure funding from Canada Council this year?,select_yes_no,"Yes,No",FALSE,320,Financial Performance,3,,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM79,How much money have we secured from Canada Council YTD?,number,,FALSE,321,Financial Performance,3,FM78,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM80,What is the donation variance ($) versus budget from Canada Council this year?,number,,FALSE,322,Financial Performance,3,FM78,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM81,What is the donation variance (%) versus budget from Canada Council this year?,number,,FALSE,323,Financial Performance,3,FM78,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM82,Did we secure funding from Federal Project Grants this year?,select_yes_no,"Yes,No",FALSE,324,Financial Performance,3,,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM83,How much money have we secured in Federal Project Grants YTD?,number,,FALSE,325,Financial Performance,3,FM82,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM84,What is the donation variance ($) versus budget in Federal Project Grants this year?,number,,FALSE,326,Financial Performance,3,FM82,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM85,What is the donation variance (%) versus budget for Federal Project Grants this year?,number,,FALSE,327,Financial Performance,3,FM82,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM86,Did we secure funding from Provincial Project Grants this year?,select_yes_no,"Yes,No",FALSE,328,Financial Performance,3,,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM87,How much money have we secured in Provincial Project Grants YTD?,number,,FALSE,329,Financial Performance,3,FM86,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM88,What is the donation variance ($) versus budget in Provincial Project Grants this year?,number,,FALSE,330,Financial Performance,3,FM86,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM89,What is the donation variance (%) versus budget for Provincial Project Grants this year?,number,,FALSE,331,Financial Performance,3,FM86,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM90,Did we secure funding from Municipal Project Grants in Calgary this year?,select_yes_no,"Yes,No",FALSE,332,Financial Performance,3,,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM91,How much money have we secured in Municipal - YYC Project Grants YTD?,number,,FALSE,333,Financial Performance,3,FM90,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM92,What is the donation variance ($) versus budget in Municipal - YYC Project Grants this year?,number,,FALSE,334,Financial Performance,3,FM90,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM93,What is the donation variance (%) versus budget in Municipal - YYC Project Grants  this year?,number,,FALSE,335,Financial Performance,3,FM90,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM94,Did we secure funding from Municipal Project Grants in Edmonton this year?,select_yes_no,"Yes,No",FALSE,336,Financial Performance,3,,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM95,How much money have we secured in Municipal - YEG Project Grants YTD?,number,,FALSE,337,Financial Performance,3,FM94,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM96,What is the donation variance ($) versus budget in Municipal - YEG Project Grants this year?,number,,FALSE,338,Financial Performance,3,FM94,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM97,What is the donation variance (%) versus budget in Municipal - YEG Project Grants  this year?,number,,FALSE,339,Financial Performance,3,FM94,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM98,Did we secure funding from Foundations this year?,select_yes_no,"Yes,No",FALSE,340,Financial Performance,3,,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM99,How much money have we secured in Foundation Project Grants YTD?,number,,FALSE,341,Financial Performance,3,FM98,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM100,What is the donation variance ($) versus budget in Foundation Project Grants this year?,number,,FALSE,342,Financial Performance,3,FM98,ART1
-Financials & Marketing,Grants,Grants,Grants,Grants,FM101,What is the donation variance (%) versus budget in Foundation Project Grants  this year?,number,,FALSE,343,Financial Performance,3,FM98,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM58,What is the explanation for the Live Music variance from budget this year?,text,,FALSE,294,Financial Performance,3,FM54,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM59,Did we secure donations for New Works this year?,select_yes_no,"Yes,No",FALSE,300,Financial Performance,3,,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM60,How much money have we secured for New Works YTD?,number,,FALSE,301,Financial Performance,3,FM59,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM61,What is the donation variance ($) versus budget for New Works this year?,number,,FALSE,302,Financial Performance,3,FM59,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM62,What is the donation variance (%) versus budget for New Works this year?,number,,FALSE,303,Financial Performance,3,FM59,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM63,What is the explanation for the New Works variance from budget this year?,text,,FALSE,304,Financial Performance,3,FM59,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM64,Did we secure donations for Costume Campaign this year?,select_yes_no,"Yes,No",FALSE,310,Financial Performance,3,,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM65,How much money have we secured for the Costume Campaign YTD?,number,,FALSE,311,Financial Performance,3,FM64,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM66,What is the donation variance ($) versus budget for the Costume Campaign this year?,number,,FALSE,312,Financial Performance,3,FM64,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM67,What is the donation variance (%) versus budget for Costume Campaign this year?,number,,FALSE,313,Financial Performance,3,FM64,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM68,What is the explanation for the Costume Campaign variance from budget this year?,text,,FALSE,314,Financial Performance,3,FM64,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM69,Did we secure donations for Provincial Touring this year?,select_yes_no,"Yes,No",FALSE,320,Financial Performance,3,,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM70,How much money have we secured for Provincial Touring YTD?,number,,FALSE,321,Financial Performance,3,FM69,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM71,What is the donation variance ($) versus budget for Provincial Touring this year?,number,,FALSE,322,Financial Performance,3,FM69,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM72,What is the donation variance (%) versus budget for Provincial Touring this year?,number,,FALSE,323,Financial Performance,3,FM69,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM73,What is the explanation for the Provincial Touring variance from budget this year?,text,,FALSE,324,Financial Performance,3,FM69,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM74,Did we secure donations for Dance Circle this year?,select_yes_no,"Yes,No",FALSE,330,Financial Performance,3,,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM75,How much money have we secured for Dance Circle YTD?,number,,FALSE,331,Financial Performance,3,FM74,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM76,What is the donation variance ($) versus budget for Dance Circle this year?,number,,FALSE,332,Financial Performance,3,FM74,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM77,What is the donation variance (%) versus budget for Dance Circle this year?,number,,FALSE,333,Financial Performance,3,FM74,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Donations,FM78,What is the explanation for the Dance Circle variance from budget this year?,text,,FALSE,334,Financial Performance,3,FM74,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Sponsorship,FM79,Did we secure Sponsorships this year?,select_yes_no,"Yes,No",FALSE,340,Financial Performance,3,,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Sponsorship,FM80,How much money have we secured for Sponsorship YTD (excludes sponsor-paid tickets)?,number,,FALSE,341,Financial Performance,3,FM79,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Sponsorship,FM81,What is the donation variance ($) versus budget for Sponsorship this year?,number,,FALSE,342,Financial Performance,3,FM79,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Sponsorship,FM82,What is the donation variance (%) versus budget for Sponsorhip this year?,number,,FALSE,343,Financial Performance,3,FM79,ART1
+Financials & Marketing,Fundraising,Fundraising,Fundraising,Sponsorship,FM83,What is the explanation for the Sponsorship variance from budget this year?,text,,FALSE,344,Financial Performance,3,FM79,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM84,Did we secure funding from Canada Council this year?,select_yes_no,"Yes,No",FALSE,350,Financial Performance,3,,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM85,How much money have we secured from Canada Council YTD?,number,,FALSE,351,Financial Performance,3,FM84,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM86,What is the donation variance ($) versus budget from Canada Council this year?,number,,FALSE,352,Financial Performance,3,FM84,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM87,What is the donation variance (%) versus budget from Canada Council this year?,number,,FALSE,353,Financial Performance,3,FM84,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM88,What is the explanation for the Canada Council variance from budget this year?,text,,FALSE,354,Financial Performance,3,FM84,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM89,Did we secure funding from Federal Project Grants this year?,select_yes_no,"Yes,No",FALSE,360,Financial Performance,3,,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM90,How much money have we secured in Federal Project Grants YTD?,number,,FALSE,361,Financial Performance,3,FM89,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM91,What is the donation variance ($) versus budget in Federal Project Grants this year?,number,,FALSE,362,Financial Performance,3,FM89,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM92,What is the donation variance (%) versus budget for Federal Project Grants this year?,number,,FALSE,363,Financial Performance,3,FM89,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM93,What is the explanation for the Federal Project Grants variance from budget this year?,text,,FALSE,364,Financial Performance,3,FM89,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM94,Did we secure funding from Provincial Project Grants this year?,select_yes_no,"Yes,No",FALSE,370,Financial Performance,3,,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM95,How much money have we secured in Provincial Project Grants YTD?,number,,FALSE,371,Financial Performance,3,FM94,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM96,What is the donation variance ($) versus budget in Provincial Project Grants this year?,number,,FALSE,372,Financial Performance,3,FM94,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM97,What is the donation variance (%) versus budget for Provincial Project Grants this year?,number,,FALSE,373,Financial Performance,3,FM94,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM98,What is the explanation for the Provincial Project Grants variance from budget this year?,text,,FALSE,374,Financial Performance,3,FM94,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM99,Did we secure funding from Municipal Project Grants in Calgary this year?,select_yes_no,"Yes,No",FALSE,380,Financial Performance,3,,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM100,How much money have we secured in Municipal - YYC Project Grants YTD?,number,,FALSE,381,Financial Performance,3,FM99,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM101,What is the donation variance ($) versus budget in Municipal - YYC Project Grants this year?,number,,FALSE,382,Financial Performance,3,FM99,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM102,What is the donation variance (%) versus budget in Municipal - YYC Project Grants  this year?,number,,FALSE,383,Financial Performance,3,FM99,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM103,What is the explanation for the Municipal - YYC Project Grants variance from budget this year?,text,,FALSE,384,Financial Performance,3,FM99,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM104,Did we secure funding from Municipal Project Grants in Edmonton this year?,select_yes_no,"Yes,No",FALSE,390,Financial Performance,3,,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM105,How much money have we secured in Municipal - YEG Project Grants YTD?,number,,FALSE,391,Financial Performance,3,FM104,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM106,What is the donation variance ($) versus budget in Municipal - YEG Project Grants this year?,number,,FALSE,392,Financial Performance,3,FM104,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM107,What is the donation variance (%) versus budget in Municipal - YEG Project Grants  this year?,number,,FALSE,393,Financial Performance,3,FM104,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM108,What is the explanation for the Municipal - YEG Project Grants variance from budget this year?,text,,FALSE,394,Financial Performance,3,FM104,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM109,Did we secure funding from Foundations this year?,select_yes_no,"Yes,No",FALSE,400,Financial Performance,3,,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM110,How much money have we secured in Foundation Project Grants YTD?,number,,FALSE,401,Financial Performance,3,FM109,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM111,What is the donation variance ($) versus budget in Foundation Project Grants this year?,number,,FALSE,402,Financial Performance,3,FM109,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM112,What is the donation variance (%) versus budget in Foundation Project Grants  this year?,number,,FALSE,403,Financial Performance,3,FM109,ART1
+Financials & Marketing,Grants,Grants,Grants,Grants,FM113,What is the explanation for the Municipal - YEG Project Grants variance from budget this year?,text,,FALSE,404,Financial Performance,3,FM109,ART1
