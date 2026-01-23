@@ -1121,9 +1121,13 @@ def filter_questions_for_scope(questions_all_df: pd.DataFrame, current_productio
           * questions tagged production == "Festivals"
           * plus global "all works" style questions (if any)
           * but NOT generic production_only questions
+      - "Subscriptions" (25-26 Subscriptions, 26-27 Subscriptions):
+          * questions tagged production matching the subscription period
+          * plus global "all works" style questions (if any)
+          * but NOT generic production_only questions
       - Any other production (e.g. Nijinsky, Once Upon a Time):
           * keep the existing behaviour:
-            generic questions + that production’s questions + production_only
+            generic questions + that production's questions + production_only
     """
     filtered = questions_all_df.copy()
 
@@ -1163,7 +1167,14 @@ def filter_questions_for_scope(questions_all_df: pd.DataFrame, current_productio
         global_mask = prod_lower.isin(general_vals) & ~general_only_mask & ~production_only_mask
         return filtered[specific_mask | global_mask].copy()
 
-    # ── 4) Normal productions (Nijinsky, OUaT, etc.) ─────────────
+    # ── 4) Subscriptions (special area) ──────────────────────────
+    # Handle both "25-26 Subscriptions" and "26-27 Subscriptions"
+    if "subscriptions" in cur_lower:
+        specific_mask = prod_lower == cur_lower
+        global_mask = prod_lower.isin(general_vals) & ~general_only_mask & ~production_only_mask
+        return filtered[specific_mask | global_mask].copy()
+
+    # ── 5) Normal productions (Nijinsky, OUaT, etc.) ─────────────
     specific_mask = prod_col.str.casefold() == cur_lower
 
     if specific_mask.any():
