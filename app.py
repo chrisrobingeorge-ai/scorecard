@@ -1167,21 +1167,9 @@ def filter_questions_for_scope(questions_all_df: pd.DataFrame, current_productio
         global_mask = prod_lower.isin(general_vals) & ~general_only_mask & ~production_only_mask
         return filtered[specific_mask | global_mask].copy()
 
-    # ── 4) Subscriptions (special area) ──────────────────────────
-    # Handle both "25-26 Subscriptions" and "26-27 Subscriptions"
+    # ── 4) Financial (special area) ──────────────────────────
+    # Handle "25-26 Subscriptions" and "26-27 Subscriptions" and "Donations" and "Sponsorships" and "Grants"
     if "subscriptions" in cur_lower:
-        specific_mask = prod_lower == cur_lower
-        global_mask = prod_lower.isin(general_vals) & ~general_only_mask & ~production_only_mask
-        return filtered[specific_mask | global_mask].copy()
-
-    # ── 5) Fundraising (special area) ──────────────────────────
-    if "fundraising" in cur_lower:
-        specific_mask = prod_lower == cur_lower
-        global_mask = prod_lower.isin(general_vals) & ~general_only_mask & ~production_only_mask
-        return filtered[specific_mask | global_mask].copy()
-
-    # ── 6) Grants (special area) ──────────────────────────
-    if "grants" in cur_lower:
         specific_mask = prod_lower == cur_lower
         global_mask = prod_lower.isin(general_vals) & ~general_only_mask & ~production_only_mask
         return filtered[specific_mask | global_mask].copy()
