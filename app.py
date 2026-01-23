@@ -1168,9 +1168,11 @@ def filter_questions_for_scope(questions_all_df: pd.DataFrame, current_productio
         return filtered[specific_mask | global_mask].copy()
 
     # ── 4) Financial (special area) ──────────────────────────
-    # Handle "25-26 Subscriptions" and "26-27 Subscriptions" and "Donations" and "Sponsorships" and "Grants"
-    if "subscriptions" in cur_lower:
-        specific_mask = prod_lower == cur_lower
+    # Handle "Financial" production which contains "25-26 Subscriptions", "26-27 Subscriptions", 
+    # "Donations", "Sponsorships", "Grants" - these should NOT include production_only items
+    if cur_lower == "financial":
+        specific_mask = prod_lower == "financial"
+        # Include only global questions (not production_only which includes Impact, Innovation, etc.)
         global_mask = prod_lower.isin(general_vals) & ~general_only_mask & ~production_only_mask
         return filtered[specific_mask | global_mask].copy()
 
