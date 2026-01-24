@@ -72,7 +72,7 @@ section,department,strategic_pillar,production,metric,question_id,question_text,
 ,Community,AB Classes,Recreational Classes,Engagement Outcomes,COMM_REC_Q6b,"What feedback or outcomes did we see from these activities (excitement, retention, referrals)?",text,,FALSE,62,engagement,1,COMM_REC_Q6,COM4
 Financials & Marketing,Community,Funding,Financial,Cultural Access Gaps,COMM_FINANCIAL_Q01,Was there a budgeted revenue target for Access Dance specific funding this year?,yes_no,"Yes,No",FALSE,700,accessibility,2,,COM1
 Financials & Marketing,Community,Funding,Financial,Cultural Access Gaps,COMM_FINANCIAL_Q01a,What was the budgeted revenue target ($) for Access Dance specific funding this year?,number,,FALSE,701,accessibility,2,COMM_FINANCIAL_Q01,COM1
-,,,,,COMM_FINANCIAL_Q01b,Did we secure any Access Dance funding this year?,yes_no,"Yes,No",FALSE,702,accessibility,,,
+Financials & Marketing,Community,Funding,Financial,Cultural Access Gaps,COMM_FINANCIAL_Q01b,Did we secure any Access Dance funding this year?,yes_no,"Yes,No",FALSE,702,accessibility,2,,COM1
 Financials & Marketing,Community,Funding,Financial,Cultural Access Gaps,COMM_FINANCIAL_Q01c,How much Access Dance specific funding did we secure this year?,number,,FALSE,703,accessibility,2,COMM_FINANCIAL_Q01b,COM1
 Financials & Marketing,Community,Funding,Financial,Cultural Access Gaps,COMM_FINANCIAL_Q01d,Who were the funding sources and for how much did we receive by each funder?,text,,FALSE,704,accessibility,2,COMM_FINANCIAL_Q01b,COM1
 Financials & Marketing,Community,Funding,Financial,Cultural Access Gaps,COMM_FINANCIAL_Q01e,What is the budget variance ($) for supporting the Access Dance programming this year?,number,,FALSE,705,accessibility,2,COMM_FINANCIAL_Q01c,COM1
@@ -113,15 +113,3 @@ Financials & Marketing,Community,Funding,Financial,Ticket Access Outcomes,COMM_F
 Financials & Marketing,Community,Funding,Financial,Ticket Access Outcomes,COMM_FINANCIAL_Q05d,What is the budget variance ($) for supporting the Growing Up Strong this year?,number,,FALSE,744,accessibility,2,COMM_FINANCIAL_Q05,COM5
 Financials & Marketing,Community,Funding,Financial,Ticket Access Outcomes,COMM_FINANCIAL_Q05e,What is the budget variance (%) for supporting the Growing Up Strong this year?,number,,FALSE,745,accessibility,2,COMM_FINANCIAL_Q05,COM5
 Financials & Marketing,Community,Funding,Financial,Ticket Access Outcomes,COMM_FINANCIAL_Q05f,What is the explanation for the variance?,text,,FALSE,746,accessibility,2,COMM_FINANCIAL_Q05,COM5
-,,,,,,,,,,,,,,
-,COMMUNITY,Recreational Classes,Recreational Classes - YYC,850349,,,,,,,,,,
-,COMMUNITY,Recreational Classes,Discounts - YYC,-15022,,,,,,,,,,
-,COMMUNITY,Recreational Classes,Recreational Classes - YEG,424302,,,,,,,,,,
-,COMMUNITY,Recreational Classes,Discounts - YEG,-11968,,,,,,,,,,
-,COMMUNITY,Adult Classes,Adult Classes - YYC,108686,,,,,,,,,,
-,COMMUNITY,Adult Classes,Adult Classes - YEG,77770,,,,,,,,,,
-,COMMUNITY,Summer Classes,Summer Classes - YYC,70000,,,,,,,,,,
-,COMMUNITY,Summer Classes,Summer Classes - YEG,50000,,,,,,,,,,
-,COMMUNITY,Summer Classes,Summer Satellites,28800,,,,,,,,,,
-,COMMUNITY,Provincial Affiliates,Provincial Affiliates - South,48545.55721,,,,,,,,,,
-,COMMUNITY,Provincial Affiliates,Provincial Affiliates - North,29961.44279,,,,,,,,,,
