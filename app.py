@@ -513,6 +513,31 @@ def build_form_for_questions(
         if isinstance(opts_raw, str) and opts_raw.strip():
             options = [o.strip() for o in opts_raw.split(",") if o.strip()]
 
+        # Non-input display types: render and return (no widget, no response)
+        # Supported types: heading, subheading, divider, markdown, note/info
+        if rtype in ("heading", "section", "title"):
+            # Top-level section heading
+            st.markdown(f"### {label}")
+            rendered.add(qid)
+            return
+        if rtype == "subheading":
+            st.markdown(f"#### {label}")
+            rendered.add(qid)
+            return
+        if rtype == "divider":
+            st.divider()
+            rendered.add(qid)
+            return
+        if rtype == "markdown":
+            # Render arbitrary markdown from question_text
+            st.markdown(label)
+            rendered.add(qid)
+            return
+        if rtype in ("note", "info"):
+            st.info(label)
+            rendered.add(qid)
+            return
+
         # Previous value
         prev_primary, prev_desc = get_answer_value(dept_label, production, qid)
 
