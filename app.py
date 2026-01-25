@@ -60,13 +60,6 @@ except Exception:
         from io import BytesIO
         return BytesIO(b"DOCX stub - docx_utils not configured.").getvalue()
 
-try:
-    from app_config import FINANCIAL_KPI_TARGETS_DF
-except Exception:
-    FINANCIAL_KPI_TARGETS_DF = pd.DataFrame(
-        columns=["area", "category", "sub_category", "target", "report_section", "report_order"]
-    )
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Merge scorecards imports
 # ─────────────────────────────────────────────────────────────────────────────
@@ -300,128 +293,6 @@ def _normalise_show_entry(entry: Any) -> Optional[dict]:
         return None
     return {"primary": entry}
 
-def render_financial_kpis(selected_area: Optional[str] = None, show_heading: bool = True):
-    """
-    Render the Financial KPI editor.
-
-    - If selected_area is provided, only show/edit that KPI area (e.g. "Donations").
-    - All edits are merged back into the full KPI set in session_state.
-    """
-    if FINANCIAL_KPI_TARGETS_DF.empty:
-        st.info("No financial KPI targets found. Check financial_kpi_targets.csv in the data folder.")
-        return
-
-    # Start from the full KPI target table
-    master = FINANCIAL_KPI_TARGETS_DF.copy()
-
-    # Bring back previously-entered actuals for all areas, if we have them
-    # Priority 1: Check the full financial_kpis first (most up-to-date with all calculations)
-    prev = st.session_state.get("financial_kpis")
-    if isinstance(prev, pd.DataFrame) and not prev.empty and "actual" in prev.columns:
-        prev = prev[["area", "category", "sub_category", "actual"]].copy()
-    else:
-        # Priority 2: Fall back to financial_kpis_actuals
-        prev = st.session_state.get("financial_kpis_actuals")
-        if isinstance(prev, pd.DataFrame) and not prev.empty and "actual" in prev.columns:
-            prev = prev[["area", "category", "sub_category", "actual"]].copy()
-        else:
-            prev = None
-    
-    # Debug: Show what we found
-    if prev is not None and selected_area:
-        prev_area = prev[prev["area"] == selected_area] if "area" in prev.columns else pd.DataFrame()
-        non_zero_in_prev = prev_area[prev_area["actual"] != 0] if not prev_area.empty else pd.DataFrame()
-        if not non_zero_in_prev.empty:
-            st.info(f"🔄 Loading {len(non_zero_in_prev)} non-zero KPI values for {selected_area}")
-    
-    if prev is not None and isinstance(prev, pd.DataFrame) and not prev.empty:
-        try:
-            # Clean the prev data
-            prev["actual"] = pd.to_numeric(prev["actual"], errors="coerce").fillna(0.0)
-            
-            # Merge with master
-            master = master.merge(
-                prev,
-                on=["area", "category", "sub_category"],
-                how="left",
-                suffixes=("_target", ""),
-            )
-            # If merge created actual_target column, drop it
-            if "actual_target" in master.columns:
-                master.drop(columns=["actual_target"], inplace=True)
-            # Fill any remaining NaN actuals with 0
-            if "actual" not in master.columns:
-                master["actual"] = 0.0
-            else:
-                master["actual"] = master["actual"].fillna(0.0)
-        except Exception as e:
-            # If merge fails, start fresh with zeros
-            st.error(f"KPI merge failed: {e}")
-            master["actual"] = 0.0
-    else:
-        master["actual"] = 0.0
-
-    # Ensure numeric types
-    master["target"] = pd.to_numeric(master["target"], errors="coerce").fillna(0.0)
-    master["actual"] = pd.to_numeric(master["actual"], errors="coerce").fillna(0.0)
-
-    # Optional area scoping
-    if selected_area:
-        working = master[master["area"] == selected_area].copy()
-    else:
-        working = master.copy()
-
-    # Heading
-    if show_heading:
-        if selected_area:
-            st.markdown(f"### Financial KPIs – {selected_area}")
-        else:
-            st.markdown("### Financial KPIs (Year-to-Date)")
-
-    display_cols = ["area", "category", "sub_category", "target", "actual"]
-    display_df = working[display_cols].copy()
-    
-    # The st.data_editor widget manages its own state via the key parameter.
-    # Use unique key per area to avoid duplicate key errors when rendering multiple KPI sections.
-    # When loading from JSON, the draft loading logic (lines 822-825) clears these cached states.
-    editor_key = f"financial_kpi_editor_{selected_area}" if selected_area else "financial_kpi_editor"
-    
-    edited = st.data_editor(
-        display_df,
-        num_rows="fixed",
-        use_container_width=True,
-        key=editor_key,
-        disabled=["area", "category", "sub_category", "target"],  # only 'actual' is editable
-        hide_index=True,
-    )
-
-    # ── Write edited Actuals back into the full master table ──
-    # Start from current master, then patch the rows for the selected area
-    updated_master = master.copy()
-
-    for _, row in edited.iterrows():
-        mask = (
-            (updated_master["area"] == row["area"]) &
-            (updated_master["category"] == row["category"]) &
-            (updated_master["sub_category"] == row["sub_category"])
-        )
-        updated_master.loc[mask, "actual"] = pd.to_numeric(row["actual"], errors="coerce")
-
-    updated_master["actual"] = pd.to_numeric(updated_master["actual"], errors="coerce").fillna(0.0)
-    updated_master["variance"] = updated_master["target"] - updated_master["actual"]
-    updated_master["pct_to_budget"] = updated_master["actual"] / updated_master["target"].replace(0, pd.NA)
-
-    # Store full set (all areas) in session for AI/PDF or later use
-    st.session_state["financial_kpis"] = updated_master
-    
-    # Extract actuals and clean NaN values before storing
-    kpi_actuals_subset = updated_master[
-        ["area", "category", "sub_category", "report_section", "report_order", "actual"]
-    ].copy()
-    # Replace NaN with None immediately
-    kpi_actuals_subset = kpi_actuals_subset.where(pd.notna(kpi_actuals_subset), None)
-    st.session_state["financial_kpis_actuals"] = kpi_actuals_subset
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -478,113 +349,7 @@ def load_questions(file_path: str) -> pd.DataFrame:
     # This call IS cached, keyed on csv_bytes
     return load_questions_from_bytes(csv_bytes)
 
-@cache_data
-def load_kpi_targets(csv_path: str = "data/kpi_targets.csv") -> pd.DataFrame:
-    """
-    Load KPI-specific targets (budget, seats, revenue, enrollment, participants, etc.).
-    Returns empty DataFrame if file not found.
-    """
-    resolved = _resolve_path(csv_path)
-    if not resolved:
-        return pd.DataFrame()
-    
-    try:
-        df = pd.read_csv(resolved)
-        # Normalize text column names
-        text_cols = ['scope_name', 'department', 'kpi_area', 'notes']
-        for col in text_cols:
-            if col in df.columns:
-                df[col] = df[col].fillna("")
-        
-        # Ensure numeric columns
-        numeric_cols = [
-            'budget', 'target_seats', 'target_revenue', 'target_ticket_price',
-            'target_enrollment', 'target_participants', 'target_donations',
-            'target_grants', 'target_sponsorships'
-        ]
-        for col in numeric_cols:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-        
-        return df
-    except Exception as e:
-        warnings.warn(f"Could not load KPI targets: {e}")
-        return pd.DataFrame()
 
-def get_kpi_target(targets_df: pd.DataFrame, scope_name: str, department: str, kpi_area: str = None) -> Optional[dict]:
-    """
-    Get target data for a specific scope (production/program/initiative) and optional KPI area.
-    Returns None if not found or if targets_df is empty.
-    """
-    if targets_df.empty or not scope_name:
-        return None
-    
-    mask = (
-        (targets_df["scope_name"].str.strip().str.casefold() == scope_name.casefold()) &
-        (targets_df["department"].str.strip() == department)
-    )
-    
-    # If KPI area specified, filter by that too
-    if kpi_area and "kpi_area" in targets_df.columns:
-        mask = mask & (targets_df["kpi_area"].str.strip().str.upper() == kpi_area.upper())
-    
-    if not mask.any():
-        return None
-    
-    return targets_df[mask].iloc[0].to_dict()
-
-def display_kpi_context(scope_name: str, dept: str, targets_df: pd.DataFrame, kpi_area: str = None):
-    """
-    Display scope-specific targets as an info box before questions.
-    Works for productions (Artistic), programs (School), initiatives (Community/Corporate).
-    """
-    if targets_df.empty or not scope_name:
-        return
-    
-    target = get_kpi_target(targets_df, scope_name, dept, kpi_area)
-    
-    if not target:
-        return
-    
-    # Build context message
-    context_parts = [f"**{scope_name} — Performance Targets:**"]
-    
-    # Budget (all departments)
-    if pd.notna(target.get('budget')):
-        context_parts.append(f"- Budget: ${target['budget']:,.0f}")
-    
-    # Artistic KPIs
-    if pd.notna(target.get('target_seats')):
-        context_parts.append(f"- Target Seats: {target['target_seats']:,.0f}")
-    
-    if pd.notna(target.get('target_revenue')):
-        context_parts.append(f"- Target Revenue: ${target['target_revenue']:,.0f}")
-    
-    if pd.notna(target.get('target_ticket_price')):
-        context_parts.append(f"- Target Avg Ticket Price: ${target['target_ticket_price']:.2f}")
-    
-    # School KPIs
-    if pd.notna(target.get('target_enrollment')):
-        context_parts.append(f"- Target Enrollment: {target['target_enrollment']:,.0f} students")
-    
-    # Community KPIs
-    if pd.notna(target.get('target_participants')):
-        context_parts.append(f"- Target Participants: {target['target_participants']:,.0f} people")
-    
-    # Corporate KPIs
-    if pd.notna(target.get('target_donations')):
-        context_parts.append(f"- Target Donations: ${target['target_donations']:,.0f}")
-    
-    if pd.notna(target.get('target_grants')):
-        context_parts.append(f"- Target Grants: ${target['target_grants']:,.0f}")
-    
-    if pd.notna(target.get('target_sponsorships')):
-        context_parts.append(f"- Target Sponsorships: ${target['target_sponsorships']:,.0f}")
-    
-    if target.get('notes') and str(target['notes']).strip():
-        context_parts.append(f"\n*{target['notes']}*")
-    
-    st.info("\n".join(context_parts))
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Visibility rules (CSV-driven)
@@ -1051,48 +816,6 @@ def _apply_pending_draft_if_any():
             # Ensure the AI section + download buttons are active without re-clicking
             st.session_state["scorecard_submitted"] = True
 
-        # 🔹 Restore financial KPI actuals if present
-        if "financial_kpis_actuals" in data and data["financial_kpis_actuals"]:
-            try:
-                kpi_df = pd.DataFrame(data["financial_kpis_actuals"])
-                st.session_state["financial_kpis_actuals"] = kpi_df
-                
-                # Also set financial_kpis to ensure render_financial_kpis picks up the values
-                # (it checks financial_kpis first before falling back to financial_kpis_actuals)
-                if "actual" in kpi_df.columns:
-                    # Create a full KPI DataFrame by merging with targets
-                    try:
-                        if not FINANCIAL_KPI_TARGETS_DF.empty:
-                            master = FINANCIAL_KPI_TARGETS_DF.copy()
-                            prev = kpi_df[["area", "category", "sub_category", "actual"]].copy()
-                            prev["actual"] = pd.to_numeric(prev["actual"], errors="coerce").fillna(0.0)
-                            master = master.merge(
-                                prev,
-                                on=["area", "category", "sub_category"],
-                                how="left",
-                            )
-                            # Fill NaN actuals with 0 (rows that didn't match in the merge)
-                            master["actual"] = master["actual"].fillna(0.0)
-                            st.session_state["financial_kpis"] = master
-                    except (KeyError, ValueError, TypeError):
-                        # If merge fails due to column/type issues, just use financial_kpis_actuals as fallback
-                        pass
-                
-                # Clear any cached data_editor states to prevent old values from overwriting loaded ones
-                for key in list(st.session_state.keys()):
-                    if key.startswith("financial_kpi_editor_"):
-                        del st.session_state[key]
-            except (ValueError, TypeError, KeyError):
-                # If KPI data is malformed, skip it silently - this is non-critical data
-                pass
-        
-        # 🔹 NEW: restore KPI explanations if present
-        if "kpi_explanations" in data and data["kpi_explanations"]:
-            dept_val = meta.get("department", "")
-            if dept_val:
-                kpi_explanation_key = f"kpi_explanations_{dept_val}"
-                st.session_state[kpi_explanation_key] = data["kpi_explanations"]
-
         st.session_state["loaded_draft"] = data
         st.session_state["draft_hash"] = h
         st.session_state["draft_applied"] = True
@@ -1275,51 +998,6 @@ def build_draft_from_state(
         "meta": meta,  # includes the CURRENT dept/prod/month etc.
         "answers": _normalise_answers_for_export(current_answers),
     }
-
-    # 🔹 Include the financial KPI actuals so they can be reloaded later
-    # Try multiple sources to ensure we capture the data
-    kpi_actuals = None
-    
-    # First, try financial_kpis (the full version with all calculated fields)
-    full_kpis = st.session_state.get("financial_kpis")
-    if isinstance(full_kpis, pd.DataFrame) and not full_kpis.empty:
-        try:
-            # Ensure we have all required columns
-            required_cols = ["area", "category", "sub_category", "actual"]
-            optional_cols = ["report_section", "report_order"]
-            
-            if all(c in full_kpis.columns for c in required_cols):
-                # Include required columns plus any optional columns that exist
-                available_cols = required_cols + [c for c in optional_cols if c in full_kpis.columns]
-                kpi_actuals = full_kpis[available_cols].copy()
-        except (KeyError, TypeError):
-            # If column extraction fails, fall back to financial_kpis_actuals
-            kpi_actuals = None
-    
-    # Fallback to financial_kpis_actuals if full version not available
-    if kpi_actuals is None or (isinstance(kpi_actuals, pd.DataFrame) and kpi_actuals.empty):
-        kpi_actuals = st.session_state.get("financial_kpis_actuals")
-    
-    # Save to draft if we have any KPI data
-    if isinstance(kpi_actuals, pd.DataFrame) and not kpi_actuals.empty:
-        # Replace NaN with None (null in JSON) before converting to dict
-        kpi_clean = kpi_actuals.copy()
-        kpi_clean = kpi_clean.where(pd.notna(kpi_clean), None)
-        # Ensure actual column is numeric and handle edge cases
-        if "actual" in kpi_clean.columns:
-            kpi_clean["actual"] = pd.to_numeric(kpi_clean["actual"], errors="coerce").fillna(0.0)
-        draft["financial_kpis_actuals"] = kpi_clean.to_dict(orient="records")
-    
-    # 🔹 NEW: include KPI explanations if present
-    dept = meta.get("department") or ""
-    kpi_explanation_key = f"kpi_explanations_{dept}"
-    kpi_explanation = st.session_state.get(kpi_explanation_key, "")
-    # Save even if empty string, as long as it exists
-    if kpi_explanation is not None:
-        kpi_explanation_str = str(kpi_explanation).strip()
-        if kpi_explanation_str:
-            draft["kpi_explanations"] = kpi_explanation_str
-
 
     # ---------- ALL departments/prods -> "per_show_answers" ----------
     per_show_export: Dict[str, Dict[str, dict]] = {}
@@ -1689,11 +1367,6 @@ def main():
     # ✅ Normalised production key for storage
     current_production = "" if sel_prod == GENERAL_PROD_LABEL else sel_prod
     
-    # ── Display scope-specific targets (if applicable, all departments)
-    if current_production:  # Not General
-        targets_df = load_kpi_targets()
-        display_kpi_context(current_production, dept_label, targets_df)
-    
     # ── 4) Filter questions for display (CURRENT PRODUCTION ONLY)
     filtered = filter_questions_for_scope(questions_all_df, current_production)
     
@@ -1764,12 +1437,6 @@ def main():
     saved_items = []
     if "answers" in draft_dict and draft_dict["answers"]:
         saved_items.append(f"{len(draft_dict['answers'])} answers")
-    if "financial_kpis_actuals" in draft_dict:
-        kpi_count = len(draft_dict["financial_kpis_actuals"])
-        non_zero = sum(1 for kpi in draft_dict["financial_kpis_actuals"] if kpi.get("actual") not in (0, 0.0, None))
-        saved_items.append(f"{kpi_count} KPIs ({non_zero} non-zero)")
-    if "kpi_explanations" in draft_dict:
-        saved_items.append("KPI explanations")
     if saved_items:
         st.sidebar.caption(f"📦 Draft includes: {', '.join(saved_items)}")
     
@@ -1912,19 +1579,7 @@ def main():
     if "ai_result" not in st.session_state:
         st.session_state["ai_result"] = None
 
-    # Gather KPI data if available in session state
-    kpi_data_for_ai = st.session_state.get("financial_kpis")
-    if isinstance(kpi_data_for_ai, pd.DataFrame) and not kpi_data_for_ai.empty:
-        # Filter to only rows with actual values (non-zero)
-        kpi_data_for_ai = kpi_data_for_ai[
-            pd.to_numeric(kpi_data_for_ai.get("actual", 0), errors="coerce").fillna(0) != 0
-        ].copy()
-    else:
-        kpi_data_for_ai = None
-    
-    # Get KPI explanations
-    kpi_explanation_key = f"kpi_explanations_{dept_label}"
-    kpi_explanations = st.session_state.get(kpi_explanation_key, "")
+    # Budgets are now handled as questions
 
     # Run AI once (first time after Generate button); reuse cached result on reruns
     if st.session_state["ai_result"] is None:
@@ -1935,21 +1590,11 @@ def main():
                 if kpi_explanations:
                     meta_with_kpi["kpi_explanations"] = kpi_explanations
                 
-                # Add scope targets if applicable (all departments)
-                if current_production:
-                    targets_df = load_kpi_targets()
-                    target_data = get_kpi_target(targets_df, current_production, dept_label)
-                    if target_data:
-                        meta_with_kpi["scope_targets"] = {
-                            k: v for k, v in target_data.items() 
-                            if pd.notna(v) and k not in ['scope_name', 'department', 'kpi_area']
-                        }
-                
                 ai_result = interpret_scorecard(
-                    meta_with_kpi,
+                    meta_for_ai,
                     questions_for_ai,
                     responses_for_ai,
-                    kpi_data=kpi_data_for_ai,
+                    kpi_data=None,
                 )
         except RuntimeError as e:
             st.error(f"AI configuration error: {e}")
