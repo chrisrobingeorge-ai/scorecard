@@ -294,116 +294,6 @@ def _normalise_show_entry(entry: Any) -> Optional[dict]:
     return {"primary": entry}
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Production Rounds Management
-# ─────────────────────────────────────────────────────────────────────────────
-def get_production_rounds(dept: str, scope: str) -> List[Dict[str, Any]]:
-    """
-    Get the list of production rounds for a given department and scope.
-    Each round is a dict: {"round_id": int, "production_name": str}
-    """
-    key = f"production_rounds::{dept}::{scope}"
-    if key not in st.session_state:
-        st.session_state[key] = []
-    return st.session_state[key]
-
-def add_production_round(dept: str, scope: str, production_name: str) -> int:
-    """
-    Add a new production round and return its round_id.
-    """
-    rounds = get_production_rounds(dept, scope)
-    round_id = len(rounds) + 1
-    rounds.append({"round_id": round_id, "production_name": production_name})
-    return round_id
-
-def remove_production_round(dept: str, scope: str, round_id: int):
-    """
-    Remove a production round and clean up its answers.
-    """
-    rounds = get_production_rounds(dept, scope)
-    rounds[:] = [r for r in rounds if r["round_id"] != round_id]
-    
-    # Clean up answers for this round
-    df = get_answers_df()
-    production_key = f"_round_{round_id}_"
-    mask = (
-        (df["department"] == dept) &
-        (df["production"].str.contains(production_key, na=False))
-    )
-    st.session_state["answers_df"] = df[~mask]
-
-def clone_template_questions(
-    questions_df: pd.DataFrame,
-    round_id: int,
-    production_name: str,
-) -> pd.DataFrame:
-    """
-    Clone template questions (production="production_only") for a specific round.
-    Updates question_id, depends_on references, and production column.
-    
-    Returns a DataFrame with cloned questions.
-    """
-    # Filter template questions
-    prod_col = questions_df["production"].astype(str).fillna("").str.strip().str.lower()
-    template_mask = prod_col == "production_only"
-    templates = questions_df[template_mask].copy()
-    
-    if templates.empty:
-        return pd.DataFrame()
-    
-    # Clone and modify
-    cloned = templates.copy()
-    
-    # Update production column to reference this specific round
-    cloned["production"] = f"_round_{round_id}_{production_name}"
-    
-    # Update question_id: append _R{round_id} suffix
-    cloned["question_id"] = cloned["question_id"].astype(str) + f"_R{round_id}"
-    
-    # Update depends_on references to point to cloned question IDs
-    if "depends_on" in cloned.columns:
-        def update_depends_on(depends_str):
-            if pd.isna(depends_str) or not depends_str:
-                return depends_str
-            # Replace QID references with QID_R{round_id}
-            import re
-            # Match question IDs at the start of dependency expressions
-            # Patterns: QID, QID=Value, QID!=Value, QID in [...]
-            def replacer(match):
-                qid = match.group(1)
-                # Only replace if this QID exists in the template
-                if any(templates["question_id"].astype(str) == qid):
-                    return f"{qid}_R{round_id}"
-                return qid
-            
-            # Match word boundaries for question IDs
-            updated = re.sub(r'\b([A-Z]+\d+)\b', replacer, str(depends_str))
-            return updated
-        
-        cloned["depends_on"] = cloned["depends_on"].apply(update_depends_on)
-    
-    return cloned
-
-def get_mainstage_productions() -> List[str]:
-    """
-    Return list of production names that should use the template system.
-    These are NOT Festivals & Touring or Special Events.
-    """
-    # These match the dropdown options in the CSV
-    return [
-        "Once Upon a Time",
-        "Nijinsky", 
-        "Nutcracker",
-        "Winter Gala",
-        "Romeo & Juliet",
-        "Swan Lake",
-        "Notre Dame de Paris",
-    ]
-
-def is_mainstage_production(production_name: str) -> bool:
-    """Check if a production should use the template question system."""
-    return production_name in get_mainstage_productions()
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Data loading (cached)
 # ─────────────────────────────────────────────────────────────────────────────
 @cache_data
@@ -943,13 +833,6 @@ def _apply_pending_draft_if_any():
 
         prod_norm = meta.get("production") or ""
         st.session_state["filter_production"] = prod_norm or GENERAL_PROD_LABEL
-        
-        # ── Restore production rounds
-        production_rounds = data.get("production_rounds", {}) or {}
-        if isinstance(production_rounds, dict):
-            for key, rounds_list in production_rounds.items():
-                if isinstance(key, str) and key.startswith("production_rounds::"):
-                    st.session_state[key] = rounds_list
 
         # 🔹 NEW: restore AI summary if present,
         # so we don't have to call OpenAI again.
@@ -1167,15 +1050,6 @@ def build_draft_from_state(
 
     if per_show_export:
         draft["per_show_answers"] = per_show_export
-    
-    # ── Production rounds (if any)
-    production_rounds_export: Dict[str, List[Dict[str, Any]]] = {}
-    for key, value in st.session_state.items():
-        if key.startswith("production_rounds::"):
-            production_rounds_export[key] = value
-    
-    if production_rounds_export:
-        draft["production_rounds"] = production_rounds_export
 
     return draft
 
@@ -1517,108 +1391,6 @@ def main():
     
     # ✅ Normalised production key for storage
     current_production = "" if sel_prod == GENERAL_PROD_LABEL else sel_prod
-    
-    # ── 3.5) Production Rounds (Artistic + Productions only)
-    if dept_label == "Artistic" and current_production.lower() == "productions":
-        st.markdown("### Production Rounds")
-        st.info("Add multiple productions below. Questions will be repeated for each production you add.")
-        
-        # Get existing rounds for this scope
-        rounds = get_production_rounds(dept_label, sel_prod)
-        
-        # Display existing rounds
-        for round_info in rounds:
-            round_id = round_info["round_id"]
-            production_name = round_info["production_name"]
-            
-            col1, col2 = st.columns([0.9, 0.1])
-            with col1:
-                st.markdown(f"#### Production Round {round_id}: {production_name}")
-            with col2:
-                if st.button("🗑️", key=f"remove_round_{round_id}", help="Remove this production round"):
-                    remove_production_round(dept_label, sel_prod, round_id)
-                    st.rerun()
-            
-            # Get all questions for this scope
-            all_qs = filter_questions_for_scope(questions_all_df, "")
-            
-            # Clone and filter template questions OR show specific production questions
-            if is_mainstage_production(production_name):
-                # Mainstage: clone template questions
-                cloned_qs = clone_template_questions(all_qs, round_id, production_name)
-                if not cloned_qs.empty:
-                    round_questions = cloned_qs
-                else:
-                    st.warning(f"No template questions found for {production_name}")
-                    round_questions = pd.DataFrame()
-            elif production_name.lower() == "festivals & touring":
-                # Festivals: filter to FE* questions
-                all_qs_filtered = all_qs[all_qs["question_id"].astype(str).str.startswith("FE")]
-                # Remove dependencies on Q1
-                all_qs_filtered = all_qs_filtered.copy()
-                all_qs_filtered.loc[:, "depends_on"] = all_qs_filtered["depends_on"].apply(
-                    lambda x: None if pd.notna(x) and "Q1" in str(x) else x
-                )
-                round_questions = all_qs_filtered
-            elif production_name.lower() == "special events":
-                # Special Events: filter to SE* questions
-                all_qs_filtered = all_qs[all_qs["question_id"].astype(str).str.startswith("SE")]
-                # Remove dependencies on Q1
-                all_qs_filtered = all_qs_filtered.copy()
-                all_qs_filtered.loc[:, "depends_on"] = all_qs_filtered["depends_on"].apply(
-                    lambda x: None if pd.notna(x) and "Q1" in str(x) else x
-                )
-                round_questions = all_qs_filtered
-            else:
-                # Specific production: filter by production column
-                round_questions = all_qs[
-                    (all_qs["production"].astype(str).str.contains(production_name, na=False)) |
-                    (all_qs["production"].astype(str).str.lower() == "general")
-                ]
-            
-            # Render questions for this round
-            if not round_questions.empty:
-                tab_pillars = round_questions["strategic_pillar"].dropna().unique().tolist()
-                tabs = st.tabs(tab_pillars if tab_pillars else ["Questions"])
-                
-                round_responses: Dict[str, dict] = {}
-                for tab, p in zip(tabs, tab_pillars) if tab_pillars else zip([tabs[0]], ["Questions"]):
-                    with tab:
-                        if tab_pillars:
-                            block = round_questions[round_questions["strategic_pillar"] == p]
-                        else:
-                            block = round_questions
-                        
-                        block_responses = build_form_for_questions(
-                            block,
-                            dept_label=dept_label,
-                            production=f"_round_{round_id}_{production_name}",
-                        )
-                        round_responses.update(block_responses)
-                
-                # Persist round responses
-                for qid, entry in round_responses.items():
-                    upsert_answer(
-                        dept=dept_label,
-                        production=f"_round_{round_id}_{production_name}",
-                        qid=qid,
-                        primary=entry.get("primary"),
-                        description=entry.get("description"),
-                    )
-            
-            st.divider()
-        
-        # Add production button
-        with st.form("add_production_form"):
-            prod_to_add = st.selectbox(
-                "Select a production to add:",
-                options=["Festivals & Touring", "Special Events"] + get_mainstage_productions(),
-                key="prod_select_add",
-            )
-            submitted = st.form_submit_button("➕ Add a Production")
-            if submitted:
-                add_production_round(dept_label, sel_prod, prod_to_add)
-                st.rerun()
     
     # ── 4) Filter questions for display (CURRENT PRODUCTION ONLY)
     filtered = filter_questions_for_scope(questions_all_df, current_production)
