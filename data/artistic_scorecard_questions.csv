@@ -212,3 +212,9 @@ Financials and Marketing,Marketing,Digital Marketing,Marketing,company_marketing
 Financials and Marketing,Marketing,Digital Marketing,Marketing,company_marketing,CORP_CM_Q5,What is our YOY Facebook traffic numbers and percentage for the Company?,text,,FALSE,2200,Marketing,1,,CORP2
 Financials and Marketing,Marketing,Digital Marketing,Marketing,company_marketing,CORP_CM_Q6,What is our YOY YouTube traffic numbers and percentage for the Company?,text,,FALSE,2210,Marketing,1,,CORP2
 Financials and Marketing,Marketing,Digital Marketing,Marketing,company_marketing,CORP_CM_Q7,What is our YOY TikTok traffic numbers and percentage for the Company?,text,,FALSE,2220,Marketing,1,,CORP2
+Financials and Marketing,Marketing,Experiential Marketing,Marketing,company_marketing,CORP_CM_Q1,Did we deliver any experiential marketing events during this period?,yes_no,"Yes,No",FALSE,2230,digital_engagement,1,,CORP2
+Financials and Marketing,Marketing,Experiential Marketing,Marketing,company_marketing,CORP_CM_Q1a,"If so, what did we do and how many people attended each event?",text,,FALSE,2240,risk,1,CORP_CM_Q1,CORP2
+Financials and Marketing,Marketing,Experiential Marketing,Marketing,company_marketing,CORP_CM_Q1b,"If not, why not?",text,,FALSE,2250,risk,1,CORP_CM_Q1=No,CORP2
+Financials and Marketing,Marketing,Experiential Marketing,Marketing,company_marketing,CORP_CM_Q1c,Did we deliver any pop-up performances during this period?,yes_no,"Yes,No",FALSE,2260,risk,1,,CORP2
+Financials and Marketing,Marketing,Experiential Marketing,Marketing,company_marketing,CORP_CM_Q1d,"If so, what did we do and how many people attended each event?",text,,FALSE,2270,risk,1,CORP_CM_Q1c,CORP2
+Financials and Marketing,Marketing,Experiential Marketing,Marketing,company_marketing,CORP_CM_Q1e,"If not, why not?",text,,FALSE,2280,risk,1,CORP_CM_Q1c=No,CORP2
