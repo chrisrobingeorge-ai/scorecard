@@ -33,7 +33,7 @@ Recruitment,School,International Recruitment,Recruitment,International Recruitme
 Recruitment,School,International Recruitment,Recruitment,Scholarships for International Students,SCH_AS_Q19,International Student Scholarships,heading,,FALSE,320,scholarships,2,,SCH6
 Recruitment,School,International Recruitment,Recruitment,Scholarships for International Students,SCH_AS_Q20,Did we expand scholarship opportunities for international students?,yes_no,"Yes,No",FALSE,330,scholarships,2,,SCH6
 Recruitment,School,International Recruitment,Recruitment,Scholarships for International Students,SCH_AS_Q21,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,FALSE,340,scholarships,1,SCH_AS_Q20,SCH6
-Recruitment,School,International Recruitment,Recruitment,Showcasing Alumni Success,SCH_AS_Q22,Alumni Success,yes_no,"Yes,No",FALSE,350,recruitment_marketing,2,,SCH5
+Recruitment,School,International Recruitment,Recruitment,Showcasing Alumni Success,SCH_AS_Q22,Alumni Success,heading,,FALSE,350,recruitment_marketing,2,,SCH5
 Recruitment,School,International Recruitment,Recruitment,Showcasing Alumni Success,SCH_AS_Q23,Did we showcase alumni success stories to highlight our success in launching world-class dancers and inspire prospective students?,yes_no,"Yes,No",FALSE,360,recruitment_marketing,2,,SCH5
 Recruitment,School,International Recruitment,Recruitment,Showcasing Alumni Success,SCH_AS_Q24,"If yes, who did we showcase?",text,,FALSE,370,recruitment_marketing,1,SCH_AS_Q23,SCH5
 Recruitment,School,Provincial Recruitment,Recruitment,Affiliate Programme Awareness,SCH_AS_Q25,Affiliate Program Awareness,heading,,FALSE,380,provincial_presence,2,,SCH5
@@ -46,23 +46,23 @@ Recruitment,School,Provincial Recruitment,Recruitment,Leveraging Provincial Tour
 Recruitment,School,Provincial Recruitment,Recruitment,Leveraging Provincial Tours,SCH_AS_Q32,"If yes, which communities did we go to and how many students attended the masterclasses in each city?",text,,FALSE,450,provincial_presence,1,SCH_AS_Q30,SCH4
 Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Alberta Students,SCH_AS_Q33,Alberta Student Scholarships,heading,,FALSE,460,scholarships,2,,SCH6
 Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Alberta Students,SCH_AS_Q34,Did we offer scholarships to make professional training accessible for Alberta students?,yes_no,"Yes,No",FALSE,470,scholarships,2,,SCH6
-Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Alberta Students,SCH_AS_Q35,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,FALSE,480,scholarships,1,SCH_SA_Q33,SCH6
-Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Alberta Students,SCH_AS_Q36,Did we secure external funding to make professional training accessible for Alberta students?,yes_no,"Yes,No",FALSE,490,scholarships,1,SCH_SA_Q33,SCH6
-Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Alberta Students,SCH_AS_Q37,From what sources and how much money did we secure to support scholarships for Alberta students?,text,,FALSE,500,scholarships,1,SCH_SA_Q33,SCH6
+Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Alberta Students,SCH_AS_Q35,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,FALSE,480,scholarships,1,SCH_AS_Q33,SCH6
+Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Alberta Students,SCH_AS_Q36,Did we secure external funding to make professional training accessible for Alberta students?,yes_no,"Yes,No",FALSE,490,scholarships,1,SCH_AS_Q33,SCH6
+Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Alberta Students,SCH_AS_Q37,From what sources and how much money did we secure to support scholarships for Alberta students?,text,,FALSE,500,scholarships,1,SCH_AS_Q33,SCH6
 Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Marginalised Students,SCH_AS_Q38,Marginalised Alberta Student Scholarships,heading,,FALSE,510,scholarships,2,,SCH6
 Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Marginalised Students,SCH_AS_Q39,Did we offer scholarships to make professional training accessible for marginalised students in Alberta?,yes_no,"Yes,No",FALSE,520,scholarships,2,,SCH6
-Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Marginalised Students,SCH_AS_Q40,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,FALSE,530,scholarships,1,SCH_SA_Q41,SCH6
-Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Marginalised Students,SCH_AS_Q41,Did we secure external funding to support these marginalised students?,yes_no,"Yes,No",FALSE,540,scholarships,1,SCH_SA_Q41,SCH6
-Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Marginalised Students,SCH_AS_Q42,From what sources and how much money did we secure to support scholarships for marginalised students?,text,,FALSE,550,scholarships,1,SCH_SA_Q41,SCH6
+Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Marginalised Students,SCH_AS_Q40,"If yes, how many scholarships did we offer and what was the dollar figure?",text,,FALSE,530,scholarships,1,SCH_AS_Q41,SCH6
+Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Marginalised Students,SCH_AS_Q41,Did we secure external funding to support these marginalised students?,yes_no,"Yes,No",FALSE,540,scholarships,1,SCH_AS_Q41,SCH6
+Demographics,School,Provincial Recruitment,Recruitment,Scholarships for Marginalised Students,SCH_AS_Q42,From what sources and how much money did we secure to support scholarships for marginalised students?,text,,FALSE,550,scholarships,1,SCH_AS_Q41,SCH6
 Demographics,School,International Recruitment,Recruitment,Boy Enrolment,SCH_AS_Q43,Boys Enrollment,heading,,FALSE,560,accessibility,3,,SCH6
 Demographics,School,International Recruitment,Recruitment,Boy Enrolment,SCH_AS_Q44,Did we increase boy enrolment through targeted campaigns and specialised programmes?,yes_no,"Yes,No",FALSE,570,accessibility,3,,SCH6
-Demographics,School,International Recruitment,Recruitment,Boy Enrolment,SCH_AS_Q45,"If yes, how did we increase awareness?",text,,FALSE,580,accessibility,2,SCH_SA_Q44,SCH6
-Demographics,School,International Recruitment,Recruitment,Boy Enrolment,SCH_AS_Q46,How many boys did we enrol through this campaign?,number,,FALSE,590,accessibility,2,SCH_SA_Q44,SCH6
+Demographics,School,International Recruitment,Recruitment,Boy Enrolment,SCH_AS_Q45,"If yes, how did we increase awareness?",text,,FALSE,580,accessibility,2,SCH_AS_Q44,SCH6
+Demographics,School,International Recruitment,Recruitment,Boy Enrolment,SCH_AS_Q46,How many boys did we enrol through this campaign?,number,,FALSE,590,accessibility,2,SCH_AS_Q44,SCH6
 Demographics,School,Provincial Recruitment,Recruitment,AB Classes,SCH_AS_Q47,AB Class Referalls,heading,,FALSE,600,accessibility,3,,SCH6
 Demographics,School,Provincial Recruitment,Recruitment,AB Classes,SCH_AS_Q48,Did we recommend students from AB Classes audition for Alberta Ballet School?,yes_no,"Yes,No",FALSE,610,accessibility,3,,SCH6
-Demographics,School,Provincial Recruitment,Recruitment,AB Classes,SCH_AS_Q49,"If yes, how many did we recommend?",number,,FALSE,620,accessibility,2,SCH_SA_Q48,SCH6
-Demographics,School,Provincial Recruitment,Recruitment,AB Classes,SCH_AS_Q50,How many accepted?,number,,FALSE,630,accessibility,2,SCH_SA_Q48,SCH6
-Demographics,School,Provincial Recruitment,Recruitment,AB Classes,SCH_AS_Q51,"If no,  please explain why.",number,,FALSE,640,accessibility,2,SCH_SA_Q48=No,SCH6
+Demographics,School,Provincial Recruitment,Recruitment,AB Classes,SCH_AS_Q49,"If yes, how many did we recommend?",number,,FALSE,620,accessibility,2,SCH_AS_Q48,SCH6
+Demographics,School,Provincial Recruitment,Recruitment,AB Classes,SCH_AS_Q50,How many accepted?,number,,FALSE,630,accessibility,2,SCH_AS_Q48,SCH6
+Demographics,School,Provincial Recruitment,Recruitment,AB Classes,SCH_AS_Q51,"If no,  please explain why.",number,,FALSE,640,accessibility,2,SCH_AS_Q48=No,SCH6
 Financials,School,Fundraising,Financial,AGLC,REV_FD_01,AGLC Revenue,heading,,FALSE,650,financial,3,,SCH6
 Financials,School,Fundraising,Financial,AGLC,REV_FD_02,"The Casino Revenue budget this year was $75,000; how much did we actually secure YTD?",number,,FALSE,660,financial,3,,SCH6
 Financials,School,Fundraising,Financial,AGLC,REV_FD_03,Explain the variance for Casino Revenue between Budget and Actuals so far this year.,text,,FALSE,670,financial,3,,SCH6
