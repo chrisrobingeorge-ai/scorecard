@@ -1173,7 +1173,10 @@ def main():
         st.session_state.pop("draft_hash", None)
         st.session_state.pop("_processed_upload_hash", None)
         st.session_state.pop("draft_applied", None)
+        st.session_state.pop("answers_df", None)  # Clear all answers
+        st.session_state.pop("ai_result", None)   # Clear AI result
         st.sidebar.success("Draft cleared. You can now reload the same file.")
+        safe_rerun()
     
     draft_files = st.sidebar.file_uploader(
         "Load saved draft(s) (JSON)",
@@ -1189,7 +1192,7 @@ def main():
         # Skip processing if these exact files were already processed
         # (prevents re-triggering merge after conflict resolution)
         if st.session_state.get("_processed_upload_hash") == uploaded_files_hash:
-            pass  # Files already processed, don't reprocess
+            st.sidebar.info("📋 Draft already loaded. To reload, click 'Clear current draft' first, then remove and re-add the file.")
         else:
             # Process multiple files - merge them into a single draft
             if len(draft_files) == 1:
