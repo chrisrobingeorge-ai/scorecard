@@ -145,3 +145,10 @@ Revenue,Community,Revenue,Recreational Classes - Provincial,Enrollment Revenue,C
 Revenue,Community,Revenue,Recreational Classes - Provincial,Enrollment Revenue,COMM_REC_FIN_Q8b,Explain the variance for Provincial Affiliates - South between Budget and Actuals so far this year.,text,,FALSE,89,financial,2,,COM2
 Revenue,Community,Revenue,Recreational Classes - Provincial,Enrollment Revenue,COMM_REC_FIN_Q8c,"The budget for Provincial Affiliates - North was $29,961. How much revenue have we generated for Provincial Affiliates - South so far this year?",number,,FALSE,90,financial,2,,COM2
 Revenue,Community,Revenue,Recreational Classes - Provincial,Enrollment Revenue,COMM_REC_FIN_Q8d,Explain the variance for Provincial Affiliates - North between Budget and Actuals so far this year.,text,,FALSE,91,financial,2,,COM2
+Marketing,Community,Marketing,Community Programs,Digital Marketing,CORP_CU_Q1,Digital Marketing,heading,,FALSE,92,marketing,1,,CORP2
+Marketing,Community,Marketing,Community Programs,Digital Marketing,CORP_CU_Q1,What is our YOY website traffic numbers and percentage for AlbertaBalletCommunity.com?,text,,FALSE,93,marketing,1,,CORP2
+Marketing,Community,Marketing,Community Programs,Digital Marketing,CORP_CU_Q2,What is our YOY Instagram traffic numbers and percentage for Community?,text,,FALSE,94,marketing,1,,CORP2
+Marketing,Community,Marketing,Community Programs,Digital Marketing,CORP_CU_Q3,What is our YOY Facebook traffic numbers and percentage for Community?,text,,FALSE,95,marketing,1,,CORP2
+Marketing,Community,Marketing,Community Programs,Digital Marketing,CORP_CU_Q4,What is our YOY YouTube traffic numbers and percentage for Community?,text,,FALSE,96,marketing,1,,CORP2
+Marketing,Community,Marketing,Community Programs,Digital Marketing,CORP_CU_Q5,What is our YOY TikTok traffic numbers and percentage for Community?,text,,FALSE,97,marketing,1,,CORP2
+Marketing,Community,Marketing,Community Programs,Digital Marketing,CORP_CU_Q6,What is our YOY LinkedIn traffic numbers and percentage for Corporate?,text,,FALSE,98,marketing,1,,CORP2
