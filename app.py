@@ -1061,6 +1061,10 @@ def build_draft_from_state(
     if per_show_export:
         draft["per_show_answers"] = per_show_export
 
+    # ---------- Include AI result if present ----------
+    if st.session_state.get("ai_result"):
+        draft["ai_result"] = st.session_state["ai_result"]
+
     return draft
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1477,6 +1481,8 @@ def main():
     saved_items = []
     if "answers" in draft_dict and draft_dict["answers"]:
         saved_items.append(f"{len(draft_dict['answers'])} answers")
+    if "ai_result" in draft_dict and draft_dict["ai_result"]:
+        saved_items.append("AI summary")
     if saved_items:
         st.sidebar.caption(f"📦 Draft includes: {', '.join(saved_items)}")
     
