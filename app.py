@@ -299,7 +299,8 @@ def _normalise_show_entry(entry: Any) -> Optional[dict]:
 @cache_data
 def load_questions_from_bytes(csv_bytes: bytes) -> pd.DataFrame:
     from io import BytesIO
-    df = pd.read_csv(BytesIO(csv_bytes))
+    import csv
+    df = pd.read_csv(BytesIO(csv_bytes), encoding='utf-8-sig', quoting=csv.QUOTE_MINIMAL)
 
     # Normalize ID
     if "question_id" in df.columns:
@@ -493,6 +494,9 @@ def build_form_for_questions(
         qid = str(row.get("question_id", "")).strip()
         if not qid or qid in rendered:
             return
+        
+        # Mark as rendered immediately to prevent duplicate widget creation
+        rendered.add(qid)
 
         # Label
         raw_label = str(row.get("question_text", "") or "").strip()
@@ -599,7 +603,6 @@ def build_form_for_questions(
             entry["primary"] = st.text_area(label_display, key=widget_key, value=default_text, height=60)
 
         responses[qid] = entry
-        rendered.add(qid)
 
     def _render_with_children(parent_row: pd.Series):
         _render_one(parent_row)
@@ -1335,7 +1338,8 @@ def main():
     if dept_cfg.has_productions and dept_cfg.productions_csv:
         resolved_prod = _resolve_path(dept_cfg.productions_csv)
         if resolved_prod and os.path.exists(resolved_prod):
-            productions_df = pd.read_csv(resolved_prod)
+            import csv
+            productions_df = pd.read_csv(resolved_prod, encoding='utf-8-sig', quoting=csv.QUOTE_MINIMAL)
         else:
             productions_df = pd.DataFrame(columns=["department", "production_name", "active"])
     

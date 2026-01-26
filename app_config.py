@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any
 
 from pathlib import Path
 import pandas as pd
+import csv
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Base paths
@@ -25,7 +26,7 @@ YES_NO_OPTIONS = ["Yes", "No"]  # global default
 OBJECTIVES_INDEX_PATH = DATA_DIR / "strategic_objectives_index.csv"
 
 try:
-    OBJECTIVES_DF = pd.read_csv(OBJECTIVES_INDEX_PATH)
+    OBJECTIVES_DF = pd.read_csv(OBJECTIVES_INDEX_PATH, encoding='utf-8-sig', quoting=csv.QUOTE_MINIMAL)
     OBJECTIVES_BY_ID: Dict[str, Dict[str, Any]] = (
         OBJECTIVES_DF
         .set_index("objective_id")
@@ -44,7 +45,7 @@ except FileNotFoundError:
 FINANCIAL_KPI_TARGETS_PATH = DATA_DIR / "financial_kpi_targets.csv"
 
 try:
-    FINANCIAL_KPI_TARGETS_DF = pd.read_csv(FINANCIAL_KPI_TARGETS_PATH)
+    FINANCIAL_KPI_TARGETS_DF = pd.read_csv(FINANCIAL_KPI_TARGETS_PATH, encoding='utf-8-sig', quoting=csv.QUOTE_MINIMAL)
 
     # Normalise column names just in case
     FINANCIAL_KPI_TARGETS_DF.columns = [
