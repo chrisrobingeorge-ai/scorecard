@@ -850,6 +850,12 @@ def _apply_pending_draft_if_any():
         st.session_state["loaded_draft"] = data
         st.session_state["draft_hash"] = h
         st.session_state["draft_applied"] = True
+        
+        # Debug: Show what was loaded
+        if rows:
+            st.sidebar.success(f"✅ Loaded {len(rows)} answer(s) from draft")
+        else:
+            st.sidebar.warning("⚠️ Draft loaded but no answers found")
 
     except Exception as e:
         st.session_state["pending_draft_error"] = str(e)
