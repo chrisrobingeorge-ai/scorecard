@@ -1207,6 +1207,8 @@ def main():
     else:
         # Clear the processed hash when files are removed from uploader
         st.session_state.pop("_processed_upload_hash", None)
+        # Also clear draft_hash so the same file can be re-uploaded
+        st.session_state.pop("draft_hash", None)
 
     if "pending_draft_error" in st.session_state:
         st.sidebar.error(f"Could not load draft: {st.session_state.pop('pending_draft_error')}")
