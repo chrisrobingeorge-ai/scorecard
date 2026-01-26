@@ -27,6 +27,11 @@ OBJECTIVES_INDEX_PATH = DATA_DIR / "strategic_objectives_index.csv"
 
 try:
     OBJECTIVES_DF = pd.read_csv(OBJECTIVES_INDEX_PATH, encoding='utf-8-sig', quoting=csv.QUOTE_MINIMAL)
+    
+    # Normalize apostrophes in all text columns
+    for col in OBJECTIVES_DF.select_dtypes(include=['object']).columns:
+        OBJECTIVES_DF[col] = OBJECTIVES_DF[col].str.replace('\u2019', "'", regex=False).str.replace('\u2018', "'", regex=False)
+    
     OBJECTIVES_BY_ID: Dict[str, Dict[str, Any]] = (
         OBJECTIVES_DF
         .set_index("objective_id")
@@ -46,6 +51,10 @@ FINANCIAL_KPI_TARGETS_PATH = DATA_DIR / "financial_kpi_targets.csv"
 
 try:
     FINANCIAL_KPI_TARGETS_DF = pd.read_csv(FINANCIAL_KPI_TARGETS_PATH, encoding='utf-8-sig', quoting=csv.QUOTE_MINIMAL)
+
+    # Normalize apostrophes in all text columns
+    for col in FINANCIAL_KPI_TARGETS_DF.select_dtypes(include=['object']).columns:
+        FINANCIAL_KPI_TARGETS_DF[col] = FINANCIAL_KPI_TARGETS_DF[col].str.replace('\u2019', "'", regex=False).str.replace('\u2018', "'", regex=False)
 
     # Normalise column names just in case
     FINANCIAL_KPI_TARGETS_DF.columns = [

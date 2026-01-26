@@ -328,6 +328,13 @@ def load_questions_from_bytes(csv_bytes: bytes) -> pd.DataFrame:
             df[c] = ""
         df[c] = df[c].fillna("")
 
+    # Normalize apostrophes: replace curly apostrophes with straight ones
+    text_columns = ["question_text", "options", "section", "strategic_pillar", "production", "metric", "depends_on"]
+    for col in text_columns:
+        if col in df.columns:
+            # Replace left and right curly quotes with straight apostrophe
+            df[col] = df[col].str.replace('\u2019', "'", regex=False).str.replace('\u2018', "'", regex=False)
+
     # Defaults for grouping/rendering
     df["section"] = df["section"].replace("", "General")
     df["response_type"] = df["response_type"].replace("", "text")
@@ -1340,6 +1347,10 @@ def main():
         if resolved_prod and os.path.exists(resolved_prod):
             import csv
             productions_df = pd.read_csv(resolved_prod, encoding='utf-8-sig', quoting=csv.QUOTE_MINIMAL)
+            
+            # Normalize apostrophes in all text columns
+            for col in productions_df.select_dtypes(include=['object']).columns:
+                productions_df[col] = productions_df[col].str.replace('\u2019', "'", regex=False).str.replace('\u2018', "'", regex=False)
         else:
             productions_df = pd.DataFrame(columns=["department", "production_name", "active"])
     
