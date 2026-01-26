@@ -1,0 +1,236 @@
+{
+  "meta": {
+    "staff_name": "Unknown",
+    "role": "",
+    "department": "Artistic",
+    "month": "2026-01",
+    "production": "Financial"
+  },
+  "answers": {
+    "SUB_26_01": {
+      "primary": 1312364.55
+    },
+    "SUB_26_01a": {
+      "primary": "This year, due to enhance subscriber offerings and increased marketing, we increased subscription revenue by $126,000."
+    },
+    "SUB_27_01": {
+      "primary": 0.0
+    },
+    "DO01a": {
+      "primary": 501125.0
+    },
+    "DO01b": {
+      "primary": "Including Endowment gifts, after launching our Artistic Excellence site and pushing donations into Canada Helps, we were able to secure these dollars for Live Music through board relations and email marketing."
+    },
+    "DO02a": {
+      "primary": 2932.3
+    },
+    "DO02b": {
+      "primary": "After launching our Artistic Excellence site and pushing donations into Canada Helps, we were able to secure this modest sum for New Works through email marketing."
+    },
+    "DO03a": {
+      "primary": 29656.9
+    },
+    "DO03b": {
+      "primary": "Lack of interest among donors and staff loss contributed to this variance of $320,000 so far."
+    },
+    "DO04a": {
+      "primary": 175.0
+    },
+    "DO04b": {
+      "primary": "After launching our Artistic Excellence site and pushing donations into Canada Helps, we were able to secure this modest sum for Provincial Touring through email marketing."
+    },
+    "DO05a": {
+      "primary": 20822.0
+    },
+    "DO05b": {
+      "primary": "Dance Circle in Calgary represents approximately 76% of members. The YTD variance of $108,625 is attributable to the majority of Dance Circle members having purchased their memberships prior to the start of this fiscal year. As memberships are treated as donations by CRA, membership fees must be recognized at the time of purchase. We expect to see this budget met after the subscription renewal campaign launches at the end of April. Further, some of the $20,822 received so far this year is also explained by members now being able to pay their membership fees over a 10 month payment plan. "
+    },
+    "DO05c": {
+      "primary": 6684.0
+    },
+    "DO05d": {
+      "primary": "Dance Circle in Edmonton represents approximately 24% of members. The YTD variance of $34,869 is attributable to the majority of Dance Circle members having purchased their memberships prior to the start of this fiscal year. As memberships are treated as donations by CRA, membership fees must be recognized at the time of purchase. We expect to see this budget met after the subscription renewal campaign launches at the end of April. Further, some of the $6,684 received so far this year is also explained by members now being able to pay their membership fees over a 10 month payment plan. "
+    },
+    "SP01a": {
+      "primary": 42082.0
+    },
+    "SP01b": {
+      "primary": "$7,882 Mayfair, $5000 O'Connors, $3000 MNP (J Strueby), $7000 Tory's, Walsh $9300, $9900 ticket only sponsor (Pattison, Burnet Duckworth, Campus Towers, Nickel Lane)"
+    },
+    "SP01c": {
+      "primary": "No"
+    },
+    "SP01e": {
+      "primary": "No"
+    },
+    "GR01a": {
+      "primary": 218000.0
+    },
+    "GR01b": {
+      "primary": "We have received only one installment from Canada Council YTD. The second installment comes in the spring."
+    },
+    "GR02a": {
+      "primary": 0.0
+    },
+    "GR03a": {
+      "primary": 0.0
+    },
+    "GR04a": {
+      "primary": 0.0
+    },
+    "GR04d": {
+      "primary": 0.0
+    },
+    "GR04g": {
+      "primary": 26000.0
+    },
+    "GR04h": {
+      "primary": "$25,000 is from RBC Emerging Artists program in support of our Apprentice Dancers. They reduced the amount by $5,000 from previous years after our budget was approved. Another $1,000 came in from Rozsa for Audience Development as the final installment for TRG support."
+    }
+  },
+  "per_show_answers": {
+    "Artistic::Financial": {
+      "SUB_26_01": {
+        "primary": 1312364.55
+      },
+      "SUB_26_01a": {
+        "primary": "This year, due to enhance subscriber offerings and increased marketing, we increased subscription revenue by $126,000."
+      },
+      "SUB_27_01": {
+        "primary": 0.0
+      },
+      "DO01a": {
+        "primary": 501125.0
+      },
+      "DO01b": {
+        "primary": "Including Endowment gifts, after launching our Artistic Excellence site and pushing donations into Canada Helps, we were able to secure these dollars for Live Music through board relations and email marketing."
+      },
+      "DO02a": {
+        "primary": 2932.3
+      },
+      "DO02b": {
+        "primary": "After launching our Artistic Excellence site and pushing donations into Canada Helps, we were able to secure this modest sum for New Works through email marketing."
+      },
+      "DO03a": {
+        "primary": 29656.9
+      },
+      "DO03b": {
+        "primary": "Lack of interest among donors and staff loss contributed to this variance of $320,000 so far."
+      },
+      "DO04a": {
+        "primary": 175.0
+      },
+      "DO04b": {
+        "primary": "After launching our Artistic Excellence site and pushing donations into Canada Helps, we were able to secure this modest sum for Provincial Touring through email marketing."
+      },
+      "DO05a": {
+        "primary": 20822.0
+      },
+      "DO05b": {
+        "primary": "Dance Circle in Calgary represents approximately 76% of members. The YTD variance of $108,625 is attributable to the majority of Dance Circle members having purchased their memberships prior to the start of this fiscal year. As memberships are treated as donations by CRA, membership fees must be recognized at the time of purchase. We expect to see this budget met after the subscription renewal campaign launches at the end of April. Further, some of the $20,822 received so far this year is also explained by members now being able to pay their membership fees over a 10 month payment plan. "
+      },
+      "DO05c": {
+        "primary": 6684.0
+      },
+      "DO05d": {
+        "primary": "Dance Circle in Edmonton represents approximately 24% of members. The YTD variance of $34,869 is attributable to the majority of Dance Circle members having purchased their memberships prior to the start of this fiscal year. As memberships are treated as donations by CRA, membership fees must be recognized at the time of purchase. We expect to see this budget met after the subscription renewal campaign launches at the end of April. Further, some of the $6,684 received so far this year is also explained by members now being able to pay their membership fees over a 10 month payment plan. "
+      },
+      "SP01a": {
+        "primary": 42082.0
+      },
+      "SP01b": {
+        "primary": "$7,882 Mayfair, $5000 O'Connors, $3000 MNP (J Strueby), $7000 Tory's, Walsh $9300, $9900 ticket only sponsor (Pattison, Burnet Duckworth, Campus Towers, Nickel Lane)"
+      },
+      "SP01c": {
+        "primary": "No"
+      },
+      "SP01e": {
+        "primary": "No"
+      },
+      "GR01a": {
+        "primary": 218000.0
+      },
+      "GR01b": {
+        "primary": "We have received only one installment from Canada Council YTD. The second installment comes in the spring."
+      },
+      "GR02a": {
+        "primary": 0.0
+      },
+      "GR03a": {
+        "primary": 0.0
+      },
+      "GR04a": {
+        "primary": 0.0
+      },
+      "GR04d": {
+        "primary": 0.0
+      },
+      "GR04g": {
+        "primary": 26000.0
+      },
+      "GR04h": {
+        "primary": "$25,000 is from RBC Emerging Artists program in support of our Apprentice Dancers. They reduced the amount by $5,000 from previous years after our budget was approved. Another $1,000 came in from Rozsa for Audience Development as the final installment for TRG support."
+      }
+    },
+    "Artistic::Productions": {
+      "OU17": {
+        "primary": 0.0
+      },
+      "OU19": {
+        "primary": 0.0
+      },
+      "NJ17": {
+        "primary": 0.0
+      },
+      "NJ19": {
+        "primary": 0.0
+      },
+      "NZ17": {
+        "primary": 0.0
+      },
+      "NZ19": {
+        "primary": 0.0
+      },
+      "WG17": {
+        "primary": 0.0
+      },
+      "WG19": {
+        "primary": 0.0
+      },
+      "RJ17": {
+        "primary": 0.0
+      },
+      "RJ19": {
+        "primary": 0.0
+      },
+      "RJ20": {
+        "primary": 0.0
+      },
+      "SL17": {
+        "primary": 0.0
+      },
+      "SL19": {
+        "primary": 0.0
+      },
+      "ND17": {
+        "primary": 0.0
+      },
+      "ND19": {
+        "primary": 0.0
+      },
+      "FE01c": {
+        "primary": 0.0
+      },
+      "FE01d": {
+        "primary": 0.0
+      },
+      "SE01c": {
+        "primary": 0.0
+      },
+      "SE01d": {
+        "primary": 0.0
+      }
+    }
+  }
+}
