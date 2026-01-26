@@ -250,6 +250,11 @@ def get_answer_value(dept: str, production: str, qid: str) -> Tuple[Optional[obj
         (df["question_id"] == qid)
     )
     if not mask.any():
+        # Debug: Show what we're looking for vs what exists
+        if not df.empty and qid in df["question_id"].values:
+            unique_prods = df[df["question_id"] == qid]["production"].unique()
+            unique_depts = df[df["question_id"] == qid]["department"].unique()
+            st.sidebar.warning(f"🔍 Question {qid} found but mismatch:\nLooking for: dept='{dept}', prod='{production}'\nFound: dept={unique_depts.tolist()}, prod={unique_prods.tolist()}")
         return None, None
     row = df[mask].iloc[0]
     return row.get("primary", None), row.get("description", None)
