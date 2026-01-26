@@ -48,7 +48,7 @@ Demographics,School,Scholarships,Recruitment,Scholarships for Alberta Students,S
 Demographics,School,Boys,Recruitment,Boy Enrolment,SCH_SA_Q9,Did we increase boy enrolment through targeted campaigns and specialised programmes?,yes_no,"Yes,No",FALSE,470,accessibility,3,,SCH6
 Demographics,School,Boys,Recruitment,Boy Enrolment,SCH_SA_Q10,"If yes, how did we increase awareness?",text,,FALSE,480,accessibility,2,SCH_SA_Q9,SCH6
 Demographics,School,Boys,Recruitment,Boy Enrolment,SCH_SA_Q11,How many boys did we enrol through this campaign?,number,,FALSE,490,accessibility,2,SCH_SA_Q9,SCH6
-Demographics,School,Boys,Recruitment,Boy Enrolment,SCH_SA_Q12,Did we recommend students from AB Classes audition for Alberta Ballet School?,yes_no,"Yes,No",FALSE,500,accessibility,3,,SCH6
+Demographics,School,AB Class Recruitment,Recruitment,AB Classes,SCH_SA_Q12,Did we recommend students from AB Classes audition for Alberta Ballet School?,yes_no,"Yes,No",FALSE,500,accessibility,3,,SCH6
 Demographics,School,AB Class Recruitment,Recruitment,AB Classes,SCH_SA_Q13,"If yes, how many did we recommend?",number,,FALSE,510,accessibility,2,SCH_SA_Q12,SCH6
 Demographics,School,AB Class Recruitment,Recruitment,AB Classes,SCH_SA_Q14,How many accepted?,number,,FALSE,520,accessibility,2,SCH_SA_Q12,SCH6
 Demographics,School,AB Class Recruitment,Recruitment,AB Classes,SCH_SA_Q15,"If no,  please explain why.",number,,FALSE,530,accessibility,2,SCH_SA_Q12=No,SCH6
