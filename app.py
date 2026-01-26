@@ -1167,6 +1167,14 @@ def main():
 
     # Sidebar: Draft controls
     st.sidebar.subheader("Drafts")
+    
+    # Add a "Clear current draft" button to force reload
+    if st.sidebar.button("🔄 Clear current draft", help="Clear the current draft to allow reloading the same file"):
+        st.session_state.pop("draft_hash", None)
+        st.session_state.pop("_processed_upload_hash", None)
+        st.session_state.pop("draft_applied", None)
+        st.sidebar.success("Draft cleared. You can now reload the same file.")
+    
     draft_files = st.sidebar.file_uploader(
         "Load saved draft(s) (JSON)",
         type="json",
