@@ -1173,17 +1173,6 @@ def main():
 
     # Sidebar: Draft controls
     st.sidebar.subheader("Drafts")
-    
-    # Add a "Clear current draft" button to force reload
-    if st.sidebar.button("🔄 Clear current draft", help="Clear the current draft to allow reloading the same file"):
-        st.session_state.pop("draft_hash", None)
-        st.session_state.pop("_processed_upload_hash", None)
-        st.session_state.pop("draft_applied", None)
-        st.session_state.pop("answers_df", None)  # Clear all answers
-        st.session_state.pop("ai_result", None)   # Clear AI result
-        st.sidebar.success("Draft cleared. You can now reload the same file.")
-        safe_rerun()
-    
     draft_files = st.sidebar.file_uploader(
         "Load saved draft(s) (JSON)",
         type="json",
@@ -1195,10 +1184,13 @@ def main():
         file_contents = [f.getvalue() for f in draft_files]
         uploaded_files_hash = _hash_bytes(b"".join(file_contents))
         
-        # Skip processing if these exact files were already processed
-        # (prevents re-triggering merge after conflict resolution)
-        if st.session_state.get("_processed_upload_hash") == uploaded_files_hash:
-            st.sidebar.info("📋 Draft already loaded. To reload, click 'Clear current draft' first, then remove and re-add the file.")
+        # Process the files (always process on first upload, or if hash changed)
+        # But skip if we're in the middle of conflict resolution
+        already_processed = st.session_state.get("_processed_upload_hash") == uploaded_files_hash
+        in_conflict_resolution = "merge_conflicts" in st.session_state
+        
+        if already_processed and not in_conflict_resolution:
+            pass  # Already processed this exact file set, skip reprocessing
         else:
             # Process multiple files - merge them into a single draft
             if len(draft_files) == 1:
