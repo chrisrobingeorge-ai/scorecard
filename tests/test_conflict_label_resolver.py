@@ -20,7 +20,6 @@ from merge_scorecards import (
     _humanize_key,
     _extract_question_id_from_path,
     _derive_section_from_qid,
-    _get_kpi_description,
     FIELD_LABEL_MAP,
 )
 
@@ -190,44 +189,8 @@ class TestDeriveSectionFromQid:
         assert _derive_section_from_qid("UNKNOWN_Q1") == "General"
 
 
-class TestGetKpiDescription:
-    """Tests for _get_kpi_description."""
-    
-    def test_two_part_key(self):
-        """Test KPI key with two parts."""
-        assert _get_kpi_description("DONATIONS/General") == "Donations > General"
-    
-    def test_three_part_key(self):
-        """Test KPI key with three parts."""
-        assert _get_kpi_description("GRANTS/Government/AFA") == "Grants > Government > Afa"
-    
-    def test_dash_subcategory(self):
-        """Test that dash subcategory is ignored."""
-        assert _get_kpi_description("DONATIONS/General/–") == "Donations > General"
-    
-    def test_underscore_handling(self):
-        """Test underscore to space conversion in KPI keys."""
-        assert _get_kpi_description("TICKET_SALES/subscriptions") == "Ticket Sales > Subscriptions"
-
-
 class TestResolveConflictLabel:
     """Tests for the main resolve_conflict_label function."""
-    
-    def test_kpi_conflict_without_registry(self):
-        """Test resolving a KPI conflict without a registry."""
-        conflict = Conflict(
-            section="financial_kpis_actuals",
-            key="DONATIONS/General/–",
-            values=[(100000.0, "user1"), (150000.0, "user2")]
-        )
-        
-        label = resolve_conflict_label(conflict, None)
-        
-        assert label.section_label == "Financial KPIs"
-        assert "Donations" in label.question_label
-        assert "General" in label.question_label
-        assert label.field_label == "Actual value"
-        assert "financial_kpis_actuals" in label.debug_key
     
     def test_answer_conflict_with_registry(self):
         """Test resolving an answer conflict with a registry."""
@@ -503,9 +466,9 @@ COMM_REC_Q2a,How many NEW recreational students registered this period?,Recreati
                 values=[("a", "file1"), ("b", "file2")]
             ),
             Conflict(
-                section="financial_kpis_actuals",
-                key="DONATIONS/General/–",
-                values=[(100000, "file1"), (200000, "file2")]
+                section="answers.ATI02",
+                key="primary",
+                values=[("x", "file1"), ("y", "file2")]
             )
         ]
         
@@ -516,8 +479,6 @@ COMM_REC_Q2a,How many NEW recreational students registered this period?,Recreati
         # Should number them
         assert "1." in result
         assert "2." in result
-        # Should contain KPI description
-        assert "Financial KPIs" in result
 
 
 if __name__ == "__main__":

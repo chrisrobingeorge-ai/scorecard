@@ -202,27 +202,6 @@ def _extract_question_id_from_path(section: str, key: str) -> Optional[str]:
     return None
 
 
-def _get_kpi_description(kpi_key: str) -> str:
-    """
-    Generate a human-readable description for a KPI key.
-    
-    Args:
-        kpi_key: Key in format "area/category/sub_category"
-    
-    Returns:
-        Human-readable description like "DONATIONS > General"
-    """
-    parts = kpi_key.split('/')
-    if len(parts) >= 2:
-        area = parts[0].replace('_', ' ').title()
-        category = parts[1].replace('_', ' ').title()
-        if len(parts) >= 3 and parts[2] and parts[2] != '–':
-            sub_cat = parts[2].replace('_', ' ').title()
-            return f"{area} > {category} > {sub_cat}"
-        return f"{area} > {category}"
-    return kpi_key.replace('_', ' ').title()
-
-
 def resolve_conflict_label(
     conflict: Conflict,
     registry: Optional[QuestionRegistry] = None
@@ -257,18 +236,6 @@ def resolve_conflict_label(
     section_label = "Answers"
     question_label = _humanize_key(key)
     field_label = FIELD_LABEL_MAP.get(key.lower(), "")
-    
-    # Handle KPI conflicts
-    if section == "financial_kpis_actuals" or "kpi" in section.lower():
-        section_label = "Financial KPIs"
-        question_label = _get_kpi_description(key)
-        field_label = "Actual value"
-        return ConflictLabel(
-            section_label=section_label,
-            question_label=question_label,
-            field_label=field_label,
-            debug_key=debug_key
-        )
     
     # Try to extract question ID
     question_id = _extract_question_id_from_path(section, key)
@@ -438,83 +405,6 @@ def is_default_value(value: Any, field_type: str = "general") -> bool:
     return False
 
 
-def merge_kpi_entries(
-    entries: List[Tuple[Dict[str, Any], str]],
-    policy: MergePolicy = MergePolicy.NON_DEFAULT_WINS
-) -> Tuple[Dict[str, Any], Optional[Conflict]]:
-    """
-    Merge multiple KPI entries for the same KPI line.
-    
-    Args:
-        entries: List of (kpi_dict, source_filename) tuples
-        policy: Merge policy to use
-    
-    Returns:
-        (merged_kpi, conflict) - conflict is None if no conflict detected
-    """
-    if not entries:
-        return {}, None
-    
-    if len(entries) == 1:
-        return entries[0][0], None
-    
-    # Extract the key for this KPI
-    first_entry = entries[0][0]
-    kpi_key = f"{first_entry.get('area', '')}/{first_entry.get('category', '')}/{first_entry.get('sub_category', '')}"
-    
-    # Collect all actuals and their sources
-    actuals_with_sources = [(e[0].get('actual', 0.0), e[1]) for e in entries]
-    
-    # Apply merge policy
-    if policy == MergePolicy.NON_DEFAULT_WINS:
-        # Find non-default values
-        non_defaults = [(val, src) for val, src in actuals_with_sources 
-                        if not is_default_value(val, "kpi")]
-        
-        if len(non_defaults) == 0:
-            # All are defaults, take the last one
-            result = copy.deepcopy(entries[-1][0])
-            return result, None
-        
-        elif len(non_defaults) == 1:
-            # Exactly one non-default, use it
-            for entry, source in entries:
-                if entry.get('actual', 0.0) == non_defaults[0][0]:
-                    result = copy.deepcopy(entry)
-                    return result, None
-        
-        else:
-            # Multiple non-defaults - check if they're all the same
-            unique_non_defaults = set(val for val, _ in non_defaults)
-            if len(unique_non_defaults) == 1:
-                # All non-defaults are the same value
-                for entry, source in entries:
-                    if entry.get('actual', 0.0) == non_defaults[0][0]:
-                        result = copy.deepcopy(entry)
-                        return result, None
-            else:
-                # Real conflict: multiple different non-default values
-                conflict = Conflict(
-                    section="financial_kpis_actuals",
-                    key=kpi_key,
-                    values=non_defaults
-                )
-                # Use the last non-default as the merged value
-                for entry, source in reversed(entries):
-                    if not is_default_value(entry.get('actual', 0.0), "kpi"):
-                        result = copy.deepcopy(entry)
-                        return result, conflict
-    
-    elif policy == MergePolicy.LAST_WINS:
-        return copy.deepcopy(entries[-1][0]), None
-    
-    elif policy == MergePolicy.FIRST_WINS:
-        return copy.deepcopy(entries[0][0]), None
-    
-    # Default: last wins
-    return copy.deepcopy(entries[-1][0]), None
-
-
 def merge_nested_dict(
     target: Dict[str, Any],
     source: Dict[str, Any],
@@ -617,7 +507,6 @@ def merge_scorecards(
         "meta": {},
         "answers": {},
         "per_show_answers": {},
-        "financial_kpis_actuals": [],
     }
     
     conflicts: List[Conflict] = []
@@ -625,7 +514,6 @@ def merge_scorecards(
     stats = {
         "files_merged": len(scorecards),
         "answers_merged": 0,
-        "kpis_merged": 0,
         "conflicts_detected": 0,
     }
     
@@ -663,37 +551,6 @@ def merge_scorecards(
                     policy
                 )
         
-        # Merge financial KPIs by key (area, category, sub_category)
-        if "financial_kpis_actuals" in scorecard_data and scorecard_data["financial_kpis_actuals"]:
-            for kpi in scorecard_data["financial_kpis_actuals"]:
-                key = (kpi.get("area"), kpi.get("category"), kpi.get("sub_category"))
-                
-                # Find if this KPI already exists in merged
-                existing_idx = None
-                for idx, existing_kpi in enumerate(merged["financial_kpis_actuals"]):
-                    existing_key = (
-                        existing_kpi.get("area"),
-                        existing_kpi.get("category"),
-                        existing_kpi.get("sub_category")
-                    )
-                    if existing_key == key:
-                        existing_idx = idx
-                        break
-                
-                if existing_idx is not None:
-                    # Merge with existing KPI entry
-                    existing_entry = merged["financial_kpis_actuals"][existing_idx]
-                    merged_kpi, conflict = merge_kpi_entries(
-                        [(existing_entry, "previous"), (kpi, source_name)],
-                        policy
-                    )
-                    merged["financial_kpis_actuals"][existing_idx] = merged_kpi
-                    if conflict:
-                        conflicts.append(conflict)
-                else:
-                    # New KPI, add it
-                    merged["financial_kpis_actuals"].append(copy.deepcopy(kpi))
-        
         # Merge ai_result - later files override
         if "ai_result" in scorecard_data and scorecard_data["ai_result"]:
             merged["ai_result"] = copy.deepcopy(scorecard_data["ai_result"])
@@ -707,7 +564,6 @@ def merge_scorecards(
     
     # Update stats
     stats["answers_merged"] = len(merged.get("answers", {}))
-    stats["kpis_merged"] = len(merged.get("financial_kpis_actuals", []))
     stats["conflicts_detected"] = len(conflicts)
     
     return MergeResult(
@@ -780,21 +636,7 @@ def apply_conflict_resolutions(
         chosen_value, _ = conflict.values[value_idx]
         
         # Apply the resolution based on section type
-        if conflict.section == "financial_kpis_actuals":
-            # Parse the KPI key
-            key_parts = conflict.key.split("/")
-            if len(key_parts) == 3:
-                area, category, sub_category = key_parts
-                
-                # Find and update the KPI entry
-                for kpi in result.get("financial_kpis_actuals", []):
-                    if (kpi.get("area") == area and 
-                        kpi.get("category") == category and 
-                        kpi.get("sub_category") == sub_category):
-                        kpi["actual"] = chosen_value
-                        break
-        
-        elif conflict.section.startswith("answers"):
+        if conflict.section.startswith("answers"):
             # Handle nested answer keys like "answers.Q1.primary"
             keys = conflict.section.split(".")[1:] + [conflict.key]
             

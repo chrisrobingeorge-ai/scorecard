@@ -14,31 +14,5 @@
       "primary": "Equipment reusability details"
     }
   },
-  "per_show_answers": {},
-  "financial_kpis_actuals": [
-    {
-      "area": "DONATIONS",
-      "category": "General",
-      "sub_category": "–",
-      "actual": 0.0,
-      "report_section": "DONATIONS",
-      "report_order": 1
-    },
-    {
-      "area": "DONATIONS",
-      "category": "Campaigns",
-      "sub_category": "Scholarships",
-      "actual": 30000.0,
-      "report_section": "DONATIONS",
-      "report_order": 3
-    },
-    {
-      "area": "GRANTS",
-      "category": "Government",
-      "sub_category": "AFA",
-      "actual": 400000.0,
-      "report_section": "GRANTS",
-      "report_order": 1
-    }
-  ]
+  "per_show_answers": {}
 }
