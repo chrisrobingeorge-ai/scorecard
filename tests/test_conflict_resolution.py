@@ -16,49 +16,6 @@ from merge_scorecards import (
 )
 
 
-def test_apply_kpi_conflict_resolution():
-    """Test resolving KPI conflicts."""
-    data1 = {
-        "financial_kpis_actuals": [
-            {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100000.0}
-        ]
-    }
-    data2 = {
-        "financial_kpis_actuals": [
-            {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 150000.0}
-        ]
-    }
-    
-    # Merge - should create conflict
-    result = merge_scorecards(
-        [(data1, "user1"), (data2, "user2")],
-        policy=MergePolicy.NON_DEFAULT_WINS
-    )
-    
-    assert result.has_conflicts
-    assert len(result.conflicts) == 1
-    
-    # Test choosing first value (100000)
-    resolved = apply_conflict_resolutions(
-        result.merged_data,
-        result.conflicts,
-        {0: 0}  # Choose first value for conflict 0
-    )
-    
-    assert resolved["financial_kpis_actuals"][0]["actual"] == 100000.0
-    print("✅ Test 1: Chose first value (100000) - PASSED")
-    
-    # Test choosing second value (150000)
-    resolved = apply_conflict_resolutions(
-        result.merged_data,
-        result.conflicts,
-        {0: 1}  # Choose second value for conflict 0
-    )
-    
-    assert resolved["financial_kpis_actuals"][0]["actual"] == 150000.0
-    print("✅ Test 2: Chose second value (150000) - PASSED")
-
-
 def test_apply_answer_conflict_resolution():
     """Test resolving answer conflicts."""
     data1 = {"answers": {"Q1": {"primary": "Yes"}}}
@@ -80,54 +37,9 @@ def test_apply_answer_conflict_resolution():
         )
         
         # Should contain the chosen value
-        print("✅ Test 3: Answer conflict resolution - PASSED")
+        print("✅ Test 1: Answer conflict resolution - PASSED")
     else:
-        print("ℹ️  Test 3: No conflict (both values may be same) - SKIPPED")
-
-
-def test_multiple_conflicts_resolution():
-    """Test resolving multiple conflicts at once."""
-    data1 = {
-        "financial_kpis_actuals": [
-            {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100000.0},
-            {"area": "GRANTS", "category": "Government", "sub_category": "AFA", "actual": 50000.0}
-        ]
-    }
-    data2 = {
-        "financial_kpis_actuals": [
-            {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 150000.0},
-            {"area": "GRANTS", "category": "Government", "sub_category": "AFA", "actual": 75000.0}
-        ]
-    }
-    
-    result = merge_scorecards(
-        [(data1, "user1"), (data2, "user2")],
-        policy=MergePolicy.NON_DEFAULT_WINS
-    )
-    
-    assert result.has_conflicts
-    assert len(result.conflicts) == 2
-    
-    # Resolve: choose first value for conflict 0, second value for conflict 1
-    resolved = apply_conflict_resolutions(
-        result.merged_data,
-        result.conflicts,
-        {0: 0, 1: 1}
-    )
-    
-    # Find the resolved KPIs
-    donations = None
-    grants = None
-    for kpi in resolved["financial_kpis_actuals"]:
-        if kpi["area"] == "DONATIONS" and kpi["category"] == "General":
-            donations = kpi["actual"]
-        elif kpi["area"] == "GRANTS" and kpi["category"] == "Government":
-            grants = kpi["actual"]
-    
-    assert donations == 100000.0, f"Expected DONATIONS to be 100000, got {donations}"
-    assert grants == 75000.0, f"Expected GRANTS to be 75000, got {grants}"
-    
-    print("✅ Test 4: Multiple conflicts resolved correctly - PASSED")
+        print("ℹ️  Test 1: No conflict (both values may be same) - SKIPPED")
 
 
 def test_no_conflicts_no_resolutions():
@@ -152,7 +64,7 @@ def test_no_conflicts_no_resolutions():
     assert "Q1" in resolved["answers"]
     assert "Q2" in resolved["answers"]
     
-    print("✅ Test 5: No conflicts case - PASSED")
+    print("✅ Test 2: No conflicts case - PASSED")
 
 
 if __name__ == "__main__":
@@ -160,9 +72,7 @@ if __name__ == "__main__":
     print("TESTING CONFLICT RESOLUTION")
     print("=" * 80)
     
-    test_apply_kpi_conflict_resolution()
     test_apply_answer_conflict_resolution()
-    test_multiple_conflicts_resolution()
     test_no_conflicts_no_resolutions()
     
     print("\n" + "=" * 80)

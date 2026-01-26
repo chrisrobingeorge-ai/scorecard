@@ -677,8 +677,6 @@ def queue_multiple_draft_bytes(draft_bytes_list: List[bytes]) -> Tuple[bool, str
             
             # Build message
             msg_parts = [f"Merged {len(draft_bytes_list)} files"]
-            if merge_result.stats.get("kpis_merged"):
-                msg_parts.append(f"{merge_result.stats['kpis_merged']} KPI lines")
             msg_parts.append(f"⚠️ {len(merge_result.conflicts)} conflicts need resolution")
             
             return True, "; ".join(msg_parts) + ". Please resolve conflicts below."
@@ -699,8 +697,6 @@ def queue_multiple_draft_bytes(draft_bytes_list: List[bytes]) -> Tuple[bool, str
             
             # Build success message with stats
             msg_parts = [f"Merged {len(draft_bytes_list)} files"]
-            if merge_result.stats.get("kpis_merged"):
-                msg_parts.append(f"{merge_result.stats['kpis_merged']} KPI lines")
             
             return True, "; ".join(msg_parts) + ". Applying…"
         

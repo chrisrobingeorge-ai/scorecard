@@ -14,23 +14,5 @@
       "primary": "Yes"
     }
   },
-  "per_show_answers": {},
-  "financial_kpis_actuals": [
-    {
-      "area": "DONATIONS",
-      "category": "General",
-      "sub_category": "–",
-      "actual": 150000.0,
-      "report_section": "DONATIONS",
-      "report_order": 1
-    },
-    {
-      "area": "GRANTS",
-      "category": "Government",
-      "sub_category": "AFA",
-      "actual": 75000.0,
-      "report_section": "GRANTS",
-      "report_order": 1
-    }
-  ]
+  "per_show_answers": {}
 }

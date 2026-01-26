@@ -14,7 +14,6 @@ from merge_scorecards import (
     merge_scorecards,
     MergePolicy,
     is_default_value,
-    merge_kpi_entries,
     Conflict,
 )
 
@@ -47,68 +46,6 @@ class TestIsDefaultValue:
         assert is_default_value({})
 
 
-class TestMergeKpiEntries:
-    """Test KPI-specific merge logic."""
-    
-    def test_single_entry_no_conflict(self):
-        kpi = {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100.0}
-        result, conflict = merge_kpi_entries([(kpi, "file1")])
-        
-        assert result == kpi
-        assert conflict is None
-    
-    def test_nondefault_wins_over_default(self):
-        kpi1 = {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100.0}
-        kpi2 = {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 0.0}
-        
-        result, conflict = merge_kpi_entries(
-            [(kpi1, "file1"), (kpi2, "file2")],
-            policy=MergePolicy.NON_DEFAULT_WINS
-        )
-        
-        assert result["actual"] == 100.0
-        assert conflict is None
-    
-    def test_default_replaced_by_nondefault(self):
-        kpi1 = {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 0.0}
-        kpi2 = {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 50000.0}
-        
-        result, conflict = merge_kpi_entries(
-            [(kpi1, "file1"), (kpi2, "file2")],
-            policy=MergePolicy.NON_DEFAULT_WINS
-        )
-        
-        assert result["actual"] == 50000.0
-        assert conflict is None
-    
-    def test_conflict_when_both_nondefault_differ(self):
-        kpi1 = {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100.0}
-        kpi2 = {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 200.0}
-        
-        result, conflict = merge_kpi_entries(
-            [(kpi1, "file1"), (kpi2, "file2")],
-            policy=MergePolicy.NON_DEFAULT_WINS
-        )
-        
-        # Should detect conflict but still produce a result (last non-default)
-        assert result["actual"] == 200.0
-        assert conflict is not None
-        assert conflict.section == "financial_kpis_actuals"
-        assert len(conflict.values) == 2
-    
-    def test_no_conflict_when_both_same_nondefault(self):
-        kpi1 = {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100.0}
-        kpi2 = {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100.0}
-        
-        result, conflict = merge_kpi_entries(
-            [(kpi1, "file1"), (kpi2, "file2")],
-            policy=MergePolicy.NON_DEFAULT_WINS
-        )
-        
-        assert result["actual"] == 100.0
-        assert conflict is None
-
-
 class TestMergeScorecards:
     """Test the main merge_scorecards function."""
     
@@ -137,72 +74,6 @@ class TestMergeScorecards:
         assert result.merged_data["answers"]["Q2"]["primary"] == "No"
         assert len(result.conflicts) == 0
     
-    def test_merge_financial_kpis_no_overlap(self):
-        data1 = {
-            "financial_kpis_actuals": [
-                {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100.0}
-            ]
-        }
-        data2 = {
-            "financial_kpis_actuals": [
-                {"area": "GRANTS", "category": "Government", "sub_category": "AFA", "actual": 200.0}
-            ]
-        }
-        
-        result = merge_scorecards([(data1, "file1"), (data2, "file2")])
-        
-        assert len(result.merged_data["financial_kpis_actuals"]) == 2
-        assert result.stats["kpis_merged"] == 2
-        assert len(result.conflicts) == 0
-    
-    def test_merge_financial_kpis_with_default_override(self):
-        """This is the main bug fix test."""
-        data1 = {
-            "financial_kpis_actuals": [
-                {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100000.0}
-            ]
-        }
-        data2 = {
-            "financial_kpis_actuals": [
-                {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 0.0}
-            ]
-        }
-        
-        result = merge_scorecards(
-            [(data1, "file1"), (data2, "file2")],
-            policy=MergePolicy.NON_DEFAULT_WINS
-        )
-        
-        # Should preserve the non-default value of 100000, not overwrite with 0
-        assert len(result.merged_data["financial_kpis_actuals"]) == 1
-        assert result.merged_data["financial_kpis_actuals"][0]["actual"] == 100000.0
-        assert len(result.conflicts) == 0  # No conflict since one is default
-    
-    def test_merge_financial_kpis_conflict_detection(self):
-        """Test that conflicts are detected when both values are non-default."""
-        data1 = {
-            "financial_kpis_actuals": [
-                {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 100000.0}
-            ]
-        }
-        data2 = {
-            "financial_kpis_actuals": [
-                {"area": "DONATIONS", "category": "General", "sub_category": "–", "actual": 150000.0}
-            ]
-        }
-        
-        result = merge_scorecards(
-            [(data1, "file1"), (data2, "file2")],
-            policy=MergePolicy.NON_DEFAULT_WINS
-        )
-        
-        # Should detect conflict
-        assert len(result.conflicts) == 1
-        assert result.conflicts[0].section == "financial_kpis_actuals"
-        assert len(result.conflicts[0].values) == 2
-        # Result should still have a value (last non-default)
-        assert result.merged_data["financial_kpis_actuals"][0]["actual"] == 150000.0
-    
     def test_merge_with_real_fixtures(self):
         """Integration test using actual test fixtures."""
         import json
@@ -223,25 +94,6 @@ class TestMergeScorecards:
         # Check that answers from both users are present
         assert "ATI01" in result.merged_data["answers"]  # From user1
         assert "ATI03" in result.merged_data["answers"]  # From user2
-        
-        # Check that KPIs are properly merged
-        kpis = result.merged_data["financial_kpis_actuals"]
-        assert len(kpis) == 5  # 3 from user1 + 2 unique from user2
-        
-        # Find the DONATIONS/General/– KPI
-        donations_general = None
-        for kpi in kpis:
-            if (kpi["area"], kpi["category"], kpi["sub_category"]) == ("DONATIONS", "General", "–"):
-                donations_general = kpi["actual"]
-                break
-        
-        # Should preserve user1's 100000, not overwrite with user2's 0
-        assert donations_general == 100000.0
-        
-        # Check that user2's unique KPIs are also present
-        kpi_keys = {(k["area"], k["category"], k["sub_category"]) for k in kpis}
-        assert ("GRANTS", "Government", "AFA") in kpi_keys
-        assert ("DONATIONS", "Campaigns", "Scholarships") in kpi_keys
 
 
 class TestMergePolicy:
