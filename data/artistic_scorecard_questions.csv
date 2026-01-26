@@ -40,7 +40,7 @@ Financials and Marketing,Financial,Grants,Financial,Canada Council,GR01,Canada C
 Financials and Marketing,Financial,Grants,Financial,Canada Council,GR01a,"The Canada Council budget this year was $622,685; how much money have we secured from Canada Council YTD?",number,,FALSE,480,Financial Performance,3,,ART2
 Financials and Marketing,Financial,Grants,Financial,Canada Council,GR01b,What is the explanation for the Canada Council variance from budget this year?,text,,FALSE,490,Financial Performance,3,,ART2
 Financials and Marketing,Financial,Grants,Financial,Federal Project Grants,GR02,Federal Project Grants,heading,,FALSE,500,Financial Performance,,,
-Financials and Marketing,Financial,Grants,Financial,Federal Project Grants,GR02a,"Although there was no budget for Federal Project Grants this year, have we secured any funding in Federal Project Grants YTD?",number,,FALSE,510,Financial Performance,3,,ART1
+Financials and Marketing,Financial,Grants,Financial,Federal Project Grants,GR02a,"The Federal Project Grants budget this year was $141,830; how much money have we secured YTD?",number,,FALSE,510,Financial Performance,3,,ART1
 Financials and Marketing,Financial,Grants,Financial,Federal Project Grants,GR02b,What is the explanation for the Federal Project Grants  variance from budget this year?,text,,FALSE,520,Financial Performance,3,,ART1
 Financials and Marketing,Financial,Grants,Financial,Provincial Project Grants,GR03,Provincial Project Grants,heading,,FALSE,530,Financial Performance,,,
 Financials and Marketing,Financial,Grants,Financial,Provincial Project Grants,GR03a,"Although there was no budget for Provincial Project Grants this year, have we secured any funding in Provincial Project Grants YTD?",number,,FALSE,540,Financial Performance,3,,ART1
