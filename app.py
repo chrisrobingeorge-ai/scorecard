@@ -1631,6 +1631,8 @@ def main():
     # ─────────────────────────────────────────────────────────────
     # AI Interpretation (fully editable before PDF)
     # ─────────────────────────────────────────────────────────────
+    kpi_explanations = st.session_state.get("kpi_explanations", "")
+
     st.subheader("AI Interpretation (editable)")
 
     # Initialise cached AI result
