@@ -554,13 +554,6 @@ def merge_scorecards(
         # Merge ai_result - later files override
         if "ai_result" in scorecard_data and scorecard_data["ai_result"]:
             merged["ai_result"] = copy.deepcopy(scorecard_data["ai_result"])
-        
-        # Merge kpi_explanations - concatenate
-        if "kpi_explanations" in scorecard_data and scorecard_data["kpi_explanations"]:
-            if "kpi_explanations" not in merged or not merged["kpi_explanations"]:
-                merged["kpi_explanations"] = scorecard_data["kpi_explanations"]
-            else:
-                merged["kpi_explanations"] += "\n\n" + scorecard_data["kpi_explanations"]
     
     # Update stats
     stats["answers_merged"] = len(merged.get("answers", {}))

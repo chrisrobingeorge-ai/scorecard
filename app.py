@@ -1631,8 +1631,6 @@ def main():
     # ─────────────────────────────────────────────────────────────
     # AI Interpretation (fully editable before PDF)
     # ─────────────────────────────────────────────────────────────
-    kpi_explanations = st.session_state.get("kpi_explanations", "")
-
     st.subheader("AI Interpretation (editable)")
 
     # Initialise cached AI result
@@ -1645,11 +1643,6 @@ def main():
     if st.session_state["ai_result"] is None:
         try:
             with st.spinner("Asking AI to interpret this scorecard..."):
-                # Add KPI explanations and production targets to meta for AI context
-                meta_with_kpi = dict(meta_for_ai)
-                if kpi_explanations:
-                    meta_with_kpi["kpi_explanations"] = kpi_explanations
-                
                 ai_result = interpret_scorecard(
                     meta_for_ai,
                     questions_for_ai,
@@ -1774,11 +1767,6 @@ def main():
         nfl_raw = ai_result.get("notes_for_leadership", "") or ""
         parts.append(str(nfl_raw))
         parts.append("")
-        
-        # KPI Explanations
-        if kpi_explanations and str(kpi_explanations).strip():
-            parts.append("=== KPI EXPLANATIONS ===")
-            parts.append(str(kpi_explanations))
         
         return "\n".join(parts)
     
@@ -1925,10 +1913,6 @@ def main():
         # Parse Notes for Leadership - straightforward text replacement
         if 'NOTES FOR LEADERSHIP' in sections:
             ai_result["notes_for_leadership"] = sections['NOTES FOR LEADERSHIP']
-        
-        # Note: KPI Explanations are managed by a text_area widget, so we cannot
-        # modify them directly via session state. Users should edit KPI explanations
-        # in the dedicated text_area widget above, not in the consolidated editor.
     
     st.markdown("### AI Summary - Consolidated Editor")
     st.markdown("Edit the entire AI summary in one place. The content will be automatically parsed into the appropriate sections for the PDF/DOCX.")
@@ -1980,7 +1964,6 @@ def main():
                 responses_for_ai,
                 ai_result,
                 logo_path="assets/alberta_ballet_logo.png",
-                kpi_explanations=kpi_explanations,
             )
             st.download_button(
                 label="📄 Download PDF report",
@@ -2000,7 +1983,6 @@ def main():
                 responses_for_ai,
                 ai_result,
                 logo_path="assets/alberta_ballet_logo.png",
-                kpi_explanations=kpi_explanations,
             )
             st.download_button(
                 label="📝 Download DOCX report",
